@@ -1,23 +1,28 @@
-
 pluginManagement {
     repositories {
-        maven {
-            // RetroFuturaGradle
-            name "GTNH Maven"
-            url "https://nexus.gtnewhorizons.com/repository/public/"
-            mavenContent {
-                includeGroup("com.gtnewhorizons")
-                includeGroupByRegex("com\\.gtnewhorizons\\..+")
-            }
-        }
         gradlePluginPortal()
+        maven {
+            name = 'MinecraftForge'
+            url = 'https://maven.minecraftforge.net/'
+        }
         mavenCentral()
-        mavenLocal()
     }
 }
 
-plugins {
-    id 'com.gtnewhorizons.gtnhsettingsconvention' version '2.0.24'
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.PREFER_PROJECT)
+
+    repositories {
+        maven {
+            name = 'MinecraftForge'
+            url = 'https://maven.minecraftforge.net/'
+        }
+        maven {
+            name = 'Commoble Maven'
+            url = 'https://maven.commoble.net/'
+        }
+        mavenCentral()
+    }
 }
 
-
+rootProject.name = 'PersonalSpace-Port-1.20.1'
