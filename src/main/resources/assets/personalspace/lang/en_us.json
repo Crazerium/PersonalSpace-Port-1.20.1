@@ -1,0 +1,6 @@
+{
+  "block.personalspace.personal_portal": "Personal Portal",
+  "item.personalspace.personal_portal": "Personal Portal",
+  "tooltip.personalspace.target": "Target: %s",
+  "tooltip.personalspace.unlinked": "Unlinked: first use creates a personal dimension"
+}

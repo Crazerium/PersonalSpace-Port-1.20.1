@@ -1,0 +1,6 @@
+{
+  "block.personalspace.personal_portal": "Персональный портал",
+  "item.personalspace.personal_portal": "Персональный портал",
+  "tooltip.personalspace.target": "Цель: %s",
+  "tooltip.personalspace.unlinked": "Не привязан: первое использование создаст персональное измерение"
+}
