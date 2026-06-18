@@ -8,7 +8,7 @@ import net.minecraft.world.level.chunk.ChunkAccess;
 
 public class PersonalSpaceChunkGenerator {
 
-    // Этот метод вызывается из события ChunkEvent.Load
+
     public static void generateChunk(ServerLevel level, ChunkAccess chunk) {
         PersonalSpaceData data = PersonalSpaceData.load(level);
         PersonalSpaceData.WorldType type = data.getType();
@@ -19,7 +19,7 @@ public class PersonalSpaceChunkGenerator {
         int chunkX = chunk.getPos().x;
         int chunkZ = chunk.getPos().z;
 
-        // Заполняем ВСЁ воздухом
+
         for (int x = 0; x < 16; x++) {
             for (int z = 0; z < 16; z++) {
                 for (int y = minY; y < maxY; y++) {
@@ -28,7 +28,7 @@ public class PersonalSpaceChunkGenerator {
             }
         }
 
-        // Только в чанке (0,0) строим платформу или слой
+
         if (chunkX == 0 && chunkZ == 0) {
             if (type == PersonalSpaceData.WorldType.FLAT) {
                 for (int x = 0; x < 16; x++) {

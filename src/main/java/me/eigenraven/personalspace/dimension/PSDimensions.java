@@ -40,11 +40,11 @@ public final class PSDimensions {
         return InfiniverseAPI.get().getOrCreateLevel(
                 server,
                 levelKey,
-                () -> createInitialStem(server) // используем стандартный генератор
+                () -> createInitialStem(server)
         );
     }
 
-    // Используем стандартный генератор (копируем из обычного мира)
+
     private static LevelStem createInitialStem(MinecraftServer server) {
         ServerLevel overworld = server.overworld();
         Holder<DimensionType> dimensionType = overworld.dimensionTypeRegistration();
@@ -53,21 +53,21 @@ public final class PSDimensions {
         return new LevelStem(dimensionType, generator);
     }
 
-    // Создаём персональный мир с настройками (тип и высота)
+
     public static ServerLevel createPersonalDimension(
             MinecraftServer server,
             ResourceKey<Level> levelKey,
             PersonalSpaceData.WorldType type,
             int height
     ) {
-        // Создаём мир через стандартный генератор
+
         ServerLevel newLevel = InfiniverseAPI.get().getOrCreateLevel(
                 server,
                 levelKey,
                 () -> createInitialStem(server)
         );
 
-        // Сохраняем настройки в JSON
+
         PersonalSpaceData data = new PersonalSpaceData();
         data.setType(type);
         data.setGroundLevel(height);
@@ -76,12 +76,12 @@ public final class PSDimensions {
         return newLevel;
     }
 
-    // Обработчик события загрузки чанка — ЗДЕСЬ МЫ ЗАМЕНЯЕМ ГЕНЕРАЦИЮ
+
     @SubscribeEvent
     public static void onChunkLoad(ChunkEvent.Load event) {
         if (event.getLevel() instanceof ServerLevel level) {
             if (level.dimension().location().getNamespace().equals(PersonalSpace.MODID)) {
-                // Вызываем нашу статическую генерацию
+
                 PersonalSpaceChunkGenerator.generateChunk(level, event.getChunk());
             }
         }
