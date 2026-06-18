@@ -1,5 +1,6 @@
 package me.eigenraven.personalspace.network;
 
+import me.eigenraven.personalspace.block.PortalBlock;
 import me.eigenraven.personalspace.block.PortalBlockEntity;
 import me.eigenraven.personalspace.data.PersonalSpaceData;
 import me.eigenraven.personalspace.dimension.PSDimensions;
@@ -7,14 +8,15 @@ import me.eigenraven.personalspace.registry.PSBlocks;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.chunk.ChunkStatus;
 import net.minecraftforge.network.NetworkEvent;
 
 import java.util.function.Supplier;
@@ -22,69 +24,208 @@ import java.util.function.Supplier;
 public class CreateDimensionPacket {
     private final PersonalSpaceData.WorldType type;
     private final int height;
-    private final BlockPos overworldPortalPos;
+    private final BlockPos sourcePortalPos;
+    private final ResourceLocation sourceLevelId;
 
-    public CreateDimensionPacket(PersonalSpaceData.WorldType type, int height, BlockPos overworldPortalPos) {
+    public CreateDimensionPacket(
+            PersonalSpaceData.WorldType type,
+            int height,
+            BlockPos sourcePortalPos
+    ) {
+        this(type, height, sourcePortalPos, null);
+    }
+
+    public CreateDimensionPacket(
+            PersonalSpaceData.WorldType type,
+            int height,
+            BlockPos sourcePortalPos,
+            ResourceLocation sourceLevelId
+    ) {
         this.type = type;
         this.height = height;
-        this.overworldPortalPos = overworldPortalPos;
+        this.sourcePortalPos = sourcePortalPos;
+        this.sourceLevelId = sourceLevelId;
     }
 
     public static void encode(CreateDimensionPacket msg, FriendlyByteBuf buf) {
         buf.writeEnum(msg.type);
         buf.writeInt(msg.height);
-        buf.writeBlockPos(msg.overworldPortalPos);
+        buf.writeBlockPos(msg.sourcePortalPos);
+
+        buf.writeBoolean(msg.sourceLevelId != null);
+
+        if (msg.sourceLevelId != null) {
+            buf.writeResourceLocation(msg.sourceLevelId);
+        }
     }
 
     public static CreateDimensionPacket decode(FriendlyByteBuf buf) {
+        PersonalSpaceData.WorldType type = buf.readEnum(PersonalSpaceData.WorldType.class);
+        int height = buf.readInt();
+        BlockPos sourcePortalPos = buf.readBlockPos();
+
+        ResourceLocation sourceLevelId = null;
+
+        if (buf.readBoolean()) {
+            sourceLevelId = buf.readResourceLocation();
+        }
+
         return new CreateDimensionPacket(
-                buf.readEnum(PersonalSpaceData.WorldType.class),
-                buf.readInt(),
-                buf.readBlockPos()
+                type,
+                height,
+                sourcePortalPos,
+                sourceLevelId
         );
     }
 
     public static void handle(CreateDimensionPacket msg, Supplier<NetworkEvent.Context> ctx) {
-        ctx.get().enqueueWork(() -> {
-            ServerPlayer player = ctx.get().getSender();
-            if (player == null) return;
+        NetworkEvent.Context context = ctx.get();
 
+        context.enqueueWork(() -> {
+            ServerPlayer player = context.getSender();
 
-            ResourceKey<Level> levelKey = PSDimensions.randomPersonalKey();
-            ServerLevel newLevel = PSDimensions.createPersonalDimension(player.server, levelKey, msg.type, msg.height);
-
-
-            PersonalSpaceData data = PersonalSpaceData.load(newLevel);
-            data.setReturnLevel(player.level().dimension().location().toString());
-            data.setReturnPos(player.blockPosition());
-            PersonalSpaceData.save(newLevel, data);
-
-
-            newLevel.getChunkSource().getChunkFuture(0, 0, ChunkStatus.FULL, true).join();
-
-
-            BlockPos portalPos = new BlockPos(7, msg.height + 1, 7);
-            BlockState portalState = PSBlocks.PERSONAL_PORTAL.get().defaultBlockState();
-            newLevel.setBlock(portalPos, portalState, 3);
-
-            PortalBlockEntity portalBE = (PortalBlockEntity) newLevel.getBlockEntity(portalPos);
-            if (portalBE == null) {
-                portalBE = new PortalBlockEntity(portalPos, portalState);
-                newLevel.setBlockEntity(portalBE);
-            }
-            ResourceKey<Level> returnKey = ResourceKey.create(Registries.DIMENSION, new ResourceLocation(data.getReturnLevel()));
-            portalBE.setTarget(returnKey, data.getReturnPos());
-
-
-            ServerLevel overworld = player.server.overworld();
-            BlockEntity overworldBE = overworld.getBlockEntity(msg.overworldPortalPos);
-            if (overworldBE instanceof PortalBlockEntity overworldPortal) {
-                overworldPortal.setTarget(levelKey, portalPos);
+            if (player == null) {
+                return;
             }
 
-
-            player.teleportTo(newLevel, 7.5, msg.height + 1, 7.5, 0, 0);
+            handleOnServer(msg, player);
         });
-        ctx.get().setPacketHandled(true);
+
+        context.setPacketHandled(true);
+    }
+
+    private static void handleOnServer(CreateDimensionPacket msg, ServerPlayer player) {
+        MinecraftServer server = player.server;
+
+        if (server == null) {
+            return;
+        }
+
+        ServerLevel sourceLevel = getSourceLevel(msg, player);
+
+        if (sourceLevel == null) {
+            player.sendSystemMessage(Component.literal("Source dimension was not found."));
+            return;
+        }
+
+        BlockEntity sourceBlockEntity = sourceLevel.getBlockEntity(msg.sourcePortalPos);
+
+        if (!(sourceBlockEntity instanceof PortalBlockEntity sourcePortal)) {
+            player.sendSystemMessage(Component.literal("Personal Space portal was not found."));
+            return;
+        }
+        if (sourcePortal.isActive() && sourcePortal.getTargetLevel() != null) {
+            sourcePortal.teleport(player);
+            return;
+        }
+
+        ResourceKey<Level> newLevelKey = PSDimensions.randomPersonalKey();
+
+        ServerLevel newLevel = PSDimensions.createPersonalDimension(
+                server,
+                newLevelKey,
+                msg.type,
+                msg.height
+        );
+        PersonalSpaceData data = PersonalSpaceData.load(newLevel);
+        data.setReturnLevel(sourceLevel.dimension().location().toString());
+        data.setReturnPos(msg.sourcePortalPos);
+        PersonalSpaceData.save(newLevel, data);
+
+        int groundY = data.getGroundLevel();
+        BlockPos innerPortalPos = new BlockPos(7, groundY + 1, 7);
+
+        PSDimensions.prepareSpawnArea(
+                newLevel,
+                data.getType(),
+                groundY,
+                innerPortalPos
+        );
+        BlockState portalState = PSBlocks.PERSONAL_PORTAL.get()
+                .defaultBlockState()
+                .setValue(PortalBlock.RETURN_PORTAL, true);
+
+        newLevel.setBlock(innerPortalPos, portalState, 3);
+
+        PortalBlockEntity innerPortal = getOrCreatePortalBlockEntity(
+                newLevel,
+                innerPortalPos,
+                portalState
+        );
+
+        ResourceLocation returnLocation = ResourceLocation.tryParse(data.getReturnLevel());
+
+        if (returnLocation == null) {
+            player.sendSystemMessage(Component.literal(
+                    "Invalid return dimension: " + data.getReturnLevel()
+            ));
+            return;
+        }
+
+        ResourceKey<Level> returnKey = ResourceKey.create(
+                Registries.DIMENSION,
+                returnLocation
+        );
+
+        innerPortal.setReturnPortal(true);
+        innerPortal.setTarget(returnKey, data.getReturnPos());
+        sourcePortal.setReturnPortal(false);
+        sourcePortal.setTarget(newLevelKey, innerPortalPos);
+
+        player.teleportTo(
+                newLevel,
+                innerPortalPos.getX() + 0.5D,
+                innerPortalPos.getY() + 1.0D,
+                innerPortalPos.getZ() + 0.5D,
+                player.getYRot(),
+                player.getXRot()
+        );
+    }
+
+    private static ServerLevel getSourceLevel(CreateDimensionPacket msg, ServerPlayer player) {
+        MinecraftServer server = player.server;
+
+        if (server == null) {
+            return null;
+        }
+
+        ResourceLocation sourceId = msg.sourceLevelId;
+
+        if (sourceId == null) {
+            sourceId = player.level().dimension().location();
+        }
+
+        ResourceKey<Level> sourceKey = ResourceKey.create(
+                Registries.DIMENSION,
+                sourceId
+        );
+
+        ServerLevel sourceLevel = server.getLevel(sourceKey);
+
+        if (sourceLevel != null) {
+            return sourceLevel;
+        }
+
+        if (player.level() instanceof ServerLevel currentLevel) {
+            return currentLevel;
+        }
+
+        return null;
+    }
+
+    private static PortalBlockEntity getOrCreatePortalBlockEntity(
+            ServerLevel level,
+            BlockPos pos,
+            BlockState state
+    ) {
+        BlockEntity existing = level.getBlockEntity(pos);
+
+        if (existing instanceof PortalBlockEntity portal) {
+            return portal;
+        }
+
+        PortalBlockEntity portal = new PortalBlockEntity(pos, state);
+        level.setBlockEntity(portal);
+        return portal;
     }
 }

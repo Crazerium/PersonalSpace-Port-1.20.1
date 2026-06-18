@@ -2,8 +2,8 @@ package me.eigenraven.personalspace;
 
 import com.mojang.logging.LogUtils;
 import me.eigenraven.personalspace.command.PSCommands;
-import me.eigenraven.personalspace.dimension.PSDimensions;
 import me.eigenraven.personalspace.network.CreateDimensionPacket;
+import me.eigenraven.personalspace.network.UsePortalPacket;
 import me.eigenraven.personalspace.registry.PSBlockEntities;
 import me.eigenraven.personalspace.registry.PSBlocks;
 import me.eigenraven.personalspace.registry.PSItems;
@@ -22,6 +22,7 @@ public final class PersonalSpace {
     public static final Logger LOGGER = LogUtils.getLogger();
 
     private static final String PROTOCOL_VERSION = "1";
+
     public static final SimpleChannel CHANNEL = NetworkRegistry.newSimpleChannel(
             new ResourceLocation(MODID, "main"),
             () -> PROTOCOL_VERSION,
@@ -36,14 +37,20 @@ public final class PersonalSpace {
         PSItems.ITEMS.register(modBus);
         PSBlockEntities.BLOCK_ENTITIES.register(modBus);
 
-        // Регистрируем обработчик событий (для генерации чанков)
-        MinecraftForge.EVENT_BUS.register(PSDimensions.class);
-
-        // Регистрируем сетевой пакет
-        CHANNEL.registerMessage(0, CreateDimensionPacket.class,
+        CHANNEL.registerMessage(
+                0,
+                CreateDimensionPacket.class,
                 CreateDimensionPacket::encode,
                 CreateDimensionPacket::decode,
                 CreateDimensionPacket::handle
+        );
+
+        CHANNEL.registerMessage(
+                1,
+                UsePortalPacket.class,
+                UsePortalPacket::encode,
+                UsePortalPacket::decode,
+                UsePortalPacket::handle
         );
 
         MinecraftForge.EVENT_BUS.addListener(PSCommands::register);

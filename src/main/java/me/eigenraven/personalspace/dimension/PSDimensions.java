@@ -3,7 +3,7 @@ package me.eigenraven.personalspace.dimension;
 import commoble.infiniverse.api.InfiniverseAPI;
 import me.eigenraven.personalspace.PersonalSpace;
 import me.eigenraven.personalspace.data.PersonalSpaceData;
-import me.eigenraven.personalspace.world.PersonalSpaceChunkGenerator;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
@@ -11,78 +11,170 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.chunk.ChunkGenerator;
-import net.minecraft.world.level.dimension.LevelStem;
+import net.minecraft.world.level.biome.Biome;
+import net.minecraft.world.level.biome.Biomes;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.dimension.DimensionType;
-import net.minecraftforge.event.level.ChunkEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraft.world.level.dimension.LevelStem;
+import net.minecraft.world.level.levelgen.FlatLevelSource;
+import net.minecraft.world.level.levelgen.flat.FlatLayerInfo;
+import net.minecraft.world.level.levelgen.flat.FlatLevelGeneratorSettings;
+import net.minecraft.world.level.levelgen.placement.PlacedFeature;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 import java.util.UUID;
 
 public final class PSDimensions {
-    private PSDimensions() {}
+    private static final int DEFAULT_GROUND_LEVEL = 64;
+
+    private PSDimensions() {
+    }
 
     public static ResourceKey<Level> randomPersonalKey() {
-        String path = "ps_" + UUID.randomUUID().toString().replace("-", "");
-        return key(path);
+        String id = "ps_" + UUID.randomUUID().toString().replace("-", "").toLowerCase(Locale.ROOT);
+        return key(id);
     }
 
     public static ResourceKey<Level> key(String idOrPath) {
-        String normalized = idOrPath.toLowerCase(Locale.ROOT);
-        ResourceLocation id = normalized.contains(":")
-                ? new ResourceLocation(normalized)
-                : new ResourceLocation(PersonalSpace.MODID, normalized);
-        return ResourceKey.create(Registries.DIMENSION, id);
+        ResourceLocation location;
+
+        if (idOrPath.contains(":")) {
+            location = new ResourceLocation(idOrPath.toLowerCase(Locale.ROOT));
+        } else {
+            location = new ResourceLocation(PersonalSpace.MODID, idOrPath.toLowerCase(Locale.ROOT));
+        }
+
+        return ResourceKey.create(Registries.DIMENSION, location);
     }
 
     public static ServerLevel getOrCreate(MinecraftServer server, ResourceKey<Level> levelKey) {
         return InfiniverseAPI.get().getOrCreateLevel(
                 server,
                 levelKey,
-                () -> createInitialStem(server)
+                () -> createStem(server, PersonalSpaceData.WorldType.VOID, DEFAULT_GROUND_LEVEL)
         );
     }
-
-
-    private static LevelStem createInitialStem(MinecraftServer server) {
-        ServerLevel overworld = server.overworld();
-        Holder<DimensionType> dimensionType = overworld.dimensionTypeRegistration();
-        // Берём генератор из обычного мира и копируем (без изменений)
-        ChunkGenerator generator = overworld.getChunkSource().getGenerator();
-        return new LevelStem(dimensionType, generator);
-    }
-
 
     public static ServerLevel createPersonalDimension(
             MinecraftServer server,
             ResourceKey<Level> levelKey,
             PersonalSpaceData.WorldType type,
-            int height
+            int groundLevel
     ) {
+        PersonalSpaceData.WorldType safeType = type == null
+                ? PersonalSpaceData.WorldType.VOID
+                : type;
+
+        int safeGroundLevel = clampGroundLevel(server.overworld(), groundLevel);
 
         ServerLevel newLevel = InfiniverseAPI.get().getOrCreateLevel(
                 server,
                 levelKey,
-                () -> createInitialStem(server)
+                () -> createStem(server, safeType, safeGroundLevel)
         );
 
-
-        PersonalSpaceData data = new PersonalSpaceData();
-        data.setType(type);
-        data.setGroundLevel(height);
+        PersonalSpaceData data = PersonalSpaceData.load(newLevel);
+        data.setType(safeType);
+        data.setGroundLevel(safeGroundLevel);
         PersonalSpaceData.save(newLevel, data);
 
         return newLevel;
     }
 
+    private static LevelStem createStem(
+            MinecraftServer server,
+            PersonalSpaceData.WorldType type,
+            int groundLevel
+    ) {
+        PersonalSpaceData.WorldType safeType = type == null
+                ? PersonalSpaceData.WorldType.VOID
+                : type;
 
-    @SubscribeEvent
-    public static void onChunkLoad(ChunkEvent.Load event) {
-        if (event.getLevel() instanceof ServerLevel level) {
-            if (level.dimension().location().getNamespace().equals(PersonalSpace.MODID)) {
+        ServerLevel overworld = server.overworld();
 
-                PersonalSpaceChunkGenerator.generateChunk(level, event.getChunk());
+        Holder<DimensionType> dimensionType = overworld.dimensionTypeRegistration();
+
+        Holder<Biome> biome = server.registryAccess()
+                .registryOrThrow(Registries.BIOME)
+                .getHolderOrThrow(Biomes.PLAINS);
+
+        List<FlatLayerInfo> layers = new ArrayList<>();
+
+        if (safeType == PersonalSpaceData.WorldType.FLAT) {
+            int minY = overworld.getMinBuildHeight();
+
+            int dirtThickness = Math.max(0, groundLevel - minY);
+
+            if (dirtThickness > 0) {
+                layers.add(new FlatLayerInfo(dirtThickness, Blocks.DIRT));
+            }
+
+            layers.add(new FlatLayerInfo(1, Blocks.GRASS_BLOCK));
+        }
+
+        FlatLevelGeneratorSettings settings = new FlatLevelGeneratorSettings(
+                Optional.empty(),
+                biome,
+                List.<Holder<PlacedFeature>>of()
+        ).withBiomeAndLayers(
+                layers,
+                Optional.empty(),
+                biome
+        );
+
+        return new LevelStem(dimensionType, new FlatLevelSource(settings));
+    }
+
+    public static int clampGroundLevel(ServerLevel level, int y) {
+        int min = level.getMinBuildHeight();
+        int max = level.getMaxBuildHeight() - 4;
+
+        if (max < min) {
+            return y;
+        }
+
+        return Math.max(min, Math.min(max, y));
+    }
+
+    public static void prepareSpawnArea(
+            ServerLevel level,
+            PersonalSpaceData.WorldType type,
+            int groundLevel,
+            BlockPos portalPos
+    ) {
+        PersonalSpaceData.WorldType safeType = type == null
+                ? PersonalSpaceData.WorldType.VOID
+                : type;
+        int floorY = portalPos.getY() - 1;
+
+        level.getChunkAt(portalPos);
+
+        if (safeType == PersonalSpaceData.WorldType.VOID) {
+            for (int x = portalPos.getX() - 3; x <= portalPos.getX() + 3; x++) {
+                for (int z = portalPos.getZ() - 3; z <= portalPos.getZ() + 3; z++) {
+                    BlockPos floor = new BlockPos(x, floorY, z);
+
+                    level.setBlock(floor, Blocks.OBSIDIAN.defaultBlockState(), 3);
+
+                    for (int dy = 1; dy <= 4; dy++) {
+                        level.setBlock(floor.above(dy), Blocks.AIR.defaultBlockState(), 3);
+                    }
+                }
+            }
+
+            return;
+        }
+
+        if (safeType == PersonalSpaceData.WorldType.FLAT) {
+            for (int x = portalPos.getX() - 2; x <= portalPos.getX() + 2; x++) {
+                for (int z = portalPos.getZ() - 2; z <= portalPos.getZ() + 2; z++) {
+                    for (int y = portalPos.getY(); y <= portalPos.getY() + 3; y++) {
+                        level.setBlock(new BlockPos(x, y, z), Blocks.AIR.defaultBlockState(), 3);
+                    }
+                }
             }
         }
     }
