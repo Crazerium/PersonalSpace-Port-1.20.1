@@ -49,20 +49,20 @@ public class CreateDimensionPacket {
             ServerPlayer player = ctx.get().getSender();
             if (player == null) return;
 
-            // 1. Создаём мир
+
             ResourceKey<Level> levelKey = PSDimensions.randomPersonalKey();
             ServerLevel newLevel = PSDimensions.createPersonalDimension(player.server, levelKey, msg.type, msg.height);
 
-            // 2. Сохраняем данные возврата
+
             PersonalSpaceData data = PersonalSpaceData.load(newLevel);
             data.setReturnLevel(player.level().dimension().location().toString());
             data.setReturnPos(player.blockPosition());
             PersonalSpaceData.save(newLevel, data);
 
-            // 3. Принудительно загружаем чанк (0,0)
+
             newLevel.getChunkSource().getChunkFuture(0, 0, ChunkStatus.FULL, true).join();
 
-            // 4. Ставим портал в личном мире
+
             BlockPos portalPos = new BlockPos(7, msg.height + 1, 7);
             BlockState portalState = PSBlocks.PERSONAL_PORTAL.get().defaultBlockState();
             newLevel.setBlock(portalPos, portalState, 3);
@@ -75,14 +75,14 @@ public class CreateDimensionPacket {
             ResourceKey<Level> returnKey = ResourceKey.create(Registries.DIMENSION, new ResourceLocation(data.getReturnLevel()));
             portalBE.setTarget(returnKey, data.getReturnPos());
 
-            // 5. Обновляем портал в овере
+
             ServerLevel overworld = player.server.overworld();
             BlockEntity overworldBE = overworld.getBlockEntity(msg.overworldPortalPos);
             if (overworldBE instanceof PortalBlockEntity overworldPortal) {
                 overworldPortal.setTarget(levelKey, portalPos);
             }
 
-            // 6. Телепортируем игрока
+
             player.teleportTo(newLevel, 7.5, msg.height + 1, 7.5, 0, 0);
         });
         ctx.get().setPacketHandled(true);
