@@ -2,6 +2,7 @@ package me.eigenraven.personalspace.block;
 
 import me.eigenraven.personalspace.PersonalSpace;
 import me.eigenraven.personalspace.client.gui.PersonalSpaceScreen;
+import me.eigenraven.personalspace.client.gui.PersonalSpaceSettingsScreen;
 import me.eigenraven.personalspace.data.PersonalSpaceData;
 import me.eigenraven.personalspace.network.UsePortalPacket;
 import me.eigenraven.personalspace.registry.PSItems;
@@ -78,6 +79,10 @@ public final class PortalBlock extends BaseEntityBlock {
         }
 
         if (player instanceof ServerPlayer serverPlayer && level instanceof ServerLevel serverLevel) {
+            if (serverPlayer.isShiftKeyDown() && isPersonalSpaceDimension(serverLevel)) {
+                return InteractionResult.CONSUME;
+            }
+
             handlePortalUseOnServer(serverLevel, pos, serverPlayer);
             return InteractionResult.CONSUME;
         }
@@ -91,6 +96,11 @@ public final class PortalBlock extends BaseEntityBlock {
             Player player,
             BlockState state
     ) {
+        if (player.isShiftKeyDown() && isPersonalSpaceDimension(level)) {
+            openSettingsGui(level.dimension().location());
+            return;
+        }
+
         BlockEntity blockEntity = level.getBlockEntity(pos);
 
         boolean returnPortal = isClientReturnPortal(level, pos, state, blockEntity);
@@ -103,7 +113,8 @@ public final class PortalBlock extends BaseEntityBlock {
             ));
             return;
         }
-        openGui(player, pos);
+
+        openCreateGui(player, pos);
     }
 
     public static void handlePortalUseOnServer(
@@ -137,7 +148,6 @@ public final class PortalBlock extends BaseEntityBlock {
 
         if (portal.isActive()) {
             portal.teleport(player);
-            return;
         }
     }
 
@@ -233,8 +243,13 @@ public final class PortalBlock extends BaseEntityBlock {
     }
 
     @OnlyIn(Dist.CLIENT)
-    private static void openGui(Player player, BlockPos pos) {
+    private static void openCreateGui(Player player, BlockPos pos) {
         Minecraft.getInstance().setScreen(new PersonalSpaceScreen(player.level(), pos));
+    }
+
+    @OnlyIn(Dist.CLIENT)
+    private static void openSettingsGui(ResourceLocation levelId) {
+        Minecraft.getInstance().setScreen(new PersonalSpaceSettingsScreen(levelId));
     }
 
     @Override

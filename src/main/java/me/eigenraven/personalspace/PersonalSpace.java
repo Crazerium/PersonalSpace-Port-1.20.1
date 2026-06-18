@@ -2,7 +2,10 @@ package me.eigenraven.personalspace;
 
 import com.mojang.logging.LogUtils;
 import me.eigenraven.personalspace.command.PSCommands;
+import me.eigenraven.personalspace.event.PSWorldRules;
 import me.eigenraven.personalspace.network.CreateDimensionPacket;
+import me.eigenraven.personalspace.network.SyncPersonalSpaceSettingsPacket;
+import me.eigenraven.personalspace.network.UpdatePersonalSpaceSettingsPacket;
 import me.eigenraven.personalspace.network.UsePortalPacket;
 import me.eigenraven.personalspace.registry.PSBlockEntities;
 import me.eigenraven.personalspace.registry.PSBlocks;
@@ -53,6 +56,26 @@ public final class PersonalSpace {
                 UsePortalPacket::handle
         );
 
+        CHANNEL.registerMessage(
+                2,
+                UpdatePersonalSpaceSettingsPacket.class,
+                UpdatePersonalSpaceSettingsPacket::encode,
+                UpdatePersonalSpaceSettingsPacket::decode,
+                UpdatePersonalSpaceSettingsPacket::handle
+        );
+
+        CHANNEL.registerMessage(
+                3,
+                SyncPersonalSpaceSettingsPacket.class,
+                SyncPersonalSpaceSettingsPacket::encode,
+                SyncPersonalSpaceSettingsPacket::decode,
+                SyncPersonalSpaceSettingsPacket::handle
+        );
+        MinecraftForge.EVENT_BUS.addListener(PSWorldRules::onPotentialSpawns);
+        MinecraftForge.EVENT_BUS.addListener(PSWorldRules::onMobSpawnPositionCheck);
+        MinecraftForge.EVENT_BUS.addListener(PSWorldRules::onEntityJoinLevel);
+        MinecraftForge.EVENT_BUS.addListener(PSWorldRules::onPlayerLoggedIn);
+        MinecraftForge.EVENT_BUS.addListener(PSWorldRules::onPlayerChangedDimension);
         MinecraftForge.EVENT_BUS.addListener(PSCommands::register);
     }
 }

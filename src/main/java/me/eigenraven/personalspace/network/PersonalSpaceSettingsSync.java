@@ -1,0 +1,44 @@
+package me.eigenraven.personalspace.network;
+
+import me.eigenraven.personalspace.PersonalSpace;
+import me.eigenraven.personalspace.data.PersonalSpaceData;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraftforge.network.PacketDistributor;
+
+public final class PersonalSpaceSettingsSync {
+    private PersonalSpaceSettingsSync() {
+    }
+
+    public static void syncTo(ServerPlayer player, ServerLevel level) {
+        if (!isPersonalSpace(level)) {
+            return;
+        }
+        PersonalSpaceData data = PersonalSpaceData.load(level);
+        level.setDayTime(data.getTimeOfDay());
+        PersonalSpace.CHANNEL.send(
+                PacketDistributor.PLAYER.with(() -> player),
+                new SyncPersonalSpaceSettingsPacket(
+                        level.dimension().location(),
+                        data.getTimeOfDay(),
+                        data.getSkyRed(),
+                        data.getSkyGreen(),
+                        data.getSkyBlue()
+                )
+        );
+    }
+
+    public static void syncToPlayersIn(ServerLevel level) {
+        if (!isPersonalSpace(level)) {
+            return;
+        }
+
+        for (ServerPlayer player : level.players()) {
+            syncTo(player, level);
+        }
+    }
+
+    private static boolean isPersonalSpace(ServerLevel level) {
+        return level.dimension().location().getNamespace().equals(PersonalSpace.MODID);
+    }
+}

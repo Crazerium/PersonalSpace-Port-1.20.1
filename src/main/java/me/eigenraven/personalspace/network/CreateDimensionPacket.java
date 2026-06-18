@@ -180,6 +180,8 @@ public class CreateDimensionPacket {
                 player.getYRot(),
                 player.getXRot()
         );
+
+        PersonalSpaceSettingsSync.syncTo(player, newLevel);
     }
 
     private static ServerLevel getSourceLevel(CreateDimensionPacket msg, ServerPlayer player) {

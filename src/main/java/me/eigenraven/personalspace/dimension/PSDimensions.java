@@ -5,6 +5,7 @@ import me.eigenraven.personalspace.PersonalSpace;
 import me.eigenraven.personalspace.data.PersonalSpaceData;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
+import net.minecraft.core.HolderSet;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
@@ -20,6 +21,7 @@ import net.minecraft.world.level.levelgen.FlatLevelSource;
 import net.minecraft.world.level.levelgen.flat.FlatLayerInfo;
 import net.minecraft.world.level.levelgen.flat.FlatLevelGeneratorSettings;
 import net.minecraft.world.level.levelgen.placement.PlacedFeature;
+import net.minecraft.world.level.levelgen.structure.StructureSet;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -51,11 +53,15 @@ public final class PSDimensions {
     }
 
     public static ServerLevel getOrCreate(MinecraftServer server, ResourceKey<Level> levelKey) {
-        return InfiniverseAPI.get().getOrCreateLevel(
+        ServerLevel level = InfiniverseAPI.get().getOrCreateLevel(
                 server,
                 levelKey,
                 () -> createStem(server, PersonalSpaceData.WorldType.VOID, DEFAULT_GROUND_LEVEL)
         );
+
+        applyStoredSettings(level);
+
+        return level;
     }
 
     public static ServerLevel createPersonalDimension(
@@ -81,6 +87,8 @@ public final class PSDimensions {
         data.setGroundLevel(safeGroundLevel);
         PersonalSpaceData.save(newLevel, data);
 
+        newLevel.setDayTime(data.getTimeOfDay());
+
         return newLevel;
     }
 
@@ -105,7 +113,6 @@ public final class PSDimensions {
 
         if (safeType == PersonalSpaceData.WorldType.FLAT) {
             int minY = overworld.getMinBuildHeight();
-
             int dirtThickness = Math.max(0, groundLevel - minY);
 
             if (dirtThickness > 0) {
@@ -114,14 +121,16 @@ public final class PSDimensions {
 
             layers.add(new FlatLayerInfo(1, Blocks.GRASS_BLOCK));
         }
-
+        Optional<HolderSet<StructureSet>> noStructures = Optional.of(
+                HolderSet.direct(List.<Holder<StructureSet>>of())
+        );
         FlatLevelGeneratorSettings settings = new FlatLevelGeneratorSettings(
-                Optional.empty(),
+                noStructures,
                 biome,
                 List.<Holder<PlacedFeature>>of()
         ).withBiomeAndLayers(
                 layers,
-                Optional.empty(),
+                noStructures,
                 biome
         );
 
@@ -148,6 +157,7 @@ public final class PSDimensions {
         PersonalSpaceData.WorldType safeType = type == null
                 ? PersonalSpaceData.WorldType.VOID
                 : type;
+
         int floorY = portalPos.getY() - 1;
 
         level.getChunkAt(portalPos);
@@ -177,5 +187,14 @@ public final class PSDimensions {
                 }
             }
         }
+    }
+
+    private static void applyStoredSettings(ServerLevel level) {
+        if (!level.dimension().location().getNamespace().equals(PersonalSpace.MODID)) {
+            return;
+        }
+
+        PersonalSpaceData data = PersonalSpaceData.load(level);
+        level.setDayTime(data.getTimeOfDay());
     }
 }

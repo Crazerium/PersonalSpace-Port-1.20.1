@@ -2,6 +2,7 @@ package me.eigenraven.personalspace.block;
 
 import me.eigenraven.personalspace.PersonalSpace;
 import me.eigenraven.personalspace.dimension.PSDimensions;
+import me.eigenraven.personalspace.network.PersonalSpaceSettingsSync;
 import me.eigenraven.personalspace.registry.PSBlockEntities;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
@@ -118,6 +119,8 @@ public class PortalBlockEntity extends BlockEntity {
                 player.getYRot(),
                 player.getXRot()
         );
+
+        PersonalSpaceSettingsSync.syncTo(player, destination);
     }
 
     public void saveToItem(ItemStack stack) {
