@@ -12,7 +12,6 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 
@@ -31,16 +30,13 @@ public final class PortalBlockEntity extends BlockEntity {
 
     public void teleport(ServerPlayer player) {
         if (!active || targetLevel == null) {
-            createNewPersonalTarget(player);
-        }
-
-        if (targetLevel == null) {
-            player.sendSystemMessage(Component.literal("PersonalSpace portal has no target dimension."));
+            player.sendSystemMessage(Component.literal("Portal is not active!"));
             return;
         }
 
         ServerLevel serverLevel = PSDimensions.getOrCreate(player.server, targetLevel);
-        prepareLanding(serverLevel, targetPos);
+        // Принудительно загружаем чанк (0,0) перед телепортацией
+        serverLevel.getChunk(0, 0);
 
         player.teleportTo(
                 serverLevel,
@@ -52,87 +48,45 @@ public final class PortalBlockEntity extends BlockEntity {
         );
     }
 
-    private void createNewPersonalTarget(ServerPlayer player) {
-        this.targetLevel = PSDimensions.randomPersonalKey();
-        this.targetPos = new BlockPos(0, 80, 0);
-        this.active = true;
-
-        setChanged();
-
-        if (level != null) {
-            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
-        }
-
-        player.sendSystemMessage(Component.literal(
-                "Created personal dimension: " + targetLevel.location()
-        ));
-    }
-
     public void setTarget(ResourceKey<Level> targetLevel, BlockPos targetPos) {
         this.targetLevel = targetLevel;
         this.targetPos = targetPos;
         this.active = true;
-
         setChanged();
-
         if (level != null) {
             level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
         }
     }
 
-    public static void prepareLanding(ServerLevel level, BlockPos pos) {
-        for (int x = -2; x <= 2; x++) {
-            for (int z = -2; z <= 2; z++) {
-                level.setBlockAndUpdate(pos.offset(x, 0, z), Blocks.OBSIDIAN.defaultBlockState());
-            }
-        }
-
-        for (int y = 1; y <= 3; y++) {
-            for (int x = -1; x <= 1; x++) {
-                for (int z = -1; z <= 1; z++) {
-                    level.setBlockAndUpdate(pos.offset(x, y, z), Blocks.AIR.defaultBlockState());
-                }
-            }
-        }
-    }
+    public boolean isActive() { return active; }
+    public ResourceKey<Level> getTargetLevel() { return targetLevel; }
 
     public void saveToItem(ItemStack stack) {
-        CompoundTag blockEntityTag = new CompoundTag();
-        savePortalData(blockEntityTag);
-        stack.getOrCreateTag().put("BlockEntityTag", blockEntityTag);
-    }
-
-    private void savePortalData(CompoundTag tag) {
+        CompoundTag tag = new CompoundTag();
         tag.putBoolean(TAG_ACTIVE, active);
-
-        if (targetLevel != null) {
-            tag.putString(TAG_TARGET_LEVEL, targetLevel.location().toString());
-        }
-
+        if (targetLevel != null) tag.putString(TAG_TARGET_LEVEL, targetLevel.location().toString());
         tag.putLong(TAG_TARGET_POS, targetPos.asLong());
+        stack.getOrCreateTag().put("BlockEntityTag", tag);
     }
 
     @Override
     protected void saveAdditional(CompoundTag tag) {
         super.saveAdditional(tag);
-        savePortalData(tag);
+        tag.putBoolean(TAG_ACTIVE, active);
+        if (targetLevel != null) tag.putString(TAG_TARGET_LEVEL, targetLevel.location().toString());
+        tag.putLong(TAG_TARGET_POS, targetPos.asLong());
     }
 
     @Override
     public void load(CompoundTag tag) {
         super.load(tag);
-
-        this.active = tag.getBoolean(TAG_ACTIVE);
-
+        active = tag.getBoolean(TAG_ACTIVE);
         if (tag.contains(TAG_TARGET_LEVEL)) {
             ResourceLocation id = ResourceLocation.tryParse(tag.getString(TAG_TARGET_LEVEL));
-            if (id != null) {
-                this.targetLevel = ResourceKey.create(Registries.DIMENSION, id);
-            }
+            if (id != null) targetLevel = ResourceKey.create(Registries.DIMENSION, id);
         }
-
         if (tag.contains(TAG_TARGET_POS)) {
-            this.targetPos = BlockPos.of(tag.getLong(TAG_TARGET_POS));
+            targetPos = BlockPos.of(tag.getLong(TAG_TARGET_POS));
         }
     }
 }

@@ -1,7 +1,6 @@
 {
-  "variants": {
-    "": {
-      "model": "personalspace:block/personal_portal"
-    }
+  "parent": "minecraft:block/cube_all",
+  "textures": {
+    "all": "personalspace:block/personal_portal"
   }
 }

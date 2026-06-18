@@ -1,6 +1,7 @@
 package me.eigenraven.personalspace.registry;
 
-import me.eigenraven.personalspace.personalspace.PersonalSpace;
+
+import me.eigenraven.personalspace.PersonalSpace;
 import me.eigenraven.personalspace.block.PortalBlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraftforge.registries.DeferredRegister;

@@ -1,7 +1,10 @@
 package me.eigenraven.personalspace.block;
 
+import me.eigenraven.personalspace.client.gui.PersonalSpaceScreen;
 import me.eigenraven.personalspace.registry.PSItems;
+import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -17,6 +20,8 @@ import net.minecraft.world.level.material.MapColor;
 import net.minecraft.world.level.storage.loot.LootParams;
 import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
 import net.minecraft.world.phys.BlockHitResult;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
 import java.util.List;
 
@@ -40,52 +45,49 @@ public final class PortalBlock extends BaseEntityBlock {
     }
 
     @Override
-    public InteractionResult use(
-            BlockState state,
-            Level level,
-            BlockPos pos,
-            Player player,
-            InteractionHand hand,
-            BlockHitResult hit
-    ) {
+    public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
         if (level.isClientSide) {
+            BlockEntity be = level.getBlockEntity(pos);
+            if (be instanceof PortalBlockEntity portal && !portal.isActive()) {
+                openGui(player, pos);
+            }
             return InteractionResult.SUCCESS;
         }
 
-        BlockEntity blockEntity = level.getBlockEntity(pos);
-        if (blockEntity instanceof PortalBlockEntity portal && player instanceof ServerPlayer serverPlayer) {
-            portal.teleport(serverPlayer);
-            return InteractionResult.CONSUME;
+        BlockEntity be = level.getBlockEntity(pos);
+        if (be instanceof PortalBlockEntity portal && player instanceof ServerPlayer serverPlayer) {
+            if (portal.isActive() && portal.getTargetLevel() != null) {
+                portal.teleport(serverPlayer);
+                return InteractionResult.CONSUME;
+            } else {
+                serverPlayer.sendSystemMessage(Component.literal("Portal is not active! Use GUI to create a world."));
+                return InteractionResult.SUCCESS;
+            }
         }
-
         return InteractionResult.PASS;
+    }
+
+    @OnlyIn(Dist.CLIENT)
+    private void openGui(Player player, BlockPos pos) {
+        if (player instanceof net.minecraft.client.player.LocalPlayer) {
+            Minecraft.getInstance().setScreen(new PersonalSpaceScreen(player.level(), pos));
+        }
     }
 
     @Override
     public List<ItemStack> getDrops(BlockState state, LootParams.Builder params) {
-        BlockEntity blockEntity = params.getOptionalParameter(LootContextParams.BLOCK_ENTITY);
-
-        if (blockEntity instanceof PortalBlockEntity portal) {
+        BlockEntity be = params.getOptionalParameter(LootContextParams.BLOCK_ENTITY);
+        if (be instanceof PortalBlockEntity portal) {
             ItemStack stack = new ItemStack(PSItems.PERSONAL_PORTAL.get());
             portal.saveToItem(stack);
             return List.of(stack);
         }
-
         return super.getDrops(state, params);
     }
 
     @Override
-    public void onRemove(
-            BlockState oldState,
-            Level level,
-            BlockPos pos,
-            BlockState newState,
-            boolean moving
-    ) {
-        if (!oldState.is(newState.getBlock())) {
-            level.removeBlockEntity(pos);
-        }
-
+    public void onRemove(BlockState oldState, Level level, BlockPos pos, BlockState newState, boolean moving) {
+        if (!oldState.is(newState.getBlock())) level.removeBlockEntity(pos);
         super.onRemove(oldState, level, pos, newState, moving);
     }
 }

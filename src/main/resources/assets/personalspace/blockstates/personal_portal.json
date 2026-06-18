@@ -1,7 +1,5 @@
 {
   "variants": {
-    "": {
-      "model": "personalspace:block/personal_portal"
-    }
+    "": { "model": "personalspace:block/personal_portal" }
   }
 }

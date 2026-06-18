@@ -2,8 +2,7 @@ package me.eigenraven.personalspace.command;
 
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
-import me.eigenraven.personalspace.personalspace.PersonalSpace;
-import me.eigenraven.personalspace.block.PortalBlockEntity;
+import me.eigenraven.personalspace.PersonalSpace;
 import me.eigenraven.personalspace.dimension.PSDimensions;
 import me.eigenraven.personalspace.item.PortalBlockItem;
 import me.eigenraven.personalspace.registry.PSBlocks;
@@ -85,9 +84,6 @@ public final class PSCommands {
     ) {
         ResourceKey<Level> key = PSDimensions.key(dimension);
         ServerLevel level = PSDimensions.getOrCreate(source.getServer(), key);
-
-        PortalBlockEntity.prepareLanding(level, targetPos);
-
         ItemStack stack = PortalBlockItem.createLinkedPortal(
                 PSBlocks.PERSONAL_PORTAL.get(),
                 key,
@@ -113,9 +109,6 @@ public final class PSCommands {
     ) {
         ResourceKey<Level> key = PSDimensions.key(dimension);
         ServerLevel level = PSDimensions.getOrCreate(source.getServer(), key);
-
-        PortalBlockEntity.prepareLanding(level, targetPos);
-
         player.teleportTo(
                 level,
                 targetPos.getX() + 0.5D,
