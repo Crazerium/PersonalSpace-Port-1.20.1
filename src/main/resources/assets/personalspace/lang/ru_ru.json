@@ -91,5 +91,11 @@
   "gui.personalspace.settings.locked_biome": "Биом: %s",
 
   "gui.personalspace.on": "ВКЛ",
-  "gui.personalspace.off": "ВЫКЛ"
+  "gui.personalspace.block_picker.search": "Поиск блока...",
+  "gui.personalspace.block_picker.no_results": "Нет доступных блоков",
+  "gui.personalspace.block_picker.current": "Текущий блок: %s",
+  "gui.personalspace.block_picker.previous": "Назад",
+  "gui.personalspace.block_picker.next": "Дальше",
+  "gui.personalspace.block_picker.page": "Страница %s / %s",
+  "gui.personalspace.block_picker.button": "%s: %s"
 }

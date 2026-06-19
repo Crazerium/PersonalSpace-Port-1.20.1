@@ -3,6 +3,7 @@ plugins {
     id 'idea'
     id 'maven-publish'
     id 'net.minecraftforge.gradle' version '[6.0.16,6.2)'
+    id 'org.spongepowered.mixin' version '0.7.+'
 }
 
 version = mod_version
@@ -59,6 +60,13 @@ dependencies {
     minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
     implementation fg.deobf("commoble.infiniverse:infiniverse-1.20.1:${infiniverse_version}")
     implementation 'com.google.code.gson:gson:2.10.1'
+
+    annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
+}
+
+mixin {
+    add sourceSets.main, "personalspace.refmap.json"
+    config "personalspace.mixins.json"
 }
 
 jar {

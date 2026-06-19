@@ -91,5 +91,11 @@
   "gui.personalspace.settings.locked_biome": "Biome: %s",
 
   "gui.personalspace.on": "ON",
-  "gui.personalspace.off": "OFF"
+  "gui.personalspace.block_picker.search": "Search block...",
+  "gui.personalspace.block_picker.no_results": "No available blocks",
+  "gui.personalspace.block_picker.current": "Current block: %s",
+  "gui.personalspace.block_picker.previous": "Previous",
+  "gui.personalspace.block_picker.next": "Next",
+  "gui.personalspace.block_picker.page": "Page %s / %s",
+  "gui.personalspace.block_picker.button": "%s: %s"
 }

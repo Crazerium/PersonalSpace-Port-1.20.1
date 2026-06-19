@@ -560,36 +560,32 @@ public class PersonalSpaceScreen extends Screen {
         layersPresetField.setTooltip(Tooltip.create(text("layers.tooltip")));
         addRenderableWidget(layersPresetField);
 
-        boundaryBlockField = createBlockIdField(
+        addRenderableWidget(createBlockPickerButton(
                 left,
                 top + 30,
                 halfWidth,
                 "boundary_block",
                 boundaryBlock,
                 value -> boundaryBlock = value
-        );
+        ));
 
-        roadBlockField = createBlockIdField(
+        addRenderableWidget(createBlockPickerButton(
                 left + halfWidth + 8,
                 top + 30,
                 halfWidth,
                 "road_block",
                 roadBlock,
                 value -> roadBlock = value
-        );
+        ));
 
-        centerMarkerBlockField = createBlockIdField(
+        addRenderableWidget(createBlockPickerButton(
                 left,
                 top + 60,
                 widgetWidth,
                 "center_block",
                 centerMarkerBlock,
                 value -> centerMarkerBlock = value
-        );
-
-        addRenderableWidget(boundaryBlockField);
-        addRenderableWidget(roadBlockField);
-        addRenderableWidget(centerMarkerBlockField);
+        ));
 
         boundaryChunksXField = createIntField(
                 left,
@@ -896,6 +892,57 @@ public class PersonalSpaceScreen extends Screen {
 
         graphics.drawString(font, text("preview.type", worldTypeName(selectedType)), textX, y, 0xA0A0A0, false);
     }
+
+    private Button createBlockPickerButton(
+            int x,
+            int y,
+            int width,
+            String labelKey,
+            String currentValue,
+            StringValueSetter setter
+    ) {
+        return Button.builder(
+                text("block_picker.button", text(labelKey), shortenBlockIdForPreview(currentValue)),
+                button -> Minecraft.getInstance().setScreen(new PersonalSpaceBlockPickerScreen(
+                        this,
+                        text(labelKey),
+                        currentValue,
+                        value -> {
+                            setter.set(value);
+                            rebuildPersonalSpaceWidgets();
+                        }
+                ))
+        ).bounds(x, y, width, 20).build();
+    }
+
+    private String shortenForPreview(String value, int maxLength) {
+        if (value == null) {
+            return "";
+        }
+
+        if (value.length() <= maxLength) {
+            return value;
+        }
+
+        return value.substring(0, Math.max(0, maxLength - 3)) + "...";
+    }
+
+    private String shortenBlockIdForPreview(String value) {
+        if (value == null || value.isBlank()) {
+            return "";
+        }
+
+        String blockId = value;
+
+        int colonIndex = blockId.indexOf(':');
+
+        if (colonIndex >= 0 && colonIndex + 1 < blockId.length()) {
+            blockId = blockId.substring(colonIndex + 1);
+        }
+
+        return shortenForPreview(blockId, 18);
+    }
+
 
     private void renderTopDownMiniMap(GuiGraphics graphics, int x, int y, int width, int height) {
         graphics.fill(x, y, x + width, y + height, 0xFF080808);
