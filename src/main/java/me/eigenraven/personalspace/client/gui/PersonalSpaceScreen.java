@@ -2,489 +2,592 @@ package me.eigenraven.personalspace.client.gui;
 
 import me.eigenraven.personalspace.PersonalSpace;
 import me.eigenraven.personalspace.data.PersonalSpaceData;
-import me.eigenraven.personalspace.data.PersonalSpacePresets;
 import me.eigenraven.personalspace.network.CreateDimensionPacket;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.CycleButton;
 import net.minecraft.client.gui.components.EditBox;
+import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.Mth;
 import net.minecraft.world.level.Level;
 
-import java.util.stream.IntStream;
-
 public class PersonalSpaceScreen extends Screen {
-    private static final long[] TIME_VALUES = {
-            1000L,
-            6000L,
-            12000L,
-            18000L
-    };
+    private static final int PANEL_WIDTH = 460;
+    private static final int BASE_PANEL_HEIGHT = 225;
+    private static final int ADVANCED_PANEL_HEIGHT = 350;
 
-    private static final String[] TIME_NAMES = {
-            "Утро",
-            "День",
-            "Вечер",
-            "Ночь"
-    };
-
-    private final Level level;
-    private final BlockPos portalPos;
-
-    private int page = 0;
+    private static final int MIN_GROUND_LEVEL = 1;
+    private static final int MAX_GROUND_LEVEL = 240;
 
     private PersonalSpaceData.WorldType selectedType = PersonalSpaceData.WorldType.VOID;
     private int selectedHeight = 64;
 
-    private long selectedTime = 6000L;
+    private long timeOfDay = 6000L;
 
-    private int selectedRed = 128;
-    private int selectedGreen = 192;
-    private int selectedBlue = 255;
+    private int skyRed = 80;
+    private int skyGreen = 120;
+    private int skyBlue = 255;
 
-    private float selectedStarBrightness = 1.0F;
-    private String selectedBiomeName = "minecraft:plains";
+    private float starBrightness = 1.0F;
+    private String biomeName = "minecraft:plains";
 
-    private boolean selectedTreesEnabled = false;
-    private boolean selectedFoliageEnabled = false;
-    private boolean selectedWeatherEnabled = false;
-    private boolean selectedCloudsEnabled = false;
+    private boolean treesEnabled = false;
+    private boolean foliageEnabled = false;
+    private boolean weatherEnabled = false;
+    private boolean cloudsEnabled = true;
 
-    private String selectedLayersPreset = PersonalSpacePresets.VOID;
+    private String layersPreset = "minecraft:bedrock,1;minecraft:dirt,2;minecraft:grass_block,1";
 
-    private int selectedBoundaryChunksX = 2;
-    private int selectedBoundaryChunksZ = 2;
-    private int selectedGapChunks = 1;
+    private int boundaryChunksX = 1;
+    private int boundaryChunksZ = 1;
+    private int gapChunks = 1;
 
-    private String selectedBoundaryBlock = "minecraft:yellow_concrete";
-    private String selectedRoadBlock = "minecraft:black_concrete";
-    private String selectedCenterMarkerBlock = "minecraft:beacon";
+    private String boundaryBlock = "minecraft:barrier";
+    private String roadBlock = "minecraft:stone";
+    private String centerMarkerBlock = "minecraft:glowstone";
 
-    private boolean selectedCenterMarkerEnabled = true;
+    private boolean centerMarkerEnabled = true;
+    private boolean advancedVisible = false;
+    private WorldPreset selectedPreset = WorldPreset.VOID;
 
-    private Button timeButton;
-    private Button typeButton;
-    private Button treesButton;
-    private Button foliageButton;
-    private Button weatherButton;
-    private Button cloudsButton;
-    private Button centerMarkerButton;
+    private final Level level;
+    private final BlockPos portalPos;
 
-    private EditBox biomeNameBox;
-    private EditBox boundaryBlockBox;
-    private EditBox roadBlockBox;
-    private EditBox centerMarkerBlockBox;
+    private EditBox heightField;
+    private EditBox timeField;
+    private EditBox biomeField;
+    private EditBox skyRedField;
+    private EditBox skyGreenField;
+    private EditBox skyBlueField;
+    private EditBox starBrightnessField;
+
+    private Button createButton;
 
     public PersonalSpaceScreen(Level level, BlockPos portalPos) {
         super(Component.translatable("gui.personalspace.create"));
         this.level = level;
         this.portalPos = portalPos;
     }
+    private enum WorldPreset {
+        VOID("Пустота"),
+        FLAT("Плоский мир"),
+        TECH("Тех. платформа"),
+        NIGHT_VOID("Ночная пустота");
+
+        private final String displayName;
+
+        WorldPreset(String displayName) {
+            this.displayName = displayName;
+        }
+    }
 
     @Override
     protected void init() {
         super.init();
 
-        if (page == 0) {
-            initMainPage();
-        } else {
-            initMoreSettingsPage();
-        }
-    }
+        int panelHeight = getPanelHeight();
+        int panelX = (width - PANEL_WIDTH) / 2;
+        int panelY = (height - panelHeight) / 2;
 
-    private void initMainPage() {
-        int centerX = width / 2;
-        int startY = height / 2 - 120;
+        int left = panelX + 20;
+        int top = panelY + 36;
+        int widgetWidth = PANEL_WIDTH - 40;
 
-        timeButton = Button.builder(
-                getTimeButtonText(),
-                button -> cycleTime()
-        ).bounds(centerX - 120, startY, 240, 20).build();
+        CycleButton<PersonalSpaceData.WorldType> worldTypeButton =
+                CycleButton.<PersonalSpaceData.WorldType>builder(this::worldTypeName)
+                        .withValues(PersonalSpaceData.WorldType.VOID, PersonalSpaceData.WorldType.FLAT)
+                        .withInitialValue(selectedType)
+                        .create(
+                                left,
+                                top,
+                                widgetWidth,
+                                20,
+                                Component.literal("Тип мира"),
+                                (button, value) -> selectedType = value
+                        );
 
-        addRenderableWidget(timeButton);
+        worldTypeButton.setTooltip(Tooltip.create(Component.literal(
+                "Пустой мир — без земли. Плоский мир — площадка на выбранной высоте."
+        )));
+        addRenderableWidget(worldTypeButton);
 
-        typeButton = Button.builder(
-                getTypeButtonText(),
-                button -> cycleWorldType()
-        ).bounds(centerX - 120, startY + 25, 240, 20).build();
+        CycleButton<WorldPreset> presetButton =
+                CycleButton.<WorldPreset>builder(preset -> Component.literal(preset.displayName))
+                        .withValues(WorldPreset.VOID, WorldPreset.FLAT, WorldPreset.TECH, WorldPreset.NIGHT_VOID)
+                        .withInitialValue(selectedPreset)
+                        .create(
+                                left,
+                                top + 28,
+                                widgetWidth,
+                                20,
+                                Component.literal("Пресет"),
+                                (button, value) -> {
+                                    selectedPreset = value;
+                                    applyPreset(value);
+                                    rebuildPersonalSpaceWidgets();
+                                }
+                        );
 
-        addRenderableWidget(typeButton);
+        presetButton.setTooltip(Tooltip.create(Component.literal(
+                "Быстро применяет тип мира, время, небо, биом и базовые настройки."
+        )));
+        addRenderableWidget(presetButton);
 
-        CycleButton<Integer> heightSlider = CycleButton.<Integer>builder(
-                        value -> Component.literal("Высота: " + value)
-                )
-                .withValues(IntStream.range(0, 256).boxed().toList())
-                .withInitialValue(selectedHeight)
-                .displayOnlyValue()
-                .create(
-                        centerX - 120,
-                        startY + 50,
-                        240,
-                        20,
-                        Component.empty(),
-                        (button, value) -> selectedHeight = value
-                );
-
-        addRenderableWidget(heightSlider);
-
-        addRenderableWidget(new IntSliderButton(
-                centerX - 120,
-                startY + 80,
-                240,
-                20,
-                0,
-                255,
-                selectedRed,
-                value -> Component.literal("Sky R: " + value),
-                value -> selectedRed = value
-        ));
-
-        addRenderableWidget(new IntSliderButton(
-                centerX - 120,
-                startY + 105,
-                240,
-                20,
-                0,
-                255,
-                selectedGreen,
-                value -> Component.literal("Sky G: " + value),
-                value -> selectedGreen = value
-        ));
-
-        addRenderableWidget(new IntSliderButton(
-                centerX - 120,
-                startY + 130,
-                240,
-                20,
-                0,
-                255,
-                selectedBlue,
-                value -> Component.literal("Sky B: " + value),
-                value -> selectedBlue = value
-        ));
-
-        addRenderableWidget(new IntSliderButton(
-                centerX - 120,
-                startY + 155,
-                240,
-                20,
-                0,
-                100,
-                Math.round(selectedStarBrightness * 100.0F),
-                value -> Component.literal("Star brightness: " + String.format("%.2f", value / 100.0F)),
-                value -> selectedStarBrightness = value / 100.0F
-        ));
-
-        biomeNameBox = new EditBox(
+        heightField = new EditBox(
                 font,
-                centerX - 120,
-                startY + 185,
-                240,
+                left,
+                top + 56,
+                widgetWidth,
                 20,
-                Component.literal("Biome name")
+                Component.literal("Высота земли")
         );
+        heightField.setValue(Integer.toString(selectedHeight));
+        heightField.setMaxLength(3);
+        heightField.setFilter(value -> value.isEmpty() || value.matches("\\d{1,3}"));
+        heightField.setResponder(value -> {
+            if (hasValidHeight()) {
+                selectedHeight = getClampedHeight();
+            }
 
-        biomeNameBox.setValue(selectedBiomeName);
-        biomeNameBox.setMaxLength(128);
-        biomeNameBox.setResponder(value -> selectedBiomeName = value);
+            updateCreateButtonState();
+        });
+        heightField.setTooltip(Tooltip.create(Component.literal(
+                "Допустимо: " + MIN_GROUND_LEVEL + "–" + MAX_GROUND_LEVEL + ". Портал появится на 1 блок выше."
+        )));
+        addRenderableWidget(heightField);
 
-        addRenderableWidget(biomeNameBox);
-
-        treesButton = Button.builder(
-                toggleText("Trees", selectedTreesEnabled),
-                button -> {
-                    selectedTreesEnabled = !selectedTreesEnabled;
-                    button.setMessage(toggleText("Trees", selectedTreesEnabled));
-                }
-        ).bounds(centerX - 120, startY + 215, 115, 20).build();
-
-        foliageButton = Button.builder(
-                toggleText("Foliage", selectedFoliageEnabled),
-                button -> {
-                    selectedFoliageEnabled = !selectedFoliageEnabled;
-                    button.setMessage(toggleText("Foliage", selectedFoliageEnabled));
-                }
-        ).bounds(centerX + 5, startY + 215, 115, 20).build();
-
-        weatherButton = Button.builder(
-                toggleText("Weather", selectedWeatherEnabled),
-                button -> {
-                    selectedWeatherEnabled = !selectedWeatherEnabled;
-                    button.setMessage(toggleText("Weather", selectedWeatherEnabled));
-                }
-        ).bounds(centerX - 120, startY + 240, 115, 20).build();
-
-        cloudsButton = Button.builder(
-                toggleText("Clouds", selectedCloudsEnabled),
-                button -> {
-                    selectedCloudsEnabled = !selectedCloudsEnabled;
-                    button.setMessage(toggleText("Clouds", selectedCloudsEnabled));
-                }
-        ).bounds(centerX + 5, startY + 240, 115, 20).build();
-
-        addRenderableWidget(treesButton);
-        addRenderableWidget(foliageButton);
-        addRenderableWidget(weatherButton);
-        addRenderableWidget(cloudsButton);
-
-        int presetY = startY + 270;
-        int presetX = centerX - 120;
-
-        for (int i = 1; i <= 4; i++) {
-            final int presetIndex = i;
-
-            addRenderableWidget(Button.builder(
-                    Component.literal(String.valueOf(i)),
-                    button -> applyPreset(presetIndex)
-            ).bounds(presetX + (i - 1) * 45, presetY, 40, 20).build());
-        }
+        int smallButtonWidth = (widgetWidth - 18) / 4;
 
         addRenderableWidget(Button.builder(
-                Component.literal("More Settings"),
-                button -> {
-                    page = 1;
-                    clearWidgets();
-                    init();
-                }
-        ).bounds(centerX - 120, startY + 305, 240, 20).build());
+                Component.literal("-16"),
+                button -> changeHeight(-16)
+        ).bounds(left, top + 84, smallButtonWidth, 20).build());
 
-        Button createBtn = Button.builder(
+        addRenderableWidget(Button.builder(
+                Component.literal("-1"),
+                button -> changeHeight(-1)
+        ).bounds(left + smallButtonWidth + 6, top + 84, smallButtonWidth, 20).build());
+
+        addRenderableWidget(Button.builder(
+                Component.literal("+1"),
+                button -> changeHeight(1)
+        ).bounds(left + (smallButtonWidth + 6) * 2, top + 84, smallButtonWidth, 20).build());
+
+        addRenderableWidget(Button.builder(
+                Component.literal("+16"),
+                button -> changeHeight(16)
+        ).bounds(left + (smallButtonWidth + 6) * 3, top + 84, smallButtonWidth, 20).build());
+
+        int advancedTop = top + 118;
+        int halfWidth = (widgetWidth - 8) / 2;
+
+        if (advancedVisible) {
+            addAdvancedWidgets(left, advancedTop, widgetWidth);
+        }
+
+        int advancedButtonX = advancedVisible ? left + halfWidth + 8 : left;
+        int advancedButtonY = advancedVisible ? advancedTop + 150 : panelY + panelHeight - 58;
+        int advancedButtonWidth = advancedVisible ? halfWidth : widgetWidth;
+
+        addRenderableWidget(Button.builder(
+                Component.literal(advancedVisible ? "Расширенные настройки: открыты" : "Расширенные настройки: скрыты"),
+                button -> {
+                    advancedVisible = !advancedVisible;
+                    rebuildPersonalSpaceWidgets();
+                }
+        ).bounds(advancedButtonX, advancedButtonY, advancedButtonWidth, 20).build());
+
+        int createButtonY = advancedVisible ? advancedTop + 180 : panelY + panelHeight - 30;
+
+        createButton = Button.builder(
                 Component.literal("Создать и телепортироваться"),
                 button -> {
-                    ResourceLocation sourceLevelId = level.dimension().location();
+                    selectedHeight = getClampedHeight();
 
                     PersonalSpace.CHANNEL.sendToServer(new CreateDimensionPacket(
                             selectedType,
                             selectedHeight,
                             portalPos,
-                            sourceLevelId,
+                            level.dimension().location(),
 
-                            selectedTime,
-                            selectedRed,
-                            selectedGreen,
-                            selectedBlue,
+                            timeOfDay,
+                            skyRed,
+                            skyGreen,
+                            skyBlue,
 
-                            selectedStarBrightness,
-                            selectedBiomeName,
+                            starBrightness,
+                            biomeName,
 
-                            selectedTreesEnabled,
-                            selectedFoliageEnabled,
-                            selectedWeatherEnabled,
-                            selectedCloudsEnabled,
+                            treesEnabled,
+                            foliageEnabled,
+                            weatherEnabled,
+                            cloudsEnabled,
 
-                            selectedLayersPreset,
+                            layersPreset,
+                            boundaryChunksX,
+                            boundaryChunksZ,
+                            gapChunks,
 
-                            selectedBoundaryChunksX,
-                            selectedBoundaryChunksZ,
-                            selectedGapChunks,
+                            boundaryBlock,
+                            roadBlock,
+                            centerMarkerBlock,
 
-                            selectedBoundaryBlock,
-                            selectedRoadBlock,
-                            selectedCenterMarkerBlock,
-
-                            selectedCenterMarkerEnabled
+                            centerMarkerEnabled
                     ));
 
                     Minecraft.getInstance().setScreen(null);
                 }
-        ).bounds(centerX - 120, startY + 330, 240, 20).build();
+        ).bounds(left, createButtonY, widgetWidth, 20).build();
 
-        addRenderableWidget(createBtn);
-
-        addRenderableWidget(Button.builder(
-                Component.literal("Отмена"),
-                button -> Minecraft.getInstance().setScreen(null)
-        ).bounds(centerX - 120, startY + 355, 240, 20).build());
+        addRenderableWidget(createButton);
+        updateCreateButtonState();
     }
 
-    private void initMoreSettingsPage() {
-        int centerX = width / 2;
-        int startY = height / 2 - 100;
-
-        addRenderableWidget(new IntSliderButton(
-                centerX - 120,
-                startY,
-                240,
-                20,
-                0,
-                20,
-                selectedBoundaryChunksX,
-                value -> Component.literal("Boundary X Chunks: " + value),
-                value -> selectedBoundaryChunksX = value
-        ));
-
-        addRenderableWidget(new IntSliderButton(
-                centerX - 120,
-                startY + 30,
-                240,
-                20,
-                0,
-                20,
-                selectedBoundaryChunksZ,
-                value -> Component.literal("Boundary Z Chunks: " + value),
-                value -> selectedBoundaryChunksZ = value
-        ));
-
-        addRenderableWidget(new IntSliderButton(
-                centerX - 120,
-                startY + 60,
-                240,
-                20,
-                0,
-                5,
-                selectedGapChunks,
-                value -> Component.literal("Gap Chunks: " + value),
-                value -> selectedGapChunks = value
-        ));
-
-        boundaryBlockBox = new EditBox(
-                font,
-                centerX - 120,
-                startY + 100,
-                240,
-                20,
-                Component.literal("Boundary Block")
-        );
-
-        boundaryBlockBox.setValue(selectedBoundaryBlock);
-        boundaryBlockBox.setMaxLength(128);
-        boundaryBlockBox.setResponder(value -> selectedBoundaryBlock = value);
-        addRenderableWidget(boundaryBlockBox);
-
-        roadBlockBox = new EditBox(
-                font,
-                centerX - 120,
-                startY + 140,
-                240,
-                20,
-                Component.literal("Road Block")
-        );
-
-        roadBlockBox.setValue(selectedRoadBlock);
-        roadBlockBox.setMaxLength(128);
-        roadBlockBox.setResponder(value -> selectedRoadBlock = value);
-        addRenderableWidget(roadBlockBox);
-
-        centerMarkerBlockBox = new EditBox(
-                font,
-                centerX - 120,
-                startY + 180,
-                240,
-                20,
-                Component.literal("Center Marker Block")
-        );
-
-        centerMarkerBlockBox.setValue(selectedCenterMarkerBlock);
-        centerMarkerBlockBox.setMaxLength(128);
-        centerMarkerBlockBox.setResponder(value -> selectedCenterMarkerBlock = value);
-        addRenderableWidget(centerMarkerBlockBox);
-
-        centerMarkerButton = Button.builder(
-                toggleText("Center Marker", selectedCenterMarkerEnabled),
-                button -> {
-                    selectedCenterMarkerEnabled = !selectedCenterMarkerEnabled;
-                    button.setMessage(toggleText("Center Marker", selectedCenterMarkerEnabled));
-                }
-        ).bounds(centerX - 120, startY + 220, 240, 20).build();
-
-        addRenderableWidget(centerMarkerButton);
-
-        addRenderableWidget(Button.builder(
-                Component.literal("Back"),
-                button -> {
-                    page = 0;
-                    clearWidgets();
-                    init();
-                }
-        ).bounds(centerX - 120, startY + 255, 240, 20).build());
-    }
-
-    private void cycleWorldType() {
-        selectedType = selectedType == PersonalSpaceData.WorldType.VOID
-                ? PersonalSpaceData.WorldType.FLAT
-                : PersonalSpaceData.WorldType.VOID;
-
-        if (typeButton != null) {
-            typeButton.setMessage(getTypeButtonText());
-        }
-    }
-
-    private Component getTypeButtonText() {
-        return Component.literal("Тип мира: " + selectedType.name());
-    }
-
-    private int getTimeIndex() {
-        long normalized = selectedTime % 24000L;
-
-        if (normalized < 0L) {
-            normalized += 24000L;
-        }
-
-        int bestIndex = 0;
-        long bestDistance = Long.MAX_VALUE;
-
-        for (int i = 0; i < TIME_VALUES.length; i++) {
-            long distance = Math.abs(TIME_VALUES[i] - normalized);
-
-            if (distance < bestDistance) {
-                bestDistance = distance;
-                bestIndex = i;
-            }
-        }
-
-        return bestIndex;
-    }
-
-    private Component getTimeButtonText() {
-        return Component.literal("Время: " + TIME_NAMES[getTimeIndex()]);
-    }
-
-    private void cycleTime() {
-        int nextIndex = (getTimeIndex() + 1) % TIME_VALUES.length;
-        selectedTime = TIME_VALUES[nextIndex];
-
-        if (timeButton != null) {
-            timeButton.setMessage(getTimeButtonText());
-        }
-    }
-
-    private Component toggleText(String name, boolean value) {
-        return Component.literal(name + ": " + (value ? "ON" : "OFF"));
-    }
-
-    private void applyPreset(int index) {
-        switch (index) {
-            case 1 -> {
+    private void applyPreset(WorldPreset preset) {
+        switch (preset) {
+            case VOID -> {
                 selectedType = PersonalSpaceData.WorldType.VOID;
                 selectedHeight = 64;
-                selectedLayersPreset = PersonalSpacePresets.VOID;
+
+                timeOfDay = 6000L;
+
+                skyRed = 80;
+                skyGreen = 120;
+                skyBlue = 255;
+
+                starBrightness = 1.0F;
+                biomeName = "minecraft:plains";
+
+                treesEnabled = false;
+                foliageEnabled = false;
+                weatherEnabled = false;
+                cloudsEnabled = true;
+
+                layersPreset = "minecraft:bedrock,1;minecraft:dirt,2;minecraft:grass_block,1";
+
+                boundaryChunksX = 1;
+                boundaryChunksZ = 1;
+                gapChunks = 1;
+
+                boundaryBlock = "minecraft:barrier";
+                roadBlock = "minecraft:stone";
+                centerMarkerBlock = "minecraft:glowstone";
+
+                centerMarkerEnabled = true;
             }
-            case 2 -> {
+
+            case FLAT -> {
                 selectedType = PersonalSpaceData.WorldType.FLAT;
                 selectedHeight = 64;
-                selectedLayersPreset = PersonalSpacePresets.SHORT_GRASS;
+
+                timeOfDay = 6000L;
+
+                skyRed = 100;
+                skyGreen = 150;
+                skyBlue = 255;
+
+                starBrightness = 0.6F;
+                biomeName = "minecraft:plains";
+
+                treesEnabled = true;
+                foliageEnabled = true;
+                weatherEnabled = true;
+                cloudsEnabled = true;
+
+                layersPreset = "minecraft:bedrock,1;minecraft:dirt,2;minecraft:grass_block,1";
+
+                boundaryChunksX = 1;
+                boundaryChunksZ = 1;
+                gapChunks = 1;
+
+                boundaryBlock = "minecraft:barrier";
+                roadBlock = "minecraft:stone_bricks";
+                centerMarkerBlock = "minecraft:glowstone";
+
+                centerMarkerEnabled = true;
             }
-            case 3 -> {
+
+            case TECH -> {
                 selectedType = PersonalSpaceData.WorldType.FLAT;
+                selectedHeight = 64;
+
+                timeOfDay = 6000L;
+
+                skyRed = 45;
+                skyGreen = 55;
+                skyBlue = 70;
+
+                starBrightness = 0.2F;
+                biomeName = "minecraft:the_void";
+
+                treesEnabled = false;
+                foliageEnabled = false;
+                weatherEnabled = false;
+                cloudsEnabled = false;
+
+                layersPreset = "minecraft:bedrock,1;minecraft:smooth_stone,3";
+
+                boundaryChunksX = 1;
+                boundaryChunksZ = 1;
+                gapChunks = 1;
+
+                boundaryBlock = "minecraft:barrier";
+                roadBlock = "minecraft:light_gray_concrete";
+                centerMarkerBlock = "minecraft:sea_lantern";
+
+                centerMarkerEnabled = true;
+            }
+
+            case NIGHT_VOID -> {
+                selectedType = PersonalSpaceData.WorldType.VOID;
                 selectedHeight = 80;
-                selectedLayersPreset = PersonalSpacePresets.TALL_GRASS;
-            }
-            case 4 -> {
-                selectedType = PersonalSpaceData.WorldType.FLAT;
-                selectedHeight = 64;
-                selectedLayersPreset = PersonalSpacePresets.STONE_PLATFORM;
-            }
-            default -> {
-                return;
+
+                timeOfDay = 18000L;
+
+                skyRed = 10;
+                skyGreen = 15;
+                skyBlue = 35;
+
+                starBrightness = 1.0F;
+                biomeName = "minecraft:the_void";
+
+                treesEnabled = false;
+                foliageEnabled = false;
+                weatherEnabled = false;
+                cloudsEnabled = false;
+
+                layersPreset = "minecraft:bedrock,1;minecraft:dirt,2;minecraft:grass_block,1";
+
+                boundaryChunksX = 1;
+                boundaryChunksZ = 1;
+                gapChunks = 1;
+
+                boundaryBlock = "minecraft:barrier";
+                roadBlock = "minecraft:deepslate_tiles";
+                centerMarkerBlock = "minecraft:end_rod";
+
+                centerMarkerEnabled = true;
             }
         }
+    }
 
-        if (typeButton != null) {
-            typeButton.setMessage(getTypeButtonText());
+    private void addAdvancedWidgets(int left, int top, int widgetWidth) {
+        int halfWidth = (widgetWidth - 8) / 2;
+        int thirdWidth = (widgetWidth - 16) / 3;
+
+        timeField = new EditBox(
+                font,
+                left,
+                top,
+                halfWidth,
+                20,
+                Component.literal("Время")
+        );
+        timeField.setValue(Long.toString(timeOfDay));
+        timeField.setMaxLength(5);
+        timeField.setFilter(value -> value.isEmpty() || value.matches("\\d{1,5}"));
+        timeField.setResponder(value -> {
+            try {
+                long parsed = Long.parseLong(value);
+                timeOfDay = Math.max(0L, Math.min(24000L, parsed));
+            } catch (NumberFormatException ignored) {
+            }
+        });
+        timeField.setTooltip(Tooltip.create(Component.literal("Время суток: 0–24000")));
+        addRenderableWidget(timeField);
+
+        starBrightnessField = new EditBox(
+                font,
+                left + halfWidth + 8,
+                top,
+                halfWidth,
+                20,
+                Component.literal("Яркость звёзд")
+        );
+        starBrightnessField.setValue(Float.toString(starBrightness));
+        starBrightnessField.setMaxLength(4);
+        starBrightnessField.setFilter(value -> value.isEmpty() || value.matches("\\d?(\\.\\d{0,2})?"));
+        starBrightnessField.setResponder(value -> {
+            try {
+                starBrightness = Mth.clamp(Float.parseFloat(value), 0.0F, 1.0F);
+            } catch (NumberFormatException ignored) {
+            }
+        });
+        starBrightnessField.setTooltip(Tooltip.create(Component.literal("Яркость звёзд: 0.0–1.0")));
+        addRenderableWidget(starBrightnessField);
+
+        biomeField = new EditBox(
+                font,
+                left,
+                top + 30,
+                widgetWidth,
+                20,
+                Component.literal("Биом")
+        );
+        biomeField.setValue(biomeName);
+        biomeField.setMaxLength(80);
+        biomeField.setFilter(value -> value.isEmpty() || value.matches("[a-z0-9_:.\\-/]+"));
+        biomeField.setResponder(value -> {
+            if (!value.isBlank()) {
+                biomeName = value.trim();
+            }
+        });
+        biomeField.setTooltip(Tooltip.create(Component.literal("Например: minecraft:plains")));
+        addRenderableWidget(biomeField);
+
+        skyRedField = createColorField(left, top + 60, thirdWidth, "R", skyRed, value -> skyRed = value);
+        skyGreenField = createColorField(left + thirdWidth + 8, top + 60, thirdWidth, "G", skyGreen, value -> skyGreen = value);
+        skyBlueField = createColorField(left + (thirdWidth + 8) * 2, top + 60, thirdWidth, "B", skyBlue, value -> skyBlue = value);
+
+        addRenderableWidget(skyRedField);
+        addRenderableWidget(skyGreenField);
+        addRenderableWidget(skyBlueField);
+
+        addRenderableWidget(CycleButton.onOffBuilder(treesEnabled)
+                .create(
+                        left,
+                        top + 90,
+                        halfWidth,
+                        20,
+                        Component.literal("Деревья"),
+                        (button, value) -> treesEnabled = value
+                ));
+
+        addRenderableWidget(CycleButton.onOffBuilder(foliageEnabled)
+                .create(
+                        left + halfWidth + 8,
+                        top + 90,
+                        halfWidth,
+                        20,
+                        Component.literal("Листва"),
+                        (button, value) -> foliageEnabled = value
+                ));
+
+        addRenderableWidget(CycleButton.onOffBuilder(weatherEnabled)
+                .create(
+                        left,
+                        top + 120,
+                        halfWidth,
+                        20,
+                        Component.literal("Погода"),
+                        (button, value) -> weatherEnabled = value
+                ));
+
+        addRenderableWidget(CycleButton.onOffBuilder(cloudsEnabled)
+                .create(
+                        left + halfWidth + 8,
+                        top + 120,
+                        halfWidth,
+                        20,
+                        Component.literal("Облака"),
+                        (button, value) -> cloudsEnabled = value
+                ));
+
+        addRenderableWidget(CycleButton.onOffBuilder(centerMarkerEnabled)
+                .create(
+                        left,
+                        top + 150,
+                        halfWidth,
+                        20,
+                        Component.literal("Центр. маркер"),
+                        (button, value) -> centerMarkerEnabled = value
+                ));
+    }
+
+    private EditBox createColorField(
+            int x,
+            int y,
+            int width,
+            String label,
+            int currentValue,
+            IntValueSetter setter
+    ) {
+        EditBox field = new EditBox(
+                font,
+                x,
+                y,
+                width,
+                20,
+                Component.literal(label)
+        );
+
+        field.setValue(Integer.toString(currentValue));
+        field.setMaxLength(3);
+        field.setFilter(value -> value.isEmpty() || value.matches("\\d{1,3}"));
+        field.setResponder(value -> {
+            try {
+                setter.set(Mth.clamp(Integer.parseInt(value), 0, 255));
+            } catch (NumberFormatException ignored) {
+            }
+        });
+        field.setTooltip(Tooltip.create(Component.literal(label + ": 0–255")));
+
+        return field;
+    }
+
+    private int getPanelHeight() {
+        return advancedVisible ? ADVANCED_PANEL_HEIGHT : BASE_PANEL_HEIGHT;
+    }
+
+    private void rebuildPersonalSpaceWidgets() {
+        clearWidgets();
+        init();
+    }
+
+    private Component worldTypeName(PersonalSpaceData.WorldType type) {
+        return switch (type) {
+            case VOID -> Component.literal("Пустой мир");
+            case FLAT -> Component.literal("Плоский мир");
+        };
+    }
+
+    private void changeHeight(int delta) {
+        int next = Mth.clamp(getHeightOrDefault() + delta, MIN_GROUND_LEVEL, MAX_GROUND_LEVEL);
+        selectedHeight = next;
+
+        if (heightField != null) {
+            heightField.setValue(Integer.toString(next));
+        }
+
+        updateCreateButtonState();
+    }
+
+    private int getHeightOrDefault() {
+        if (heightField == null) {
+            return selectedHeight;
+        }
+
+        try {
+            return Integer.parseInt(heightField.getValue());
+        } catch (NumberFormatException ignored) {
+            return selectedHeight;
+        }
+    }
+
+    private int getClampedHeight() {
+        return Mth.clamp(getHeightOrDefault(), MIN_GROUND_LEVEL, MAX_GROUND_LEVEL);
+    }
+
+    private boolean hasValidHeight() {
+        if (heightField == null) {
+            return selectedHeight >= MIN_GROUND_LEVEL && selectedHeight <= MAX_GROUND_LEVEL;
+        }
+
+        try {
+            int value = Integer.parseInt(heightField.getValue());
+            return value >= MIN_GROUND_LEVEL && value <= MAX_GROUND_LEVEL;
+        } catch (NumberFormatException ignored) {
+            return false;
+        }
+    }
+
+    private void updateCreateButtonState() {
+        if (createButton != null) {
+            createButton.active = hasValidHeight();
         }
     }
 
@@ -492,74 +595,56 @@ public class PersonalSpaceScreen extends Screen {
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         renderBackground(graphics);
 
+        int panelHeight = getPanelHeight();
+        int panelX = (width - PANEL_WIDTH) / 2;
+        int panelY = (height - panelHeight) / 2;
+
+        graphics.fill(panelX, panelY, panelX + PANEL_WIDTH, panelY + panelHeight, 0xCC101010);
+        graphics.fill(panelX, panelY, panelX + PANEL_WIDTH, panelY + 1, 0xFF666666);
+        graphics.fill(panelX, panelY + panelHeight - 1, panelX + PANEL_WIDTH, panelY + panelHeight, 0xFF000000);
+        graphics.fill(panelX, panelY, panelX + 1, panelY + panelHeight, 0xFF666666);
+        graphics.fill(panelX + PANEL_WIDTH - 1, panelY, panelX + PANEL_WIDTH, panelY + panelHeight, 0xFF000000);
+
         graphics.drawCenteredString(
                 font,
-                Component.literal(page == 0 ? "Создание Personal Space" : "More Settings"),
+                Component.literal("Личное измерение"),
                 width / 2,
-                height / 2 - 150,
+                panelY + 12,
                 0xFFFFFF
         );
 
-        if (page == 0) {
+        graphics.drawCenteredString(
+                font,
+                Component.literal("Настрой параметры перед созданием"),
+                width / 2,
+                panelY + 24,
+                0xA0A0A0
+        );
+
+        graphics.drawString(
+                font,
+                Component.literal("Высота земли:"),
+                panelX + 20,
+                panelY + 84,
+                0xD0D0D0,
+                false
+        );
+
+        if (hasValidHeight()) {
             graphics.drawCenteredString(
                     font,
-                    Component.literal("Настройки генерации задаются до создания мира"),
+                    Component.literal("Портал появится на Y=" + (getClampedHeight() + 1)),
                     width / 2,
-                    height / 2 - 136,
-                    0xAAAAAA
-            );
-
-            graphics.drawString(
-                    font,
-                    Component.literal("Biome name"),
-                    width / 2 - 120,
-                    height / 2 + 61,
-                    0xFFFFFF,
-                    false
-            );
-
-            graphics.drawString(
-                    font,
-                    Component.literal("Presets"),
-                    width / 2 - 120,
-                    height / 2 + 146,
-                    0xFFFFFF,
-                    false
+                    panelY + 146,
+                    0x808080
             );
         } else {
             graphics.drawCenteredString(
                     font,
-                    Component.literal("Boundary / road / center marker settings"),
+                    Component.literal("Высота должна быть от " + MIN_GROUND_LEVEL + " до " + MAX_GROUND_LEVEL),
                     width / 2,
-                    height / 2 - 136,
-                    0xAAAAAA
-            );
-
-            graphics.drawString(
-                    font,
-                    Component.literal("Boundary Block"),
-                    width / 2 - 120,
-                    height / 2 + 4,
-                    0xFFFFFF,
-                    false
-            );
-
-            graphics.drawString(
-                    font,
-                    Component.literal("Road Block"),
-                    width / 2 - 120,
-                    height / 2 + 44,
-                    0xFFFFFF,
-                    false
-            );
-
-            graphics.drawString(
-                    font,
-                    Component.literal("Center Marker Block"),
-                    width / 2 - 120,
-                    height / 2 + 84,
-                    0xFFFFFF,
-                    false
+                    panelY + 146,
+                    0xFF5555
             );
         }
 
@@ -569,5 +654,10 @@ public class PersonalSpaceScreen extends Screen {
     @Override
     public boolean isPauseScreen() {
         return false;
+    }
+
+    @FunctionalInterface
+    private interface IntValueSetter {
+        void set(int value);
     }
 }

@@ -187,7 +187,6 @@ public class CreateDimensionPacket {
 
     public static void handle(CreateDimensionPacket msg, Supplier<NetworkEvent.Context> ctx) {
         NetworkEvent.Context context = ctx.get();
-
         context.enqueueWork(() -> {
             ServerPlayer player = context.getSender();
 
@@ -207,7 +206,7 @@ public class CreateDimensionPacket {
         if (server == null) {
             return;
         }
-
+        int safeHeight = net.minecraft.util.Mth.clamp(msg.height, 1, 240);
         ServerLevel sourceLevel = getSourceLevel(msg, player);
 
         if (sourceLevel == null) {
@@ -233,14 +232,14 @@ public class CreateDimensionPacket {
                 server,
                 newLevelKey,
                 msg.type,
-                msg.height,
+                safeHeight,
                 msg.biomeName
         );
 
         PersonalSpaceData data = PersonalSpaceData.load(newLevel);
 
         data.setType(msg.type);
-        data.setGroundLevel(msg.height);
+        data.setGroundLevel(safeHeight);
 
         data.setReturnLevel(sourceLevel.dimension().location().toString());
         data.setReturnPos(msg.sourcePortalPos);
