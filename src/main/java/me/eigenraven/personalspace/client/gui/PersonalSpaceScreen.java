@@ -32,6 +32,11 @@ public class PersonalSpaceScreen extends Screen {
             "Ночь"
     };
 
+    private final Level level;
+    private final BlockPos portalPos;
+
+    private int page = 0;
+
     private PersonalSpaceData.WorldType selectedType = PersonalSpaceData.WorldType.VOID;
     private int selectedHeight = 64;
 
@@ -51,16 +56,28 @@ public class PersonalSpaceScreen extends Screen {
 
     private String selectedLayersPreset = PersonalSpacePresets.VOID;
 
+    private int selectedBoundaryChunksX = 2;
+    private int selectedBoundaryChunksZ = 2;
+    private int selectedGapChunks = 1;
+
+    private String selectedBoundaryBlock = "minecraft:yellow_concrete";
+    private String selectedRoadBlock = "minecraft:black_concrete";
+    private String selectedCenterMarkerBlock = "minecraft:beacon";
+
+    private boolean selectedCenterMarkerEnabled = true;
+
     private Button timeButton;
     private Button typeButton;
     private Button treesButton;
     private Button foliageButton;
     private Button weatherButton;
     private Button cloudsButton;
-    private EditBox biomeNameBox;
+    private Button centerMarkerButton;
 
-    private final Level level;
-    private final BlockPos portalPos;
+    private EditBox biomeNameBox;
+    private EditBox boundaryBlockBox;
+    private EditBox roadBlockBox;
+    private EditBox centerMarkerBlockBox;
 
     public PersonalSpaceScreen(Level level, BlockPos portalPos) {
         super(Component.translatable("gui.personalspace.create"));
@@ -72,6 +89,14 @@ public class PersonalSpaceScreen extends Screen {
     protected void init() {
         super.init();
 
+        if (page == 0) {
+            initMainPage();
+        } else {
+            initMoreSettingsPage();
+        }
+    }
+
+    private void initMainPage() {
         int centerX = width / 2;
         int startY = height / 2 - 120;
 
@@ -218,6 +243,15 @@ public class PersonalSpaceScreen extends Screen {
             ).bounds(presetX + (i - 1) * 45, presetY, 40, 20).build());
         }
 
+        addRenderableWidget(Button.builder(
+                Component.literal("More Settings"),
+                button -> {
+                    page = 1;
+                    clearWidgets();
+                    init();
+                }
+        ).bounds(centerX - 120, startY + 305, 240, 20).build());
+
         Button createBtn = Button.builder(
                 Component.literal("Создать и телепортироваться"),
                 button -> {
@@ -242,19 +276,131 @@ public class PersonalSpaceScreen extends Screen {
                             selectedWeatherEnabled,
                             selectedCloudsEnabled,
 
-                            selectedLayersPreset
+                            selectedLayersPreset,
+
+                            selectedBoundaryChunksX,
+                            selectedBoundaryChunksZ,
+                            selectedGapChunks,
+
+                            selectedBoundaryBlock,
+                            selectedRoadBlock,
+                            selectedCenterMarkerBlock,
+
+                            selectedCenterMarkerEnabled
                     ));
 
                     Minecraft.getInstance().setScreen(null);
                 }
-        ).bounds(centerX - 120, startY + 305, 240, 20).build();
+        ).bounds(centerX - 120, startY + 330, 240, 20).build();
 
         addRenderableWidget(createBtn);
 
         addRenderableWidget(Button.builder(
                 Component.literal("Отмена"),
                 button -> Minecraft.getInstance().setScreen(null)
-        ).bounds(centerX - 120, startY + 330, 240, 20).build());
+        ).bounds(centerX - 120, startY + 355, 240, 20).build());
+    }
+
+    private void initMoreSettingsPage() {
+        int centerX = width / 2;
+        int startY = height / 2 - 100;
+
+        addRenderableWidget(new IntSliderButton(
+                centerX - 120,
+                startY,
+                240,
+                20,
+                0,
+                20,
+                selectedBoundaryChunksX,
+                value -> Component.literal("Boundary X Chunks: " + value),
+                value -> selectedBoundaryChunksX = value
+        ));
+
+        addRenderableWidget(new IntSliderButton(
+                centerX - 120,
+                startY + 30,
+                240,
+                20,
+                0,
+                20,
+                selectedBoundaryChunksZ,
+                value -> Component.literal("Boundary Z Chunks: " + value),
+                value -> selectedBoundaryChunksZ = value
+        ));
+
+        addRenderableWidget(new IntSliderButton(
+                centerX - 120,
+                startY + 60,
+                240,
+                20,
+                0,
+                5,
+                selectedGapChunks,
+                value -> Component.literal("Gap Chunks: " + value),
+                value -> selectedGapChunks = value
+        ));
+
+        boundaryBlockBox = new EditBox(
+                font,
+                centerX - 120,
+                startY + 100,
+                240,
+                20,
+                Component.literal("Boundary Block")
+        );
+
+        boundaryBlockBox.setValue(selectedBoundaryBlock);
+        boundaryBlockBox.setMaxLength(128);
+        boundaryBlockBox.setResponder(value -> selectedBoundaryBlock = value);
+        addRenderableWidget(boundaryBlockBox);
+
+        roadBlockBox = new EditBox(
+                font,
+                centerX - 120,
+                startY + 140,
+                240,
+                20,
+                Component.literal("Road Block")
+        );
+
+        roadBlockBox.setValue(selectedRoadBlock);
+        roadBlockBox.setMaxLength(128);
+        roadBlockBox.setResponder(value -> selectedRoadBlock = value);
+        addRenderableWidget(roadBlockBox);
+
+        centerMarkerBlockBox = new EditBox(
+                font,
+                centerX - 120,
+                startY + 180,
+                240,
+                20,
+                Component.literal("Center Marker Block")
+        );
+
+        centerMarkerBlockBox.setValue(selectedCenterMarkerBlock);
+        centerMarkerBlockBox.setMaxLength(128);
+        centerMarkerBlockBox.setResponder(value -> selectedCenterMarkerBlock = value);
+        addRenderableWidget(centerMarkerBlockBox);
+
+        centerMarkerButton = Button.builder(
+                toggleText("Center Marker", selectedCenterMarkerEnabled),
+                button -> {
+                    selectedCenterMarkerEnabled = !selectedCenterMarkerEnabled;
+                    button.setMessage(toggleText("Center Marker", selectedCenterMarkerEnabled));
+                }
+        ).bounds(centerX - 120, startY + 220, 240, 20).build();
+
+        addRenderableWidget(centerMarkerButton);
+
+        addRenderableWidget(Button.builder(
+                Component.literal("Back"),
+                button -> {
+                    page = 0;
+                    clearWidgets();
+                    init();
+                }
+        ).bounds(centerX - 120, startY + 255, 240, 20).build());
     }
 
     private void cycleWorldType() {
@@ -348,37 +494,74 @@ public class PersonalSpaceScreen extends Screen {
 
         graphics.drawCenteredString(
                 font,
-                Component.literal("Создание Personal Space"),
+                Component.literal(page == 0 ? "Создание Personal Space" : "More Settings"),
                 width / 2,
                 height / 2 - 150,
                 0xFFFFFF
         );
 
-        graphics.drawCenteredString(
-                font,
-                Component.literal("Настройки генерации задаются до создания мира"),
-                width / 2,
-                height / 2 - 136,
-                0xAAAAAA
-        );
+        if (page == 0) {
+            graphics.drawCenteredString(
+                    font,
+                    Component.literal("Настройки генерации задаются до создания мира"),
+                    width / 2,
+                    height / 2 - 136,
+                    0xAAAAAA
+            );
 
-        graphics.drawString(
-                font,
-                Component.literal("Biome name"),
-                width / 2 - 120,
-                height / 2 + 61,
-                0xFFFFFF,
-                false
-        );
+            graphics.drawString(
+                    font,
+                    Component.literal("Biome name"),
+                    width / 2 - 120,
+                    height / 2 + 61,
+                    0xFFFFFF,
+                    false
+            );
 
-        graphics.drawString(
-                font,
-                Component.literal("Presets"),
-                width / 2 - 120,
-                height / 2 + 146,
-                0xFFFFFF,
-                false
-        );
+            graphics.drawString(
+                    font,
+                    Component.literal("Presets"),
+                    width / 2 - 120,
+                    height / 2 + 146,
+                    0xFFFFFF,
+                    false
+            );
+        } else {
+            graphics.drawCenteredString(
+                    font,
+                    Component.literal("Boundary / road / center marker settings"),
+                    width / 2,
+                    height / 2 - 136,
+                    0xAAAAAA
+            );
+
+            graphics.drawString(
+                    font,
+                    Component.literal("Boundary Block"),
+                    width / 2 - 120,
+                    height / 2 + 4,
+                    0xFFFFFF,
+                    false
+            );
+
+            graphics.drawString(
+                    font,
+                    Component.literal("Road Block"),
+                    width / 2 - 120,
+                    height / 2 + 44,
+                    0xFFFFFF,
+                    false
+            );
+
+            graphics.drawString(
+                    font,
+                    Component.literal("Center Marker Block"),
+                    width / 2 - 120,
+                    height / 2 + 84,
+                    0xFFFFFF,
+                    false
+            );
+        }
 
         super.render(graphics, mouseX, mouseY, partialTick);
     }

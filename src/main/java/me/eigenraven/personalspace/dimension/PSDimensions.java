@@ -6,6 +6,7 @@ import me.eigenraven.personalspace.data.PersonalSpaceData;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.HolderSet;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
@@ -186,6 +187,8 @@ public final class PSDimensions {
                 }
             }
 
+            applyBoundaryRoadsAndMarker(level, portalPos, data);
+
             return;
         }
 
@@ -203,6 +206,8 @@ public final class PSDimensions {
                     }
                 }
             }
+
+            applyBoundaryRoadsAndMarker(level, portalPos, data);
         }
     }
     private static void applyPresetLayersAroundPortal(
@@ -255,6 +260,108 @@ public final class PSDimensions {
                 }
             }
         }
+    }
+    private static void applyBoundaryRoadsAndMarker(
+            ServerLevel level,
+            BlockPos portalPos,
+            PersonalSpaceData data
+    ) {
+        int boundaryChunksX = data.getBoundaryChunksX();
+        int boundaryChunksZ = data.getBoundaryChunksZ();
+        int gapChunks = data.getGapChunks();
+
+        if (boundaryChunksX <= 0 && boundaryChunksZ <= 0 && gapChunks <= 0 && !data.isCenterMarkerEnabled()) {
+            return;
+        }
+
+        int centerX = portalPos.getX();
+        int centerZ = portalPos.getZ();
+        int floorY = portalPos.getY() - 1;
+
+        int radiusX = Math.max(1, boundaryChunksX) * 16;
+        int radiusZ = Math.max(1, boundaryChunksZ) * 16;
+
+        int minX = centerX - radiusX;
+        int maxX = centerX + radiusX;
+        int minZ = centerZ - radiusZ;
+        int maxZ = centerZ + radiusZ;
+
+        int roadHalfWidth = Math.max(0, gapChunks * 8);
+
+        BlockState boundaryState = blockStateFromId(
+                data.getBoundaryBlock(),
+                Blocks.YELLOW_CONCRETE.defaultBlockState()
+        );
+
+        BlockState roadState = blockStateFromId(
+                data.getRoadBlock(),
+                Blocks.BLACK_CONCRETE.defaultBlockState()
+        );
+
+        for (int x = minX; x <= maxX; x++) {
+            for (int z = minZ; z <= maxZ; z++) {
+                boolean isBoundary =
+                        x == minX || x == maxX ||
+                                z == minZ || z == maxZ;
+
+                boolean isRoad =
+                        roadHalfWidth > 0 &&
+                                (Math.abs(x - centerX) <= roadHalfWidth ||
+                                        Math.abs(z - centerZ) <= roadHalfWidth);
+
+                if (!isBoundary && !isRoad) {
+                    continue;
+                }
+
+                BlockState state = isBoundary ? boundaryState : roadState;
+
+                level.setBlock(
+                        new BlockPos(x, floorY, z),
+                        state,
+                        3
+                );
+            }
+        }
+
+        if (data.isCenterMarkerEnabled()) {
+            BlockState markerState = blockStateFromId(
+                    data.getCenterMarkerBlock(),
+                    Blocks.BEACON.defaultBlockState()
+            );
+
+            if (!markerState.isAir()) {
+                level.setBlock(
+                        new BlockPos(centerX, floorY, centerZ),
+                        markerState,
+                        3
+                );
+            }
+        }
+
+        for (int x = portalPos.getX() - 2; x <= portalPos.getX() + 2; x++) {
+            for (int z = portalPos.getZ() - 2; z <= portalPos.getZ() + 2; z++) {
+                for (int y = portalPos.getY(); y <= portalPos.getY() + 3; y++) {
+                    level.setBlock(
+                            new BlockPos(x, y, z),
+                            Blocks.AIR.defaultBlockState(),
+                            3
+                    );
+                }
+            }
+        }
+    }
+
+    private static BlockState blockStateFromId(String blockId, BlockState fallback) {
+        ResourceLocation id = ResourceLocation.tryParse(blockId);
+
+        if (id == null) {
+            return fallback;
+        }
+
+        return BuiltInRegistries.BLOCK
+                .getOptional(id)
+                .map(block -> block.defaultBlockState())
+                .orElse(fallback);
     }
     private static void applyStoredSettings(ServerLevel level) {
         if (!level.dimension().location().getNamespace().equals(PersonalSpace.MODID)) {

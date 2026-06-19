@@ -38,6 +38,15 @@ public class PersonalSpaceData {
     private boolean cloudsEnabled = false;
 
     private String layersPreset = "minecraft:bedrock*1;minecraft:dirt*3;minecraft:grass_block*1";
+    private int boundaryChunksX = 2;
+    private int boundaryChunksZ = 2;
+    private int gapChunks = 1;
+
+    private String boundaryBlock = "minecraft:yellow_concrete";
+    private String roadBlock = "minecraft:black_concrete";
+    private String centerMarkerBlock = "minecraft:beacon";
+
+    private boolean centerMarkerEnabled = true;
     public float getStarBrightness() {
         return starBrightness;
     }
@@ -87,6 +96,79 @@ public class PersonalSpaceData {
 
     public void setCloudsEnabled(boolean cloudsEnabled) {
         this.cloudsEnabled = cloudsEnabled;
+    }
+    public int getBoundaryChunksX() {
+        return Math.max(0, Math.min(20, boundaryChunksX));
+    }
+
+    public void setBoundaryChunksX(int boundaryChunksX) {
+        this.boundaryChunksX = Math.max(0, Math.min(20, boundaryChunksX));
+    }
+
+    public int getBoundaryChunksZ() {
+        return Math.max(0, Math.min(20, boundaryChunksZ));
+    }
+
+    public void setBoundaryChunksZ(int boundaryChunksZ) {
+        this.boundaryChunksZ = Math.max(0, Math.min(20, boundaryChunksZ));
+    }
+
+    public int getGapChunks() {
+        return Math.max(0, Math.min(5, gapChunks));
+    }
+
+    public void setGapChunks(int gapChunks) {
+        this.gapChunks = Math.max(0, Math.min(5, gapChunks));
+    }
+
+    public String getBoundaryBlock() {
+        return boundaryBlock == null || boundaryBlock.isBlank()
+                ? "minecraft:yellow_concrete"
+                : boundaryBlock;
+    }
+
+    public void setBoundaryBlock(String boundaryBlock) {
+        if (boundaryBlock == null || boundaryBlock.isBlank()) {
+            boundaryBlock = "minecraft:yellow_concrete";
+        }
+
+        this.boundaryBlock = boundaryBlock;
+    }
+
+    public String getRoadBlock() {
+        return roadBlock == null || roadBlock.isBlank()
+                ? "minecraft:black_concrete"
+                : roadBlock;
+    }
+
+    public void setRoadBlock(String roadBlock) {
+        if (roadBlock == null || roadBlock.isBlank()) {
+            roadBlock = "minecraft:black_concrete";
+        }
+
+        this.roadBlock = roadBlock;
+    }
+
+    public String getCenterMarkerBlock() {
+        return centerMarkerBlock == null || centerMarkerBlock.isBlank()
+                ? "minecraft:beacon"
+                : centerMarkerBlock;
+    }
+
+    public void setCenterMarkerBlock(String centerMarkerBlock) {
+        if (centerMarkerBlock == null || centerMarkerBlock.isBlank()) {
+            centerMarkerBlock = "minecraft:beacon";
+        }
+
+        this.centerMarkerBlock = centerMarkerBlock;
+    }
+
+    public boolean isCenterMarkerEnabled() {
+        return centerMarkerEnabled;
+    }
+
+    public void setCenterMarkerEnabled(boolean centerMarkerEnabled) {
+        this.centerMarkerEnabled = centerMarkerEnabled;
     }
 
     public String getLayersPreset() {
@@ -165,6 +247,21 @@ public class PersonalSpaceData {
 
         if (layersPreset == null) {
             layersPreset = "";
+        }
+        boundaryChunksX = Math.max(0, Math.min(20, boundaryChunksX));
+        boundaryChunksZ = Math.max(0, Math.min(20, boundaryChunksZ));
+        gapChunks = Math.max(0, Math.min(5, gapChunks));
+
+        if (boundaryBlock == null || boundaryBlock.isBlank()) {
+            boundaryBlock = "minecraft:yellow_concrete";
+        }
+
+        if (roadBlock == null || roadBlock.isBlank()) {
+            roadBlock = "minecraft:black_concrete";
+        }
+
+        if (centerMarkerBlock == null || centerMarkerBlock.isBlank()) {
+            centerMarkerBlock = "minecraft:beacon";
         }
     }
 

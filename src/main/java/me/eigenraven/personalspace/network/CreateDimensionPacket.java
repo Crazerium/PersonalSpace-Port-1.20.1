@@ -41,6 +41,15 @@ public class CreateDimensionPacket {
     private final boolean cloudsEnabled;
 
     private final String layersPreset;
+    private final int boundaryChunksX;
+    private final int boundaryChunksZ;
+    private final int gapChunks;
+
+    private final String boundaryBlock;
+    private final String roadBlock;
+    private final String centerMarkerBlock;
+
+    private final boolean centerMarkerEnabled;
 
     public CreateDimensionPacket(
             PersonalSpaceData.WorldType type,
@@ -57,7 +66,14 @@ public class CreateDimensionPacket {
             boolean foliageEnabled,
             boolean weatherEnabled,
             boolean cloudsEnabled,
-            String layersPreset
+            String layersPreset,
+            int boundaryChunksX,
+            int boundaryChunksZ,
+            int gapChunks,
+            String boundaryBlock,
+            String roadBlock,
+            String centerMarkerBlock,
+            boolean centerMarkerEnabled
     ) {
         this.type = type;
         this.height = height;
@@ -78,6 +94,15 @@ public class CreateDimensionPacket {
         this.cloudsEnabled = cloudsEnabled;
 
         this.layersPreset = layersPreset;
+        this.boundaryChunksX = boundaryChunksX;
+        this.boundaryChunksZ = boundaryChunksZ;
+        this.gapChunks = gapChunks;
+
+        this.boundaryBlock = boundaryBlock;
+        this.roadBlock = roadBlock;
+        this.centerMarkerBlock = centerMarkerBlock;
+
+        this.centerMarkerEnabled = centerMarkerEnabled;
     }
 
     public static void encode(CreateDimensionPacket msg, FriendlyByteBuf buf) {
@@ -105,6 +130,15 @@ public class CreateDimensionPacket {
         buf.writeBoolean(msg.cloudsEnabled);
 
         buf.writeUtf(msg.layersPreset);
+        buf.writeInt(msg.boundaryChunksX);
+        buf.writeInt(msg.boundaryChunksZ);
+        buf.writeInt(msg.gapChunks);
+
+        buf.writeUtf(msg.boundaryBlock);
+        buf.writeUtf(msg.roadBlock);
+        buf.writeUtf(msg.centerMarkerBlock);
+
+        buf.writeBoolean(msg.centerMarkerEnabled);
     }
 
     public static CreateDimensionPacket decode(FriendlyByteBuf buf) {
@@ -137,7 +171,17 @@ public class CreateDimensionPacket {
                 buf.readBoolean(),
                 buf.readBoolean(),
 
-                buf.readUtf()
+                buf.readUtf(),
+
+                buf.readInt(),
+                buf.readInt(),
+                buf.readInt(),
+
+                buf.readUtf(),
+                buf.readUtf(),
+                buf.readUtf(),
+
+                buf.readBoolean()
         );
     }
 
@@ -212,6 +256,15 @@ public class CreateDimensionPacket {
         data.setCloudsEnabled(msg.cloudsEnabled);
 
         data.setLayersPreset(msg.layersPreset);
+        data.setBoundaryChunksX(msg.boundaryChunksX);
+        data.setBoundaryChunksZ(msg.boundaryChunksZ);
+        data.setGapChunks(msg.gapChunks);
+
+        data.setBoundaryBlock(msg.boundaryBlock);
+        data.setRoadBlock(msg.roadBlock);
+        data.setCenterMarkerBlock(msg.centerMarkerBlock);
+
+        data.setCenterMarkerEnabled(msg.centerMarkerEnabled);
 
         PersonalSpaceData.save(newLevel, data);
 
