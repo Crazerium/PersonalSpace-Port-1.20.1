@@ -12,6 +12,7 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.biome.Biomes;
@@ -199,15 +200,9 @@ public final class PSDimensions {
                     presetLayers
             );
 
-            for (int x = portalPos.getX() - 2; x <= portalPos.getX() + 2; x++) {
-                for (int z = portalPos.getZ() - 2; z <= portalPos.getZ() + 2; z++) {
-                    for (int y = portalPos.getY(); y <= portalPos.getY() + 3; y++) {
-                        level.setBlock(new BlockPos(x, y, z), Blocks.AIR.defaultBlockState(), 3);
-                    }
-                }
-            }
-
             applyBoundaryRoadsAndMarker(level, portalPos, data);
+            applyVegetation(level, portalPos, data);
+            clearPortalSpace(level, portalPos);
         }
     }
     private static void applyPresetLayersAroundPortal(
@@ -337,10 +332,170 @@ public final class PSDimensions {
                 );
             }
         }
+    }
+    private static void applyVegetation(
+            ServerLevel level,
+            BlockPos portalPos,
+            PersonalSpaceData data
+    ) {
+        if (!data.isTreesEnabled() && !data.isFoliageEnabled()) {
+            return;
+        }
 
+        RandomSource random = RandomSource.create(level.getSeed() ^ portalPos.asLong());
+
+        int centerX = portalPos.getX();
+        int centerZ = portalPos.getZ();
+        int floorY = portalPos.getY() - 1;
+
+        int radius = 14;
+
+        if (data.isFoliageEnabled()) {
+            for (int x = centerX - radius; x <= centerX + radius; x++) {
+                for (int z = centerZ - radius; z <= centerZ + radius; z++) {
+                    if (isProtectedCreationArea(x, z, portalPos, data)) {
+                        continue;
+                    }
+
+                    if (random.nextInt(5) != 0) {
+                        continue;
+                    }
+
+                    BlockPos groundPos = new BlockPos(x, floorY, z);
+                    BlockPos plantPos = groundPos.above();
+
+                    if (level.getBlockState(groundPos).isAir()) {
+                        continue;
+                    }
+
+                    if (!level.getBlockState(plantPos).isAir()) {
+                        continue;
+                    }
+
+                    int variant = random.nextInt(4);
+
+                    if (variant == 0) {
+                        level.setBlock(plantPos, Blocks.DANDELION.defaultBlockState(), 3);
+                    } else if (variant == 1) {
+                        level.setBlock(plantPos, Blocks.POPPY.defaultBlockState(), 3);
+                    } else {
+                        level.setBlock(plantPos, Blocks.FERN.defaultBlockState(), 3);
+                    }
+                }
+            }
+        }
+
+        if (data.isTreesEnabled()) {
+            int attempts = 8;
+
+            for (int i = 0; i < attempts; i++) {
+                int x = centerX + random.nextInt(radius * 2 + 1) - radius;
+                int z = centerZ + random.nextInt(radius * 2 + 1) - radius;
+
+                if (isProtectedCreationArea(x, z, portalPos, data)) {
+                    continue;
+                }
+
+                BlockPos basePos = new BlockPos(x, floorY + 1, z);
+
+                if (!level.getBlockState(basePos.below()).isAir()
+                        && level.getBlockState(basePos).isAir()) {
+                    placeSimpleOakTree(level, basePos);
+                }
+            }
+        }
+    }
+
+    private static boolean isProtectedCreationArea(
+            int x,
+            int z,
+            BlockPos portalPos,
+            PersonalSpaceData data
+    ) {
+        int centerX = portalPos.getX();
+        int centerZ = portalPos.getZ();
+
+        if (Math.abs(x - centerX) <= 4 && Math.abs(z - centerZ) <= 4) {
+            return true;
+        }
+
+        int boundaryChunksX = data.getBoundaryChunksX();
+        int boundaryChunksZ = data.getBoundaryChunksZ();
+        int gapChunks = data.getGapChunks();
+
+        int radiusX = Math.max(1, boundaryChunksX) * 16;
+        int radiusZ = Math.max(1, boundaryChunksZ) * 16;
+
+        int minX = centerX - radiusX;
+        int maxX = centerX + radiusX;
+        int minZ = centerZ - radiusZ;
+        int maxZ = centerZ + radiusZ;
+
+        if (x == minX || x == maxX || z == minZ || z == maxZ) {
+            return true;
+        }
+
+        int roadHalfWidth = Math.max(0, gapChunks * 8);
+
+        return roadHalfWidth > 0 &&
+                (Math.abs(x - centerX) <= roadHalfWidth ||
+                        Math.abs(z - centerZ) <= roadHalfWidth);
+    }
+
+    private static void placeSimpleOakTree(ServerLevel level, BlockPos basePos) {
+        for (int y = 0; y <= 6; y++) {
+            if (!level.getBlockState(basePos.above(y)).isAir()) {
+                return;
+            }
+        }
+
+        for (int y = 0; y < 5; y++) {
+            level.setBlock(
+                    basePos.above(y),
+                    Blocks.OAK_LOG.defaultBlockState(),
+                    3
+            );
+        }
+
+        BlockPos leavesCenter = basePos.above(4);
+
+        for (int dx = -2; dx <= 2; dx++) {
+            for (int dz = -2; dz <= 2; dz++) {
+                for (int dy = -1; dy <= 1; dy++) {
+                    int distance = Math.abs(dx) + Math.abs(dz) + Math.abs(dy);
+
+                    if (distance > 4) {
+                        continue;
+                    }
+
+                    BlockPos leafPos = leavesCenter.offset(dx, dy, dz);
+
+                    if (level.getBlockState(leafPos).isAir()) {
+                        level.setBlock(
+                                leafPos,
+                                Blocks.OAK_LEAVES.defaultBlockState(),
+                                3
+                        );
+                    }
+                }
+            }
+        }
+
+        BlockPos top = leavesCenter.above();
+
+        if (level.getBlockState(top).isAir()) {
+            level.setBlock(
+                    top,
+                    Blocks.OAK_LEAVES.defaultBlockState(),
+                    3
+            );
+        }
+    }
+
+    private static void clearPortalSpace(ServerLevel level, BlockPos portalPos) {
         for (int x = portalPos.getX() - 2; x <= portalPos.getX() + 2; x++) {
             for (int z = portalPos.getZ() - 2; z <= portalPos.getZ() + 2; z++) {
-                for (int y = portalPos.getY(); y <= portalPos.getY() + 3; y++) {
+                for (int y = portalPos.getY(); y <= portalPos.getY() + 4; y++) {
                     level.setBlock(
                             new BlockPos(x, y, z),
                             Blocks.AIR.defaultBlockState(),
