@@ -16,8 +16,10 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.biome.Biomes;
+import net.minecraft.world.level.biome.FixedBiomeSource;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.chunk.ChunkGenerator;
 import net.minecraft.world.level.dimension.DimensionType;
 import net.minecraft.world.level.dimension.LevelStem;
 import net.minecraft.world.level.levelgen.FlatLevelSource;
@@ -95,6 +97,32 @@ public final class PSDimensions {
 
         return newLevel;
     }
+
+    public static ServerLevel createPersonalDimension(
+            MinecraftServer server,
+            ResourceKey<Level> levelKey,
+            PersonalSpaceData data
+    ) {
+        PersonalSpaceData.WorldType safeType = data.getType() == null
+                ? PersonalSpaceData.WorldType.VOID
+                : data.getType();
+
+        int safeGroundLevel = clampGroundLevel(server.overworld(), data.getGroundLevel());
+        data.setGroundLevel(safeGroundLevel);
+
+        ServerLevel newLevel = InfiniverseAPI.get().getOrCreateLevel(
+                server,
+                levelKey,
+                () -> createStem(server, data)
+        );
+
+        PersonalSpaceData.save(newLevel, data);
+
+        applyStoredSettings(newLevel);
+
+        return newLevel;
+    }
+
     private static Holder<Biome> resolveBiome(
             MinecraftServer server,
             String biomeName
@@ -169,6 +197,52 @@ public final class PSDimensions {
         return new LevelStem(dimensionType, new FlatLevelSource(settings));
     }
 
+    private static LevelStem createStem(
+            MinecraftServer server,
+            PersonalSpaceData data
+    ) {
+        PersonalSpaceData.WorldType safeType = data.getType() == null
+                ? PersonalSpaceData.WorldType.VOID
+                : data.getType();
+
+        ServerLevel overworld = server.overworld();
+
+        Holder<DimensionType> dimensionType = overworld.dimensionTypeRegistration();
+        Holder<Biome> biome = resolveBiome(server, data.getBiomeName());
+
+        if (safeType == PersonalSpaceData.WorldType.FLAT && data.isRepeatingGridEnabled()) {
+            int minY = overworld.getMinBuildHeight();
+            int height = overworld.getMaxBuildHeight() - minY;
+
+            ChunkGenerator generator = new PersonalSpaceGridChunkGenerator(
+                    new FixedBiomeSource(biome),
+                    minY,
+                    height,
+                    data.getGroundLevel(),
+                    data.getLayersPreset(),
+                    data.getBoundaryChunksX(),
+                    data.getBoundaryChunksZ(),
+                    data.getGapChunks(),
+                    data.getBoundaryBlock(),
+                    data.getRoadBlock(),
+                    data.getCenterMarkerBlock(),
+                    data.isCenterMarkerEnabled(),
+                    data.getRepeatingGridOriginX(),
+                    data.getRepeatingGridOriginZ()
+            );
+
+            return new LevelStem(dimensionType, generator);
+        }
+
+        return createStem(
+                server,
+                safeType,
+                data.getGroundLevel(),
+                data.getBiomeName()
+        );
+    }
+
+
     public static int clampGroundLevel(ServerLevel level, int y) {
         int min = level.getMinBuildHeight();
         int max = level.getMaxBuildHeight() - 4;
@@ -223,17 +297,152 @@ public final class PSDimensions {
         }
 
         if (safeType == PersonalSpaceData.WorldType.FLAT) {
-            applyPresetLayersAroundPortal(
-                    level,
-                    portalPos,
-                    presetLayers
-            );
+            if (!data.isRepeatingGridEnabled()) {
+                applyPresetLayersAroundPortal(
+                        level,
+                        portalPos,
+                        presetLayers
+                );
 
-            applyBoundaryRoadsAndMarker(level, portalPos, data);
-            applyVegetation(level, portalPos, data);
+                applyBoundaryRoadsAndMarker(level, portalPos, data);
+                applyVegetation(level, portalPos, data);
+            }
+
             clearPortalSpace(level, portalPos);
         }
     }
+
+    private static void alignRepeatingGridToPortal(
+            PersonalSpaceData data,
+            BlockPos portalPos
+    ) {
+        int plotBlocksX = Math.max(1, data.getBoundaryChunksX()) * 16;
+        int plotBlocksZ = Math.max(1, data.getBoundaryChunksZ()) * 16;
+
+        int originX = portalPos.getX() - plotBlocksX / 2;
+        int originZ = portalPos.getZ() - plotBlocksZ / 2;
+
+        data.setRepeatingGridOrigin(originX, originZ);
+    }
+
+
+
+    private static void applyRepeatingGridChunk(
+            ServerLevel level,
+            int chunkX,
+            int chunkZ,
+            PersonalSpaceData data
+    ) {
+        int groundY = data.getGroundLevel();
+
+        BlockState plotState = getTopLayerState(data);
+
+        BlockState roadState = blockStateFromId(
+                data.getRoadBlock(),
+                Blocks.COBBLESTONE.defaultBlockState()
+        );
+
+        BlockState boundaryState = blockStateFromId(
+                data.getBoundaryBlock(),
+                Blocks.WHITE_CONCRETE.defaultBlockState()
+        );
+
+        BlockState centerState = blockStateFromId(
+                data.getCenterMarkerBlock(),
+                Blocks.SEA_LANTERN.defaultBlockState()
+        );
+
+        int plotBlocksX = Math.max(1, data.getBoundaryChunksX()) * 16;
+        int plotBlocksZ = Math.max(1, data.getBoundaryChunksZ()) * 16;
+        int gapBlocks = Math.max(1, data.getGapChunks()) * 16;
+
+        int cycleBlocksX = plotBlocksX + gapBlocks;
+        int cycleBlocksZ = plotBlocksZ + gapBlocks;
+
+        int originX = data.getRepeatingGridOriginX();
+        int originZ = data.getRepeatingGridOriginZ();
+
+        int minX = chunkX << 4;
+        int minZ = chunkZ << 4;
+
+        for (int localX = 0; localX < 16; localX++) {
+            for (int localZ = 0; localZ < 16; localZ++) {
+                int worldX = minX + localX;
+                int worldZ = minZ + localZ;
+
+                int relX = Math.floorMod(worldX - originX, cycleBlocksX);
+                int relZ = Math.floorMod(worldZ - originZ, cycleBlocksZ);
+
+                boolean road =
+                        relX >= plotBlocksX ||
+                                relZ >= plotBlocksZ;
+
+                boolean boundary =
+                        !road &&
+                                (
+                                        relX == 0 ||
+                                                relX == plotBlocksX - 1 ||
+                                                relZ == 0 ||
+                                                relZ == plotBlocksZ - 1
+                                );
+
+                boolean center =
+                        !road &&
+                                data.isCenterMarkerEnabled() &&
+                                relX == plotBlocksX / 2 &&
+                                relZ == plotBlocksZ / 2;
+
+                BlockState state;
+
+                if (center) {
+                    state = centerState;
+                } else if (road) {
+                    state = roadState;
+                } else if (boundary) {
+                    state = boundaryState;
+                } else {
+                    state = plotState;
+                }
+
+                level.setBlock(
+                        new BlockPos(worldX, groundY, worldZ),
+                        state,
+                        2
+                );
+            }
+        }
+    }
+
+    private static boolean isRepeatingGridPlotBoundary(
+            int localChunkX,
+            int localChunkZ,
+            int localX,
+            int localZ,
+            int plotChunksX,
+            int plotChunksZ
+    ) {
+        boolean firstPlotChunkX = localChunkX == 0;
+        boolean lastPlotChunkX = localChunkX == plotChunksX - 1;
+        boolean firstPlotChunkZ = localChunkZ == 0;
+        boolean lastPlotChunkZ = localChunkZ == plotChunksZ - 1;
+
+        return (firstPlotChunkX && localX == 0)
+                || (lastPlotChunkX && localX == 15)
+                || (firstPlotChunkZ && localZ == 0)
+                || (lastPlotChunkZ && localZ == 15);
+    }
+
+    private static BlockState getTopLayerState(PersonalSpaceData data) {
+        List<PersonalSpaceLayerParser.Layer> layers =
+                PersonalSpaceLayerParser.parse(data.getLayersPreset());
+
+        if (!layers.isEmpty()) {
+            return layers.get(layers.size() - 1).state();
+        }
+
+        return Blocks.GRASS_BLOCK.defaultBlockState();
+    }
+
     private static void applyPresetLayersAroundPortal(
             ServerLevel level,
             BlockPos portalPos,

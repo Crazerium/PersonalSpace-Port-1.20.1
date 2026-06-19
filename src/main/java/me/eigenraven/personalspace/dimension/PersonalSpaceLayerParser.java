@@ -34,13 +34,16 @@ public final class PersonalSpaceLayerParser {
             String blockId = part;
             int count = 1;
 
+            int commaIndex = part.lastIndexOf(',');
             int starIndex = part.lastIndexOf('*');
 
-            if (starIndex >= 0) {
-                blockId = part.substring(0, starIndex).trim();
+            int separatorIndex = Math.max(commaIndex, starIndex);
+
+            if (separatorIndex >= 0) {
+                blockId = part.substring(0, separatorIndex).trim();
 
                 try {
-                    count = Integer.parseInt(part.substring(starIndex + 1).trim());
+                    count = Integer.parseInt(part.substring(separatorIndex + 1).trim());
                 } catch (NumberFormatException ignored) {
                     count = 1;
                 }

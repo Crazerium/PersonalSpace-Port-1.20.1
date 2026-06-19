@@ -9,6 +9,7 @@ import me.eigenraven.personalspace.network.UpdatePersonalSpaceSettingsPacket;
 import me.eigenraven.personalspace.network.UsePortalPacket;
 import me.eigenraven.personalspace.registry.PSBlockEntities;
 import me.eigenraven.personalspace.registry.PSBlocks;
+import me.eigenraven.personalspace.registry.PSChunkGenerators;
 import me.eigenraven.personalspace.registry.PSItems;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.common.MinecraftForge;
@@ -39,6 +40,7 @@ public final class PersonalSpace {
         PSBlocks.BLOCKS.register(modBus);
         PSItems.ITEMS.register(modBus);
         PSBlockEntities.BLOCK_ENTITIES.register(modBus);
+        PSChunkGenerators.CHUNK_GENERATORS.register(modBus);
 
         CHANNEL.registerMessage(
                 0,

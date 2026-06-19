@@ -55,6 +55,7 @@ public class PersonalSpaceScreen extends Screen {
 
     private boolean centerMarkerEnabled = true;
     private boolean advancedVisible = false;
+    private boolean repeatingGridEnabled = false;
 
     private WorldPreset selectedPreset = WorldPreset.VOID;
     private AdvancedPage advancedPage = AdvancedPage.WORLD;
@@ -90,7 +91,8 @@ public class PersonalSpaceScreen extends Screen {
         VOID("preset.void"),
         FLAT("preset.flat"),
         TECH("preset.tech"),
-        NIGHT_VOID("preset.night_void");
+        NIGHT_VOID("preset.night_void"),
+        ROAD_GRID("preset.road_grid");
 
         private final String translationKey;
 
@@ -142,7 +144,13 @@ public class PersonalSpaceScreen extends Screen {
 
         CycleButton<WorldPreset> presetButton =
                 CycleButton.<WorldPreset>builder(preset -> text(preset.translationKey))
-                        .withValues(WorldPreset.VOID, WorldPreset.FLAT, WorldPreset.TECH, WorldPreset.NIGHT_VOID)
+                        .withValues(
+                                WorldPreset.VOID,
+                                WorldPreset.FLAT,
+                                WorldPreset.TECH,
+                                WorldPreset.NIGHT_VOID,
+                                WorldPreset.ROAD_GRID
+                        )
                         .withInitialValue(selectedPreset)
                         .create(
                                 left,
@@ -259,7 +267,8 @@ public class PersonalSpaceScreen extends Screen {
                             roadBlock,
                             centerMarkerBlock,
 
-                            centerMarkerEnabled
+                            centerMarkerEnabled,
+                            repeatingGridEnabled
                     ));
 
                     Minecraft.getInstance().setScreen(null);
@@ -301,6 +310,7 @@ public class PersonalSpaceScreen extends Screen {
                 centerMarkerBlock = "minecraft:glowstone";
 
                 centerMarkerEnabled = true;
+                repeatingGridEnabled = false;
             }
 
             case FLAT -> {
@@ -332,6 +342,7 @@ public class PersonalSpaceScreen extends Screen {
                 centerMarkerBlock = "minecraft:glowstone";
 
                 centerMarkerEnabled = true;
+                repeatingGridEnabled = false;
             }
 
             case TECH -> {
@@ -363,6 +374,7 @@ public class PersonalSpaceScreen extends Screen {
                 centerMarkerBlock = "minecraft:sea_lantern";
 
                 centerMarkerEnabled = true;
+                repeatingGridEnabled = false;
             }
 
             case NIGHT_VOID -> {
@@ -394,6 +406,38 @@ public class PersonalSpaceScreen extends Screen {
                 centerMarkerBlock = "minecraft:end_rod";
 
                 centerMarkerEnabled = true;
+                repeatingGridEnabled = false;
+            }
+            case ROAD_GRID -> {
+                selectedType = PersonalSpaceData.WorldType.FLAT;
+                selectedHeight = 64;
+
+                timeOfDay = 6000L;
+
+                skyRed = 120;
+                skyGreen = 170;
+                skyBlue = 255;
+
+                starBrightness = 0.5F;
+                biomeName = "minecraft:plains";
+
+                treesEnabled = false;
+                foliageEnabled = false;
+                weatherEnabled = false;
+                cloudsEnabled = true;
+
+                layersPreset = "minecraft:bedrock,1;minecraft:dirt,3;minecraft:grass_block,1";
+
+                boundaryChunksX = 2;
+                boundaryChunksZ = 2;
+                gapChunks = 1;
+
+                boundaryBlock = "minecraft:white_concrete";
+                roadBlock = "minecraft:cobbled_deepslate";
+                centerMarkerBlock = "minecraft:sea_lantern";
+
+                centerMarkerEnabled = true;
+                repeatingGridEnabled = true;
             }
         }
     }

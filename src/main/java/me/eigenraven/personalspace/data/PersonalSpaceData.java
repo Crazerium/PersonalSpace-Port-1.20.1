@@ -47,6 +47,9 @@ public class PersonalSpaceData {
     private String centerMarkerBlock = "minecraft:beacon";
 
     private boolean centerMarkerEnabled = true;
+    private boolean repeatingGridEnabled = false;
+    private int repeatingGridOriginX = 0;
+    private int repeatingGridOriginZ = 0;
     public float getStarBrightness() {
         return starBrightness;
     }
@@ -169,6 +172,27 @@ public class PersonalSpaceData {
 
     public void setCenterMarkerEnabled(boolean centerMarkerEnabled) {
         this.centerMarkerEnabled = centerMarkerEnabled;
+    }
+
+    public boolean isRepeatingGridEnabled() {
+        return repeatingGridEnabled;
+    }
+
+    public void setRepeatingGridEnabled(boolean repeatingGridEnabled) {
+        this.repeatingGridEnabled = repeatingGridEnabled;
+    }
+
+    public int getRepeatingGridOriginX() {
+        return repeatingGridOriginX;
+    }
+
+    public int getRepeatingGridOriginZ() {
+        return repeatingGridOriginZ;
+    }
+
+    public void setRepeatingGridOrigin(int x, int z) {
+        this.repeatingGridOriginX = x;
+        this.repeatingGridOriginZ = z;
     }
 
     public String getLayersPreset() {
