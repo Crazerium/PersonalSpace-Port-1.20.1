@@ -41,3 +41,10 @@ mandatory=true
 versionRange="[1.0.0,)"
 ordering="AFTER"
 side="BOTH"
+
+[[dependencies.personalspace]]
+modId="gtceu"
+mandatory=false
+versionRange="[7.5.3,)"
+ordering="AFTER"
+side="BOTH"

@@ -2,6 +2,7 @@ package me.eigenraven.personalspace;
 
 import com.mojang.logging.LogUtils;
 import me.eigenraven.personalspace.command.PSCommands;
+import me.eigenraven.personalspace.compat.gtceu.PersonalSpaceGTCEuConfig;
 import me.eigenraven.personalspace.config.PSConfig;
 import me.eigenraven.personalspace.event.PSWorldRules;
 import me.eigenraven.personalspace.network.CreateDimensionPacket;
@@ -43,6 +44,12 @@ public final class PersonalSpace {
                 ModConfig.Type.SERVER,
                 PSConfig.SERVER_SPEC,
                 "personalspace-server.toml"
+        );
+
+        ModLoadingContext.get().registerConfig(
+                ModConfig.Type.COMMON,
+                PersonalSpaceGTCEuConfig.SPEC,
+                "personalspace-gtceu.toml"
         );
 
         PSBlocks.BLOCKS.register(modBus);

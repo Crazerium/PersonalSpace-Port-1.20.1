@@ -2,6 +2,7 @@ package me.eigenraven.personalspace.dimension;
 
 import commoble.infiniverse.api.InfiniverseAPI;
 import me.eigenraven.personalspace.PersonalSpace;
+import me.eigenraven.personalspace.compat.gtceu.PersonalSpaceGTCEuHooks;
 import me.eigenraven.personalspace.data.PersonalSpaceData;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
@@ -147,36 +148,6 @@ public final class PSDimensions {
 
         return level;
     }
-
-    public static ServerLevel createPersonalDimension(
-            MinecraftServer server,
-            ResourceKey<Level> levelKey,
-            PersonalSpaceData.WorldType type,
-            int groundLevel,
-            String biomeName
-    ){
-        PersonalSpaceData.WorldType safeType = type == null
-                ? PersonalSpaceData.WorldType.VOID
-                : type;
-
-        int safeGroundLevel = clampGroundLevel(server.overworld(), groundLevel);
-
-        ServerLevel newLevel = InfiniverseAPI.get().getOrCreateLevel(
-                server,
-                levelKey,
-                () -> createStem(server, safeType, safeGroundLevel, biomeName)
-        );
-
-        PersonalSpaceData data = PersonalSpaceData.load(newLevel);
-        data.setType(safeType);
-        data.setGroundLevel(safeGroundLevel);
-        PersonalSpaceData.save(newLevel, data);
-
-        newLevel.setDayTime(data.getTimeOfDay());
-
-        return newLevel;
-    }
-
     public static ServerLevel createPersonalDimension(
             MinecraftServer server,
             ResourceKey<Level> levelKey,
@@ -196,6 +167,8 @@ public final class PSDimensions {
         );
 
         PersonalSpaceData.save(newLevel, data);
+
+        PersonalSpaceGTCEuHooks.onPersonalDimensionCreated(levelKey);
 
         applyStoredSettings(newLevel);
 
@@ -835,13 +808,23 @@ public final class PSDimensions {
                 .map(block -> block.defaultBlockState())
                 .orElse(fallback);
     }
+
+    public static boolean isPersonalSpaceDimension(ResourceLocation id) {
+        return id != null
+                && id.getNamespace().equals(PersonalSpace.MODID)
+                && id.getPath().startsWith("ps_");
+    }
+
+
+
     private static void applyStoredSettings(ServerLevel level) {
-        if (!level.dimension().location().getNamespace().equals(PersonalSpace.MODID)) {
+        if (!isPersonalSpaceDimension(level.dimension().location())) {
             return;
         }
 
         PersonalSpaceData data = PersonalSpaceData.load(level);
         level.setDayTime(data.getTimeOfDay());
+
         if (!data.isWeatherEnabled()) {
             level.setWeatherParameters(6000, 0, false, false);
         }
