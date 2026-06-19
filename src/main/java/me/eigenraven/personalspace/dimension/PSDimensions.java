@@ -15,6 +15,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.biome.Biomes;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.dimension.DimensionType;
 import net.minecraft.world.level.dimension.LevelStem;
 import net.minecraft.world.level.levelgen.FlatLevelSource;
@@ -158,16 +159,26 @@ public final class PSDimensions {
                 ? PersonalSpaceData.WorldType.VOID
                 : type;
 
+        PersonalSpaceData data = PersonalSpaceData.load(level);
+        List<PersonalSpaceLayerParser.Layer> presetLayers =
+                PersonalSpaceLayerParser.parse(data.getLayersPreset());
+
         int floorY = portalPos.getY() - 1;
 
         level.getChunkAt(portalPos);
 
         if (safeType == PersonalSpaceData.WorldType.VOID) {
+            BlockState floorState = Blocks.OBSIDIAN.defaultBlockState();
+
+            if (!presetLayers.isEmpty()) {
+                floorState = presetLayers.get(presetLayers.size() - 1).state();
+            }
+
             for (int x = portalPos.getX() - 3; x <= portalPos.getX() + 3; x++) {
                 for (int z = portalPos.getZ() - 3; z <= portalPos.getZ() + 3; z++) {
                     BlockPos floor = new BlockPos(x, floorY, z);
 
-                    level.setBlock(floor, Blocks.OBSIDIAN.defaultBlockState(), 3);
+                    level.setBlock(floor, floorState, 3);
 
                     for (int dy = 1; dy <= 4; dy++) {
                         level.setBlock(floor.above(dy), Blocks.AIR.defaultBlockState(), 3);
@@ -179,6 +190,12 @@ public final class PSDimensions {
         }
 
         if (safeType == PersonalSpaceData.WorldType.FLAT) {
+            applyPresetLayersAroundPortal(
+                    level,
+                    portalPos,
+                    presetLayers
+            );
+
             for (int x = portalPos.getX() - 2; x <= portalPos.getX() + 2; x++) {
                 for (int z = portalPos.getZ() - 2; z <= portalPos.getZ() + 2; z++) {
                     for (int y = portalPos.getY(); y <= portalPos.getY() + 3; y++) {
@@ -188,7 +205,57 @@ public final class PSDimensions {
             }
         }
     }
+    private static void applyPresetLayersAroundPortal(
+            ServerLevel level,
+            BlockPos portalPos,
+            List<PersonalSpaceLayerParser.Layer> layers
+    ) {
+        if (layers.isEmpty()) {
+            return;
+        }
 
+        int minY = level.getMinBuildHeight();
+        int floorY = portalPos.getY() - 1;
+        int radius = 16;
+
+        for (int x = portalPos.getX() - radius; x <= portalPos.getX() + radius; x++) {
+            for (int z = portalPos.getZ() - radius; z <= portalPos.getZ() + radius; z++) {
+                int y = minY;
+
+                for (PersonalSpaceLayerParser.Layer layer : layers) {
+                    for (int i = 0; i < layer.count(); i++) {
+                        if (y > floorY) {
+                            break;
+                        }
+
+                        level.setBlock(
+                                new BlockPos(x, y, z),
+                                layer.state(),
+                                3
+                        );
+
+                        y++;
+                    }
+
+                    if (y > floorY) {
+                        break;
+                    }
+                }
+
+                while (y <= floorY) {
+                    BlockState topState = layers.get(layers.size() - 1).state();
+
+                    level.setBlock(
+                            new BlockPos(x, y, z),
+                            topState,
+                            3
+                    );
+
+                    y++;
+                }
+            }
+        }
+    }
     private static void applyStoredSettings(ServerLevel level) {
         if (!level.dimension().location().getNamespace().equals(PersonalSpace.MODID)) {
             return;

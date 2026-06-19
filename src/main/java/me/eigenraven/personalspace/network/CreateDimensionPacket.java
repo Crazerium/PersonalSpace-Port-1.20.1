@@ -27,24 +27,57 @@ public class CreateDimensionPacket {
     private final BlockPos sourcePortalPos;
     private final ResourceLocation sourceLevelId;
 
-    public CreateDimensionPacket(
-            PersonalSpaceData.WorldType type,
-            int height,
-            BlockPos sourcePortalPos
-    ) {
-        this(type, height, sourcePortalPos, null);
-    }
+    private final long timeOfDay;
+    private final int skyRed;
+    private final int skyGreen;
+    private final int skyBlue;
+
+    private final float starBrightness;
+    private final String biomeName;
+
+    private final boolean treesEnabled;
+    private final boolean foliageEnabled;
+    private final boolean weatherEnabled;
+    private final boolean cloudsEnabled;
+
+    private final String layersPreset;
 
     public CreateDimensionPacket(
             PersonalSpaceData.WorldType type,
             int height,
             BlockPos sourcePortalPos,
-            ResourceLocation sourceLevelId
+            ResourceLocation sourceLevelId,
+            long timeOfDay,
+            int skyRed,
+            int skyGreen,
+            int skyBlue,
+            float starBrightness,
+            String biomeName,
+            boolean treesEnabled,
+            boolean foliageEnabled,
+            boolean weatherEnabled,
+            boolean cloudsEnabled,
+            String layersPreset
     ) {
         this.type = type;
         this.height = height;
         this.sourcePortalPos = sourcePortalPos;
         this.sourceLevelId = sourceLevelId;
+
+        this.timeOfDay = timeOfDay;
+        this.skyRed = skyRed;
+        this.skyGreen = skyGreen;
+        this.skyBlue = skyBlue;
+
+        this.starBrightness = starBrightness;
+        this.biomeName = biomeName;
+
+        this.treesEnabled = treesEnabled;
+        this.foliageEnabled = foliageEnabled;
+        this.weatherEnabled = weatherEnabled;
+        this.cloudsEnabled = cloudsEnabled;
+
+        this.layersPreset = layersPreset;
     }
 
     public static void encode(CreateDimensionPacket msg, FriendlyByteBuf buf) {
@@ -57,6 +90,21 @@ public class CreateDimensionPacket {
         if (msg.sourceLevelId != null) {
             buf.writeResourceLocation(msg.sourceLevelId);
         }
+
+        buf.writeLong(msg.timeOfDay);
+        buf.writeInt(msg.skyRed);
+        buf.writeInt(msg.skyGreen);
+        buf.writeInt(msg.skyBlue);
+
+        buf.writeFloat(msg.starBrightness);
+        buf.writeUtf(msg.biomeName);
+
+        buf.writeBoolean(msg.treesEnabled);
+        buf.writeBoolean(msg.foliageEnabled);
+        buf.writeBoolean(msg.weatherEnabled);
+        buf.writeBoolean(msg.cloudsEnabled);
+
+        buf.writeUtf(msg.layersPreset);
     }
 
     public static CreateDimensionPacket decode(FriendlyByteBuf buf) {
@@ -74,7 +122,22 @@ public class CreateDimensionPacket {
                 type,
                 height,
                 sourcePortalPos,
-                sourceLevelId
+                sourceLevelId,
+
+                buf.readLong(),
+                buf.readInt(),
+                buf.readInt(),
+                buf.readInt(),
+
+                buf.readFloat(),
+                buf.readUtf(),
+
+                buf.readBoolean(),
+                buf.readBoolean(),
+                buf.readBoolean(),
+                buf.readBoolean(),
+
+                buf.readUtf()
         );
     }
 
@@ -114,6 +177,7 @@ public class CreateDimensionPacket {
             player.sendSystemMessage(Component.literal("Personal Space portal was not found."));
             return;
         }
+
         if (sourcePortal.isActive() && sourcePortal.getTargetLevel() != null) {
             sourcePortal.teleport(player);
             return;
@@ -127,10 +191,31 @@ public class CreateDimensionPacket {
                 msg.type,
                 msg.height
         );
+
         PersonalSpaceData data = PersonalSpaceData.load(newLevel);
+
+        data.setType(msg.type);
+        data.setGroundLevel(msg.height);
+
         data.setReturnLevel(sourceLevel.dimension().location().toString());
         data.setReturnPos(msg.sourcePortalPos);
+
+        data.setTimeOfDay(msg.timeOfDay);
+        data.setSkyColor(msg.skyRed, msg.skyGreen, msg.skyBlue);
+
+        data.setStarBrightness(msg.starBrightness);
+        data.setBiomeName(msg.biomeName);
+
+        data.setTreesEnabled(msg.treesEnabled);
+        data.setFoliageEnabled(msg.foliageEnabled);
+        data.setWeatherEnabled(msg.weatherEnabled);
+        data.setCloudsEnabled(msg.cloudsEnabled);
+
+        data.setLayersPreset(msg.layersPreset);
+
         PersonalSpaceData.save(newLevel, data);
+
+        newLevel.setDayTime(data.getTimeOfDay());
 
         int groundY = data.getGroundLevel();
         BlockPos innerPortalPos = new BlockPos(7, groundY + 1, 7);
@@ -141,6 +226,7 @@ public class CreateDimensionPacket {
                 groundY,
                 innerPortalPos
         );
+
         BlockState portalState = PSBlocks.PERSONAL_PORTAL.get()
                 .defaultBlockState()
                 .setValue(PortalBlock.RETURN_PORTAL, true);
@@ -169,6 +255,7 @@ public class CreateDimensionPacket {
 
         innerPortal.setReturnPortal(true);
         innerPortal.setTarget(returnKey, data.getReturnPos());
+
         sourcePortal.setReturnPortal(false);
         sourcePortal.setTarget(newLevelKey, innerPortalPos);
 

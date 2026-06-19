@@ -150,10 +150,22 @@ public class PersonalSpaceData {
         if (type == null) {
             type = WorldType.VOID;
         }
+
         timeOfDay = normalizeTime(timeOfDay);
+
         skyRed = clampColor(skyRed);
         skyGreen = clampColor(skyGreen);
         skyBlue = clampColor(skyBlue);
+
+        starBrightness = Math.max(0.0F, Math.min(1.0F, starBrightness));
+
+        if (biomeName == null || biomeName.isBlank()) {
+            biomeName = "minecraft:plains";
+        }
+
+        if (layersPreset == null) {
+            layersPreset = "";
+        }
     }
 
     private static long normalizeTime(long value) {

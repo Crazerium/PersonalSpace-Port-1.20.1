@@ -2,12 +2,10 @@ package me.eigenraven.personalspace.client.gui;
 
 import me.eigenraven.personalspace.PersonalSpace;
 import me.eigenraven.personalspace.client.ClientPersonalSpaceSettings;
-import me.eigenraven.personalspace.data.PersonalSpacePresets;
 import me.eigenraven.personalspace.network.UpdatePersonalSpaceSettingsPacket;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
-import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -20,25 +18,23 @@ public class PersonalSpaceSettingsScreen extends Screen {
     private int selectedGreen;
     private int selectedBlue;
     private float selectedStarBrightness;
-    private String selectedBiomeName;
 
-    private boolean selectedTreesEnabled;
-    private boolean selectedFoliageEnabled;
+    private String lockedBiomeName;
+    private boolean lockedTreesEnabled;
+    private boolean lockedFoliageEnabled;
     private boolean selectedWeatherEnabled;
     private boolean selectedCloudsEnabled;
+    private String lockedLayersPreset;
 
-    private String selectedLayersPreset;
-
-    private Button treesButton;
-    private Button foliageButton;
+    private Button timeButton;
     private Button weatherButton;
     private Button cloudsButton;
-    private EditBox biomeNameBox;
+
     private static final long[] TIME_VALUES = {
-            1000L,   // morning
-            6000L,   // day
-            12000L,  // evening
-            18000L   // night
+            1000L,
+            6000L,
+            12000L,
+            18000L
     };
 
     private static final String[] TIME_NAMES = {
@@ -47,42 +43,6 @@ public class PersonalSpaceSettingsScreen extends Screen {
             "Вечер",
             "Ночь"
     };
-
-    private Button timeButton;
-    private int getTimeIndex() {
-        long normalized = selectedTime % 24000L;
-        if (normalized < 0L) {
-            normalized += 24000L;
-        }
-
-        int bestIndex = 0;
-        long bestDistance = Long.MAX_VALUE;
-
-        for (int i = 0; i < TIME_VALUES.length; i++) {
-            long distance = Math.abs(TIME_VALUES[i] - normalized);
-            if (distance < bestDistance) {
-                bestDistance = distance;
-                bestIndex = i;
-            }
-        }
-
-        return bestIndex;
-    }
-
-    private Component getTimeButtonText() {
-        return Component.literal("Время: " + TIME_NAMES[getTimeIndex()]);
-    }
-
-    private void cycleTime() {
-        int nextIndex = (getTimeIndex() + 1) % TIME_VALUES.length;
-        selectedTime = (int) TIME_VALUES[nextIndex];
-
-        if (timeButton != null) {
-            timeButton.setMessage(getTimeButtonText());
-        }
-
-        preview();
-    }
 
     public PersonalSpaceSettingsScreen(ResourceLocation levelId) {
         super(Component.literal("Personal Space Settings"));
@@ -94,16 +54,16 @@ public class PersonalSpaceSettingsScreen extends Screen {
         this.selectedRed = settings.skyRed();
         this.selectedGreen = settings.skyGreen();
         this.selectedBlue = settings.skyBlue();
-
         this.selectedStarBrightness = settings.starBrightness();
-        this.selectedBiomeName = settings.biomeName();
 
-        this.selectedTreesEnabled = settings.treesEnabled();
-        this.selectedFoliageEnabled = settings.foliageEnabled();
+        this.lockedBiomeName = settings.biomeName();
+        this.lockedTreesEnabled = settings.treesEnabled();
+        this.lockedFoliageEnabled = settings.foliageEnabled();
+
         this.selectedWeatherEnabled = settings.weatherEnabled();
         this.selectedCloudsEnabled = settings.cloudsEnabled();
 
-        this.selectedLayersPreset = settings.layersPreset();
+        this.lockedLayersPreset = settings.layersPreset();
     }
 
     @Override
@@ -164,6 +124,7 @@ public class PersonalSpaceSettingsScreen extends Screen {
                     preview();
                 }
         ));
+
         addRenderableWidget(new IntSliderButton(
                 centerX - 120,
                 startY + 120,
@@ -178,40 +139,6 @@ public class PersonalSpaceSettingsScreen extends Screen {
                     preview();
                 }
         ));
-        biomeNameBox = new EditBox(
-                font,
-                centerX - 120,
-                startY + 150,
-                240,
-                20,
-                Component.literal("Biome name")
-        );
-
-        biomeNameBox.setValue(selectedBiomeName);
-        biomeNameBox.setMaxLength(128);
-        biomeNameBox.setResponder(value -> {
-            selectedBiomeName = value;
-            preview();
-        });
-
-        addRenderableWidget(biomeNameBox);
-        treesButton = Button.builder(
-                toggleText("Trees", selectedTreesEnabled),
-                button -> {
-                    selectedTreesEnabled = !selectedTreesEnabled;
-                    button.setMessage(toggleText("Trees", selectedTreesEnabled));
-                    preview();
-                }
-        ).bounds(centerX - 120, startY + 180, 115, 20).build();
-
-        foliageButton = Button.builder(
-                toggleText("Foliage", selectedFoliageEnabled),
-                button -> {
-                    selectedFoliageEnabled = !selectedFoliageEnabled;
-                    button.setMessage(toggleText("Foliage", selectedFoliageEnabled));
-                    preview();
-                }
-        ).bounds(centerX + 5, startY + 180, 115, 20).build();
 
         weatherButton = Button.builder(
                 toggleText("Weather", selectedWeatherEnabled),
@@ -220,7 +147,7 @@ public class PersonalSpaceSettingsScreen extends Screen {
                     button.setMessage(toggleText("Weather", selectedWeatherEnabled));
                     preview();
                 }
-        ).bounds(centerX - 120, startY + 205, 115, 20).build();
+        ).bounds(centerX - 120, startY + 155, 115, 20).build();
 
         cloudsButton = Button.builder(
                 toggleText("Clouds", selectedCloudsEnabled),
@@ -229,23 +156,11 @@ public class PersonalSpaceSettingsScreen extends Screen {
                     button.setMessage(toggleText("Clouds", selectedCloudsEnabled));
                     preview();
                 }
-        ).bounds(centerX + 5, startY + 205, 115, 20).build();
+        ).bounds(centerX + 5, startY + 155, 115, 20).build();
 
-        addRenderableWidget(treesButton);
-        addRenderableWidget(foliageButton);
         addRenderableWidget(weatherButton);
         addRenderableWidget(cloudsButton);
-        int presetY = startY + 235;
-        int presetX = centerX - 120;
 
-        for (int i = 1; i <= 4; i++) {
-            final int presetIndex = i;
-
-            addRenderableWidget(Button.builder(
-                    presetText(i),
-                    button -> applyPreset(presetIndex)
-            ).bounds(presetX + (i - 1) * 45, presetY, 40, 20).build());
-        }
         addRenderableWidget(Button.builder(
                 Component.literal("Сохранить"),
                 button -> {
@@ -255,25 +170,26 @@ public class PersonalSpaceSettingsScreen extends Screen {
                             selectedGreen,
                             selectedBlue,
                             selectedStarBrightness,
-                            selectedBiomeName,
-                            selectedTreesEnabled,
-                            selectedFoliageEnabled,
+                            lockedBiomeName,
+                            lockedTreesEnabled,
+                            lockedFoliageEnabled,
                             selectedWeatherEnabled,
                             selectedCloudsEnabled,
-                            selectedLayersPreset
+                            lockedLayersPreset
                     ));
 
                     Minecraft.getInstance().setScreen(null);
                 }
-        ).bounds(centerX - 120, startY + 265, 115, 20).build());
+        ).bounds(centerX - 120, startY + 190, 115, 20).build());
 
         addRenderableWidget(Button.builder(
                 Component.literal("Отмена"),
                 button -> Minecraft.getInstance().setScreen(null)
-        ).bounds(centerX + 5, startY + 265, 115, 20).build());
+        ).bounds(centerX + 5, startY + 190, 115, 20).build());
 
         preview();
     }
+
     private void preview() {
         ClientPersonalSpaceSettings.set(
                 levelId,
@@ -282,13 +198,54 @@ public class PersonalSpaceSettingsScreen extends Screen {
                 selectedGreen,
                 selectedBlue,
                 selectedStarBrightness,
-                selectedBiomeName,
-                selectedTreesEnabled,
-                selectedFoliageEnabled,
+                lockedBiomeName,
+                lockedTreesEnabled,
+                lockedFoliageEnabled,
                 selectedWeatherEnabled,
                 selectedCloudsEnabled,
-                selectedLayersPreset
+                lockedLayersPreset
         );
+    }
+
+    private int getTimeIndex() {
+        long normalized = selectedTime % 24000L;
+
+        if (normalized < 0L) {
+            normalized += 24000L;
+        }
+
+        int bestIndex = 0;
+        long bestDistance = Long.MAX_VALUE;
+
+        for (int i = 0; i < TIME_VALUES.length; i++) {
+            long distance = Math.abs(TIME_VALUES[i] - normalized);
+
+            if (distance < bestDistance) {
+                bestDistance = distance;
+                bestIndex = i;
+            }
+        }
+
+        return bestIndex;
+    }
+
+    private Component getTimeButtonText() {
+        return Component.literal("Время: " + TIME_NAMES[getTimeIndex()]);
+    }
+
+    private void cycleTime() {
+        int nextIndex = (getTimeIndex() + 1) % TIME_VALUES.length;
+        selectedTime = (int) TIME_VALUES[nextIndex];
+
+        if (timeButton != null) {
+            timeButton.setMessage(getTimeButtonText());
+        }
+
+        preview();
+    }
+
+    private Component toggleText(String name, boolean value) {
+        return Component.literal(name + ": " + (value ? "ON" : "OFF"));
     }
 
     @Override
@@ -305,7 +262,7 @@ public class PersonalSpaceSettingsScreen extends Screen {
 
         graphics.drawCenteredString(
                 font,
-                Component.literal("Shift + ПКМ по порталу открывает это меню"),
+                Component.literal("Здесь меняются только визуальные настройки"),
                 width / 2,
                 height / 2 - 96,
                 0xAAAAAA
@@ -313,19 +270,19 @@ public class PersonalSpaceSettingsScreen extends Screen {
 
         graphics.drawString(
                 font,
-                Component.literal("Biome name"),
+                Component.literal("Worldgen locked after creation"),
                 width / 2 - 120,
-                height / 2 + 64,
-                0xFFFFFF,
+                height / 2 + 112,
+                0x777777,
                 false
         );
 
         graphics.drawString(
                 font,
-                Component.literal("Presets"),
+                Component.literal("Biome: " + lockedBiomeName),
                 width / 2 - 120,
-                height / 2 + 149,
-                0xFFFFFF,
+                height / 2 + 124,
+                0x777777,
                 false
         );
 
@@ -335,26 +292,5 @@ public class PersonalSpaceSettingsScreen extends Screen {
     @Override
     public boolean isPauseScreen() {
         return false;
-    }
-    private Component toggleText(String name, boolean value) {
-        return Component.literal(name + ": " + (value ? "ON" : "OFF"));
-    }
-
-    private Component presetText(int index) {
-        return Component.literal(String.valueOf(index));
-    }
-
-    private void applyPreset(int index) {
-        switch (index) {
-            case 1 -> selectedLayersPreset = PersonalSpacePresets.VOID;
-            case 2 -> selectedLayersPreset = PersonalSpacePresets.SHORT_GRASS;
-            case 3 -> selectedLayersPreset = PersonalSpacePresets.TALL_GRASS;
-            case 4 -> selectedLayersPreset = PersonalSpacePresets.STONE_PLATFORM;
-            default -> {
-                return;
-            }
-        }
-
-        preview();
     }
 }
