@@ -29,6 +29,78 @@ public class PersonalSpaceData {
     private int skyRed = 128;
     private int skyGreen = 192;
     private int skyBlue = 255;
+    private float starBrightness = 1.0F;
+    private String biomeName = "minecraft:plains";
+
+    private boolean treesEnabled = false;
+    private boolean foliageEnabled = false;
+    private boolean weatherEnabled = false;
+    private boolean cloudsEnabled = false;
+
+    private String layersPreset = "minecraft:bedrock*1;minecraft:dirt*3;minecraft:grass_block*1";
+    public float getStarBrightness() {
+        return starBrightness;
+    }
+
+    public void setStarBrightness(float starBrightness) {
+        this.starBrightness = Math.max(0.0F, Math.min(1.0F, starBrightness));
+    }
+
+    public String getBiomeName() {
+        return biomeName == null || biomeName.isBlank() ? "minecraft:plains" : biomeName;
+    }
+
+    public void setBiomeName(String biomeName) {
+        if (biomeName == null || biomeName.isBlank()) {
+            biomeName = "minecraft:plains";
+        }
+        this.biomeName = biomeName;
+    }
+
+    public boolean isTreesEnabled() {
+        return treesEnabled;
+    }
+
+    public void setTreesEnabled(boolean treesEnabled) {
+        this.treesEnabled = treesEnabled;
+    }
+
+    public boolean isFoliageEnabled() {
+        return foliageEnabled;
+    }
+
+    public void setFoliageEnabled(boolean foliageEnabled) {
+        this.foliageEnabled = foliageEnabled;
+    }
+
+    public boolean isWeatherEnabled() {
+        return weatherEnabled;
+    }
+
+    public void setWeatherEnabled(boolean weatherEnabled) {
+        this.weatherEnabled = weatherEnabled;
+    }
+
+    public boolean isCloudsEnabled() {
+        return cloudsEnabled;
+    }
+
+    public void setCloudsEnabled(boolean cloudsEnabled) {
+        this.cloudsEnabled = cloudsEnabled;
+    }
+
+    public String getLayersPreset() {
+        return layersPreset == null || layersPreset.isBlank()
+                ? "minecraft:bedrock*1;minecraft:dirt*3;minecraft:grass_block*1"
+                : layersPreset;
+    }
+
+    public void setLayersPreset(String layersPreset) {
+        if (layersPreset == null || layersPreset.isBlank()) {
+            layersPreset = "";
+        }
+        this.layersPreset = layersPreset;
+    }
 
     private static final Gson GSON = new GsonBuilder()
             .setPrettyPrinting()

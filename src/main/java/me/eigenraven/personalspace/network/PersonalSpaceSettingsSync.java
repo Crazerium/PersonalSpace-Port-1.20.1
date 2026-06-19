@@ -23,7 +23,14 @@ public final class PersonalSpaceSettingsSync {
                         data.getTimeOfDay(),
                         data.getSkyRed(),
                         data.getSkyGreen(),
-                        data.getSkyBlue()
+                        data.getSkyBlue(),
+                        data.getStarBrightness(),
+                        data.getBiomeName(),
+                        data.isTreesEnabled(),
+                        data.isFoliageEnabled(),
+                        data.isWeatherEnabled(),
+                        data.isCloudsEnabled(),
+                        data.getLayersPreset()
                 )
         );
     }

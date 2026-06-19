@@ -1,21 +1,32 @@
 package me.eigenraven.personalspace.client;
 
 import net.minecraft.resources.ResourceLocation;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
 
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
-@OnlyIn(Dist.CLIENT)
 public final class ClientPersonalSpaceSettings {
-    private static final Map<ResourceLocation, Settings> SETTINGS = new HashMap<>();
+    private static final Settings DEFAULT = new Settings(
+            6000L,
+            127,
+            178,
+            255,
+            1.0F,
+            "minecraft:plains",
+            false,
+            false,
+            false,
+            false,
+            "minecraft:bedrock*1;minecraft:dirt*3;minecraft:grass_block*1"
+    );
+
+    private static final Map<ResourceLocation, Settings> SETTINGS = new ConcurrentHashMap<>();
 
     private ClientPersonalSpaceSettings() {
     }
 
     public static Settings get(ResourceLocation levelId) {
-        return SETTINGS.getOrDefault(levelId, Settings.DEFAULT);
+        return SETTINGS.getOrDefault(levelId, DEFAULT);
     }
 
     public static void set(
@@ -25,60 +36,68 @@ public final class ClientPersonalSpaceSettings {
             int skyGreen,
             int skyBlue
     ) {
+        Settings old = get(levelId);
+
+        set(
+                levelId,
+                timeOfDay,
+                skyRed,
+                skyGreen,
+                skyBlue,
+                old.starBrightness(),
+                old.biomeName(),
+                old.treesEnabled(),
+                old.foliageEnabled(),
+                old.weatherEnabled(),
+                old.cloudsEnabled(),
+                old.layersPreset()
+        );
+    }
+
+    public static void set(
+            ResourceLocation levelId,
+            long timeOfDay,
+            int skyRed,
+            int skyGreen,
+            int skyBlue,
+            float starBrightness,
+            String biomeName,
+            boolean treesEnabled,
+            boolean foliageEnabled,
+            boolean weatherEnabled,
+            boolean cloudsEnabled,
+            String layersPreset
+    ) {
         SETTINGS.put(
                 levelId,
                 new Settings(
-                        normalizeTime(timeOfDay),
-                        clampColor(skyRed),
-                        clampColor(skyGreen),
-                        clampColor(skyBlue)
+                        timeOfDay,
+                        skyRed,
+                        skyGreen,
+                        skyBlue,
+                        starBrightness,
+                        biomeName,
+                        treesEnabled,
+                        foliageEnabled,
+                        weatherEnabled,
+                        cloudsEnabled,
+                        layersPreset
                 )
         );
     }
 
-    private static long normalizeTime(long value) {
-        long result = value % 24000L;
-
-        if (result < 0L) {
-            result += 24000L;
-        }
-
-        return result;
-    }
-
-    private static int clampColor(int value) {
-        return Math.max(0, Math.min(255, value));
-    }
-
-    public static final class Settings {
-        public static final Settings DEFAULT = new Settings(6000L, 128, 192, 255);
-
-        private final long timeOfDay;
-        private final int skyRed;
-        private final int skyGreen;
-        private final int skyBlue;
-
-        public Settings(long timeOfDay, int skyRed, int skyGreen, int skyBlue) {
-            this.timeOfDay = timeOfDay;
-            this.skyRed = skyRed;
-            this.skyGreen = skyGreen;
-            this.skyBlue = skyBlue;
-        }
-
-        public long timeOfDay() {
-            return timeOfDay;
-        }
-
-        public int skyRed() {
-            return skyRed;
-        }
-
-        public int skyGreen() {
-            return skyGreen;
-        }
-
-        public int skyBlue() {
-            return skyBlue;
-        }
+    public record Settings(
+            long timeOfDay,
+            int skyRed,
+            int skyGreen,
+            int skyBlue,
+            float starBrightness,
+            String biomeName,
+            boolean treesEnabled,
+            boolean foliageEnabled,
+            boolean weatherEnabled,
+            boolean cloudsEnabled,
+            String layersPreset
+    ) {
     }
 }
