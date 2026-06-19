@@ -233,7 +233,8 @@ public class CreateDimensionPacket {
                 server,
                 newLevelKey,
                 msg.type,
-                msg.height
+                msg.height,
+                msg.biomeName
         );
 
         PersonalSpaceData data = PersonalSpaceData.load(newLevel);

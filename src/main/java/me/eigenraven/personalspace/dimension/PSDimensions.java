@@ -59,7 +59,7 @@ public final class PSDimensions {
         ServerLevel level = InfiniverseAPI.get().getOrCreateLevel(
                 server,
                 levelKey,
-                () -> createStem(server, PersonalSpaceData.WorldType.VOID, DEFAULT_GROUND_LEVEL)
+                () -> createStem(server, PersonalSpaceData.WorldType.VOID, DEFAULT_GROUND_LEVEL, "minecraft:plains")
         );
 
         applyStoredSettings(level);
@@ -71,8 +71,9 @@ public final class PSDimensions {
             MinecraftServer server,
             ResourceKey<Level> levelKey,
             PersonalSpaceData.WorldType type,
-            int groundLevel
-    ) {
+            int groundLevel,
+            String biomeName
+    ){
         PersonalSpaceData.WorldType safeType = type == null
                 ? PersonalSpaceData.WorldType.VOID
                 : type;
@@ -82,7 +83,7 @@ public final class PSDimensions {
         ServerLevel newLevel = InfiniverseAPI.get().getOrCreateLevel(
                 server,
                 levelKey,
-                () -> createStem(server, safeType, safeGroundLevel)
+                () -> createStem(server, safeType, safeGroundLevel, biomeName)
         );
 
         PersonalSpaceData data = PersonalSpaceData.load(newLevel);
@@ -94,11 +95,41 @@ public final class PSDimensions {
 
         return newLevel;
     }
+    private static Holder<Biome> resolveBiome(
+            MinecraftServer server,
+            String biomeName
+    ) {
+        ResourceLocation biomeId = ResourceLocation.tryParse(
+                biomeName == null || biomeName.isBlank()
+                        ? "minecraft:plains"
+                        : biomeName
+        );
 
+        ResourceKey<Biome> fallbackKey = Biomes.PLAINS;
+
+        if (biomeId == null) {
+            return server.registryAccess()
+                    .registryOrThrow(Registries.BIOME)
+                    .getHolderOrThrow(fallbackKey);
+        }
+
+        ResourceKey<Biome> requestedKey = ResourceKey.create(
+                Registries.BIOME,
+                biomeId
+        );
+
+        return server.registryAccess()
+                .registryOrThrow(Registries.BIOME)
+                .getHolder(requestedKey)
+                .orElseGet(() -> server.registryAccess()
+                        .registryOrThrow(Registries.BIOME)
+                        .getHolderOrThrow(fallbackKey));
+    }
     private static LevelStem createStem(
             MinecraftServer server,
             PersonalSpaceData.WorldType type,
-            int groundLevel
+            int groundLevel,
+            String biomeName
     ) {
         PersonalSpaceData.WorldType safeType = type == null
                 ? PersonalSpaceData.WorldType.VOID
@@ -108,9 +139,7 @@ public final class PSDimensions {
 
         Holder<DimensionType> dimensionType = overworld.dimensionTypeRegistration();
 
-        Holder<Biome> biome = server.registryAccess()
-                .registryOrThrow(Registries.BIOME)
-                .getHolderOrThrow(Biomes.PLAINS);
+        Holder<Biome> biome = resolveBiome(server, biomeName);
 
         List<FlatLayerInfo> layers = new ArrayList<>();
 
