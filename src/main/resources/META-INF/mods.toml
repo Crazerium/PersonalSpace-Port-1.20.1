@@ -2,14 +2,42 @@ modLoader="javafml"
 loaderVersion="[47,)"
 license="LGPL-3.0"
 
-[[mixins]]
-config = "personalspace.mixins.json"
-
 [[mods]]
 modId="personalspace"
-version="${file.jarVersion}"
+version="1.0.0"
 displayName="Personal Space"
 authors="eigenraven, Crazerium"
+credits="Original mod by eigenraven. Forge 1.20.1 port by Crazerium."
+displayURL="https://github.com/Crazerium/PersonalSpace-Port-1.20.1/tree/forge-1.20.1-clean"
 description='''
-Personal Space for Forge 1.20.1
+Personal Space adds private configurable dimensions for players.
+
+Requires Infiniverse API.
+
+Create your own personal world, customize its terrain, sky, time, weather,
+world border, and visual style. Designed for modpacks where players need
+safe isolated building spaces without overloading the main world.
+
+Forge 1.20.1 port by Crazerium.
 '''
+
+[[dependencies.personalspace]]
+modId="forge"
+mandatory=true
+versionRange="[47,)"
+ordering="NONE"
+side="BOTH"
+
+[[dependencies.personalspace]]
+modId="minecraft"
+mandatory=true
+versionRange="[1.20.1,1.21)"
+ordering="NONE"
+side="BOTH"
+
+[[dependencies.personalspace]]
+modId="infiniverse"
+mandatory=true
+versionRange="[1.0.0,)"
+ordering="AFTER"
+side="BOTH"
