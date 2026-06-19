@@ -17,6 +17,55 @@ public class PersonalSpaceSettingsScreen extends Screen {
     private int selectedRed;
     private int selectedGreen;
     private int selectedBlue;
+    private static final long[] TIME_VALUES = {
+            1000L,   // morning
+            6000L,   // day
+            12000L,  // evening
+            18000L   // night
+    };
+
+    private static final String[] TIME_NAMES = {
+            "Утро",
+            "День",
+            "Вечер",
+            "Ночь"
+    };
+
+    private Button timeButton;
+    private int getTimeIndex() {
+        long normalized = selectedTime % 24000L;
+        if (normalized < 0L) {
+            normalized += 24000L;
+        }
+
+        int bestIndex = 0;
+        long bestDistance = Long.MAX_VALUE;
+
+        for (int i = 0; i < TIME_VALUES.length; i++) {
+            long distance = Math.abs(TIME_VALUES[i] - normalized);
+            if (distance < bestDistance) {
+                bestDistance = distance;
+                bestIndex = i;
+            }
+        }
+
+        return bestIndex;
+    }
+
+    private Component getTimeButtonText() {
+        return Component.literal("Время: " + TIME_NAMES[getTimeIndex()]);
+    }
+
+    private void cycleTime() {
+        int nextIndex = (getTimeIndex() + 1) % TIME_VALUES.length;
+        selectedTime = (int) TIME_VALUES[nextIndex];
+
+        if (timeButton != null) {
+            timeButton.setMessage(getTimeButtonText());
+        }
+
+        preview();
+    }
 
     public PersonalSpaceSettingsScreen(ResourceLocation levelId) {
         super(Component.literal("Personal Space Settings"));
@@ -37,20 +86,12 @@ public class PersonalSpaceSettingsScreen extends Screen {
         int centerX = width / 2;
         int startY = height / 2 - 80;
 
-        addRenderableWidget(new IntSliderButton(
-                centerX - 120,
-                startY,
-                240,
-                20,
-                0,
-                23999,
-                selectedTime,
-                value -> Component.literal("Время суток: " + value),
-                value -> {
-                    selectedTime = value;
-                    preview();
-                }
-        ));
+        timeButton = Button.builder(
+                getTimeButtonText(),
+                button -> cycleTime()
+        ).bounds(centerX - 120, startY, 240, 20).build();
+
+        addRenderableWidget(timeButton);
 
         addRenderableWidget(new IntSliderButton(
                 centerX - 120,
@@ -96,31 +137,6 @@ public class PersonalSpaceSettingsScreen extends Screen {
                     preview();
                 }
         ));
-
-        addRenderableWidget(Button.builder(
-                Component.literal("День"),
-                button -> {
-                    selectedTime = 6000;
-                    rebuildWidgets();
-                }
-        ).bounds(centerX - 120, startY + 125, 75, 20).build());
-
-        addRenderableWidget(Button.builder(
-                Component.literal("Закат"),
-                button -> {
-                    selectedTime = 12000;
-                    rebuildWidgets();
-                }
-        ).bounds(centerX - 37, startY + 125, 75, 20).build());
-
-        addRenderableWidget(Button.builder(
-                Component.literal("Ночь"),
-                button -> {
-                    selectedTime = 18000;
-                    rebuildWidgets();
-                }
-        ).bounds(centerX + 46, startY + 125, 75, 20).build());
-
         addRenderableWidget(Button.builder(
                 Component.literal("Сохранить"),
                 button -> {

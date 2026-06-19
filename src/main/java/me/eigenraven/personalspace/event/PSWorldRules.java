@@ -4,9 +4,9 @@ import me.eigenraven.personalspace.PersonalSpace;
 import me.eigenraven.personalspace.network.PersonalSpaceSettingsSync;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.entity.Mob;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
+import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.EntityJoinLevelEvent;
 import net.minecraftforge.event.entity.living.MobSpawnEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
@@ -70,5 +70,27 @@ public final class PSWorldRules {
         }
 
         return false;
+    }
+    public static void onServerTick(TickEvent.ServerTickEvent event) {
+        if (event.phase != TickEvent.Phase.END) {
+            return;
+        }
+
+        if (event.getServer().getTickCount() % 20 != 0) {
+            return;
+        }
+
+        for (ServerLevel level : event.getServer().getAllLevels()) {
+            if (!level.dimension().location().getNamespace().equals(PersonalSpace.MODID)) {
+                continue;
+            }
+
+            level.setWeatherParameters(
+                    6000,
+                    0,
+                    false,
+                    false
+            );
+        }
     }
 }

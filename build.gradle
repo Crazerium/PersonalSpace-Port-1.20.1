@@ -27,6 +27,8 @@ minecraft {
             property 'forge.logging.markers', 'REGISTRIES'
             property 'forge.logging.console.level', 'debug'
 
+            args '--mixin.config=personalspace.mixins.json'
+
             mods {
                 "${mod_id}" {
                     source sourceSets.main
@@ -57,4 +59,12 @@ dependencies {
     minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
     implementation fg.deobf("commoble.infiniverse:infiniverse-1.20.1:${infiniverse_version}")
     implementation 'com.google.code.gson:gson:2.10.1'
+}
+
+jar {
+    manifest {
+        attributes([
+                "MixinConfigs": "personalspace.mixins.json"
+        ])
+    }
 }

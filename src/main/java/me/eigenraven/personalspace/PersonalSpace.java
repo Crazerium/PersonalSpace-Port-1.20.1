@@ -77,5 +77,6 @@ public final class PersonalSpace {
         MinecraftForge.EVENT_BUS.addListener(PSWorldRules::onPlayerLoggedIn);
         MinecraftForge.EVENT_BUS.addListener(PSWorldRules::onPlayerChangedDimension);
         MinecraftForge.EVENT_BUS.addListener(PSCommands::register);
+        MinecraftForge.EVENT_BUS.addListener(PSWorldRules::onServerTick);
     }
 }
