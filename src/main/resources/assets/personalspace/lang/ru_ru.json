@@ -58,5 +58,12 @@
 
   "block.personalspace.personal_portal": "Персональный портал",
   "item.personalspace.personal_portal": "Персональный портал",
-  "tooltip.personalspace.unlinked": "Не привязан"
+  "tooltip.personalspace.unlinked": "Не привязан",
+
+  "gui.personalspace.preview.title": "Будет создано",
+  "gui.personalspace.preview.map": "Миникарта",
+  "gui.personalspace.preview.preset": "Пресет: %s",
+  "gui.personalspace.preview.type": "Тип: %s",
+  "gui.personalspace.preview.size": "Размер: %s x %s",
+  "gui.personalspace.preview.gap": "Промежуток: %s"
 }

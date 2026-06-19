@@ -19,6 +19,9 @@ public class PersonalSpaceScreen extends Screen {
     private static final int PANEL_WIDTH = 460;
     private static final int BASE_PANEL_HEIGHT = 225;
     private static final int ADVANCED_PANEL_HEIGHT = 350;
+    private static final int PREVIEW_WIDTH = 190;
+    private static final int PREVIEW_HEIGHT = 210;
+    private static final int PREVIEW_GAP = 10;
 
     private static final int MIN_GROUND_LEVEL = 1;
     private static final int MAX_GROUND_LEVEL = 240;
@@ -846,8 +849,227 @@ public class PersonalSpaceScreen extends Screen {
                     0xFF5555
             );
         }
-
+        renderPresetPreview(graphics, panelX, panelY, panelHeight);
         super.render(graphics, mouseX, mouseY, partialTick);
+    }
+
+    private void renderPresetPreview(GuiGraphics graphics, int panelX, int panelY, int panelHeight) {
+        int previewX = panelX + PANEL_WIDTH + PREVIEW_GAP;
+        int previewY = panelY;
+
+        if (previewX + PREVIEW_WIDTH > width - 6) {
+            return;
+        }
+
+        int previewHeight = Math.min(Math.max(230, panelHeight), height - previewY - 6);
+
+        graphics.fill(previewX, previewY, previewX + PREVIEW_WIDTH, previewY + previewHeight, 0xCC101010);
+        graphics.fill(previewX, previewY, previewX + PREVIEW_WIDTH, previewY + 1, 0xFF666666);
+        graphics.fill(previewX, previewY + previewHeight - 1, previewX + PREVIEW_WIDTH, previewY + previewHeight, 0xFF000000);
+        graphics.fill(previewX, previewY, previewX + 1, previewY + previewHeight, 0xFF666666);
+        graphics.fill(previewX + PREVIEW_WIDTH - 1, previewY, previewX + PREVIEW_WIDTH, previewY + previewHeight, 0xFF000000);
+
+        int textX = previewX + 10;
+        int y = previewY + 10;
+
+        graphics.drawString(font, text("preview.title"), textX, y, 0xFFFFFF, false);
+        y += 14;
+
+        graphics.drawString(font, text("preview.map"), textX, y, 0xA0A0A0, false);
+        y += 10;
+
+        int mapWidth = PREVIEW_WIDTH - 20;
+        int mapHeight = 120;
+
+        renderTopDownMiniMap(graphics, previewX + 10, y, mapWidth, mapHeight);
+
+        y += mapHeight + 8;
+
+        graphics.drawString(font, text("preview.preset", text(selectedPreset.translationKey)), textX, y, 0xA0A0A0, false);
+        y += 12;
+
+        graphics.drawString(font, text("preview.size", boundaryChunksX, boundaryChunksZ), textX, y, 0xA0A0A0, false);
+        y += 12;
+
+        graphics.drawString(font, text("preview.gap", gapChunks), textX, y, 0xA0A0A0, false);
+        y += 12;
+
+        graphics.drawString(font, text("preview.type", worldTypeName(selectedType)), textX, y, 0xA0A0A0, false);
+    }
+
+    private void renderTopDownMiniMap(GuiGraphics graphics, int x, int y, int width, int height) {
+        graphics.fill(x, y, x + width, y + height, 0xFF080808);
+
+        int safeBoundaryX = Math.max(1, boundaryChunksX);
+        int safeBoundaryZ = Math.max(1, boundaryChunksZ);
+        int safeGap = Math.max(0, gapChunks);
+
+        int halfCellsX = safeBoundaryX + safeGap + 1;
+        int halfCellsZ = safeBoundaryZ + safeGap + 1;
+
+        int totalCellsX = halfCellsX * 2 + 1;
+        int totalCellsZ = halfCellsZ * 2 + 1;
+
+        int cellSize = Math.max(3, Math.min(width / totalCellsX, height / totalCellsZ));
+
+        int drawWidth = totalCellsX * cellSize;
+        int drawHeight = totalCellsZ * cellSize;
+
+        int startX = x + (width - drawWidth) / 2;
+        int startY = y + (height - drawHeight) / 2;
+
+        int centerX = halfCellsX;
+        int centerZ = halfCellsZ;
+
+        int boundaryMinX = centerX - (safeBoundaryX + safeGap);
+        int boundaryMaxX = centerX + (safeBoundaryX + safeGap);
+        int boundaryMinZ = centerZ - (safeBoundaryZ + safeGap);
+        int boundaryMaxZ = centerZ + (safeBoundaryZ + safeGap);
+
+        int platformMinX = centerX - safeBoundaryX;
+        int platformMaxX = centerX + safeBoundaryX;
+        int platformMinZ = centerZ - safeBoundaryZ;
+        int platformMaxZ = centerZ + safeBoundaryZ;
+
+        int voidColor = 0xFF111111;
+        int gapColor = 0xFF1C1C1C;
+        int platformColor = getPlatformPreviewColor();
+        int boundaryColor = getBlockPreviewColor(boundaryBlock, 0xFFFF5555);
+        int roadColor = getBlockPreviewColor(roadBlock, 0xFF777777);
+        int markerColor = getBlockPreviewColor(centerMarkerBlock, 0xFFFFFF55);
+        int treeColor = 0xFF2E8B57;
+
+        for (int gridZ = 0; gridZ < totalCellsZ; gridZ++) {
+            for (int gridX = 0; gridX < totalCellsX; gridX++) {
+                int color = voidColor;
+
+                boolean insideBoundary =
+                        gridX >= boundaryMinX && gridX <= boundaryMaxX &&
+                                gridZ >= boundaryMinZ && gridZ <= boundaryMaxZ;
+
+                boolean insidePlatform =
+                        gridX >= platformMinX && gridX <= platformMaxX &&
+                                gridZ >= platformMinZ && gridZ <= platformMaxZ;
+
+                boolean onBoundaryEdge =
+                        insideBoundary &&
+                                (gridX == boundaryMinX || gridX == boundaryMaxX || gridZ == boundaryMinZ || gridZ == boundaryMaxZ);
+
+                boolean onRoad =
+                        (gridX == centerX && insidePlatform) ||
+                                (gridZ == centerZ && insidePlatform);
+
+                if (insideBoundary) {
+                    color = gapColor;
+                }
+
+                if (selectedType == PersonalSpaceData.WorldType.FLAT && insidePlatform) {
+                    color = platformColor;
+                }
+
+                if (onRoad) {
+                    color = roadColor;
+                }
+
+                if (onBoundaryEdge) {
+                    color = boundaryColor;
+                }
+
+                drawMiniMapCell(
+                        graphics,
+                        startX + gridX * cellSize,
+                        startY + gridZ * cellSize,
+                        cellSize,
+                        color
+                );
+            }
+        }
+
+        if (treesEnabled && selectedType == PersonalSpaceData.WorldType.FLAT) {
+            drawPreviewTree(graphics, startX, startY, cellSize, centerX - 1, centerZ - 1, treeColor);
+            drawPreviewTree(graphics, startX, startY, cellSize, centerX + 1, centerZ - 1, treeColor);
+            drawPreviewTree(graphics, startX, startY, cellSize, centerX - 1, centerZ + 1, treeColor);
+            drawPreviewTree(graphics, startX, startY, cellSize, centerX + 1, centerZ + 1, treeColor);
+        }
+
+        if (centerMarkerEnabled) {
+            drawMiniMapCell(
+                    graphics,
+                    startX + centerX * cellSize,
+                    startY + centerZ * cellSize,
+                    cellSize,
+                    markerColor
+            );
+        }
+    }
+
+    private void drawMiniMapCell(GuiGraphics graphics, int x, int y, int size, int color) {
+        graphics.fill(x, y, x + size, y + size, 0xFF000000);
+
+        int inset = size >= 5 ? 1 : 0;
+        graphics.fill(x + inset, y + inset, x + size - inset, y + size - inset, color);
+    }
+
+    private void drawPreviewTree(GuiGraphics graphics, int startX, int startY, int cellSize, int gridX, int gridZ, int color) {
+        int px = startX + gridX * cellSize;
+        int py = startY + gridZ * cellSize;
+        drawMiniMapCell(graphics, px, py, cellSize, color);
+    }
+
+    private int getPlatformPreviewColor() {
+        String topLayerBlock = getTopLayerBlockId();
+
+        if (selectedType == PersonalSpaceData.WorldType.VOID) {
+            return 0xFF111111;
+        }
+
+        return getBlockPreviewColor(topLayerBlock, 0xFF6A8F3A);
+    }
+
+    private String getTopLayerBlockId() {
+        if (layersPreset == null || layersPreset.isBlank()) {
+            return "minecraft:grass_block";
+        }
+
+        String[] layers = layersPreset.split(";");
+        if (layers.length == 0) {
+            return "minecraft:grass_block";
+        }
+
+        String last = layers[layers.length - 1];
+        String[] parts = last.split(",");
+        if (parts.length < 1) {
+            return "minecraft:grass_block";
+        }
+
+        return parts[0].trim();
+    }
+
+    private int getBlockPreviewColor(String blockId, int fallback) {
+        if (blockId == null) {
+            return fallback;
+        }
+
+        String id = blockId.toLowerCase();
+
+        if (id.contains("barrier")) return 0xFFFF5555;
+        if (id.contains("glowstone")) return 0xFFFFD54F;
+        if (id.contains("sea_lantern")) return 0xFFB3E5FC;
+        if (id.contains("end_rod")) return 0xFFF8F8E8;
+        if (id.contains("stone_bricks")) return 0xFF8A8A8A;
+        if (id.contains("smooth_stone")) return 0xFF9A9A9A;
+        if (id.contains("stone")) return 0xFF7A7A7A;
+        if (id.contains("deepslate")) return 0xFF4A4A55;
+        if (id.contains("light_gray_concrete")) return 0xFFBDBDBD;
+        if (id.contains("grass_block")) return 0xFF6FAF45;
+        if (id.contains("dirt")) return 0xFF8B5A2B;
+        if (id.contains("sand")) return 0xFFE7D28B;
+        if (id.contains("snow")) return 0xFFF2F6FF;
+        if (id.contains("water")) return 0xFF3F76E4;
+        if (id.contains("wood")) return 0xFF8B6B3F;
+        if (id.contains("planks")) return 0xFFA67C52;
+
+        return fallback;
     }
 
     @Override

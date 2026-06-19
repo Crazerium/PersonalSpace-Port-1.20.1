@@ -58,5 +58,12 @@
 
   "block.personalspace.personal_portal": "Personal Portal",
   "item.personalspace.personal_portal": "Personal Portal",
-  "tooltip.personalspace.unlinked": "Unlinked"
+  "tooltip.personalspace.unlinked": "Unlinked",
+
+  "gui.personalspace.preview.title": "Will be created",
+  "gui.personalspace.preview.map": "Mini-map",
+  "gui.personalspace.preview.preset": "Preset: %s",
+  "gui.personalspace.preview.type": "Type: %s",
+  "gui.personalspace.preview.size": "Size: %s x %s",
+  "gui.personalspace.preview.gap": "Gap: %s"
 }

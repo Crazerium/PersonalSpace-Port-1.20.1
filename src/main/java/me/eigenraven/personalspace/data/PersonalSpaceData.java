@@ -37,7 +37,7 @@ public class PersonalSpaceData {
     private boolean weatherEnabled = false;
     private boolean cloudsEnabled = false;
 
-    private String layersPreset = "minecraft:bedrock*1;minecraft:dirt*3;minecraft:grass_block*1";
+    private String layersPreset = "minecraft:bedrock,1;minecraft:dirt,3;minecraft:grass_block,1";
     private int boundaryChunksX = 2;
     private int boundaryChunksZ = 2;
     private int gapChunks = 1;
@@ -98,27 +98,27 @@ public class PersonalSpaceData {
         this.cloudsEnabled = cloudsEnabled;
     }
     public int getBoundaryChunksX() {
-        return Math.max(0, Math.min(20, boundaryChunksX));
+        return Math.max(0, Math.min(16, boundaryChunksX));
     }
 
     public void setBoundaryChunksX(int boundaryChunksX) {
-        this.boundaryChunksX = Math.max(0, Math.min(20, boundaryChunksX));
+        this.boundaryChunksX = Math.max(0, Math.min(16, boundaryChunksX));
     }
 
     public int getBoundaryChunksZ() {
-        return Math.max(0, Math.min(20, boundaryChunksZ));
+        return Math.max(0, Math.min(16, boundaryChunksZ));
     }
 
     public void setBoundaryChunksZ(int boundaryChunksZ) {
-        this.boundaryChunksZ = Math.max(0, Math.min(20, boundaryChunksZ));
+        this.boundaryChunksZ = Math.max(0, Math.min(16, boundaryChunksZ));
     }
 
     public int getGapChunks() {
-        return Math.max(0, Math.min(5, gapChunks));
+        return Math.max(0, Math.min(16, gapChunks));
     }
 
     public void setGapChunks(int gapChunks) {
-        this.gapChunks = Math.max(0, Math.min(5, gapChunks));
+        this.gapChunks = Math.max(0, Math.min(16, gapChunks));
     }
 
     public String getBoundaryBlock() {
@@ -173,7 +173,7 @@ public class PersonalSpaceData {
 
     public String getLayersPreset() {
         return layersPreset == null || layersPreset.isBlank()
-                ? "minecraft:bedrock*1;minecraft:dirt*3;minecraft:grass_block*1"
+                ? "minecraft:bedrock,1;minecraft:dirt,3;minecraft:grass_block,1"
                 : layersPreset;
     }
 
@@ -248,9 +248,9 @@ public class PersonalSpaceData {
         if (layersPreset == null) {
             layersPreset = "";
         }
-        boundaryChunksX = Math.max(0, Math.min(20, boundaryChunksX));
-        boundaryChunksZ = Math.max(0, Math.min(20, boundaryChunksZ));
-        gapChunks = Math.max(0, Math.min(5, gapChunks));
+        boundaryChunksX = Math.max(0, Math.min(16, boundaryChunksX));
+        boundaryChunksZ = Math.max(0, Math.min(16, boundaryChunksZ));
+        gapChunks = Math.max(0, Math.min(16, gapChunks));
 
         if (boundaryBlock == null || boundaryBlock.isBlank()) {
             boundaryBlock = "minecraft:yellow_concrete";
