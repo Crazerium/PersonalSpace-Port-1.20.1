@@ -1,6 +1,7 @@
 package me.eigenraven.personalspace.client.gui;
 
 import me.eigenraven.personalspace.PersonalSpace;
+import me.eigenraven.personalspace.network.CreateDimensionPacket;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
@@ -36,165 +37,6 @@ public class PersonalSpaceBlockPickerScreen extends Screen {
 
     private static final int GRID_WIDTH = GRID_COLUMNS * CELL_SIZE;
     private static final int GRID_HEIGHT = GRID_ROWS * CELL_SIZE;
-
-    private static final Set<String> ALLOWED_VANILLA_BLOCKS = Set.of(
-            "minecraft:dirt",
-            "minecraft:coarse_dirt",
-            "minecraft:rooted_dirt",
-            "minecraft:grass_block",
-            "minecraft:podzol",
-            "minecraft:mycelium",
-
-            "minecraft:stone",
-            "minecraft:cobblestone",
-            "minecraft:mossy_cobblestone",
-            "minecraft:smooth_stone",
-            "minecraft:stone_bricks",
-            "minecraft:cracked_stone_bricks",
-            "minecraft:mossy_stone_bricks",
-            "minecraft:chiseled_stone_bricks",
-
-            "minecraft:deepslate",
-            "minecraft:cobbled_deepslate",
-            "minecraft:polished_deepslate",
-            "minecraft:deepslate_bricks",
-            "minecraft:cracked_deepslate_bricks",
-            "minecraft:deepslate_tiles",
-            "minecraft:cracked_deepslate_tiles",
-            "minecraft:chiseled_deepslate",
-
-            "minecraft:andesite",
-            "minecraft:polished_andesite",
-            "minecraft:diorite",
-            "minecraft:polished_diorite",
-            "minecraft:granite",
-            "minecraft:polished_granite",
-            "minecraft:tuff",
-            "minecraft:calcite",
-            "minecraft:dripstone_block",
-
-            "minecraft:sandstone",
-            "minecraft:cut_sandstone",
-            "minecraft:smooth_sandstone",
-            "minecraft:chiseled_sandstone",
-            "minecraft:red_sandstone",
-            "minecraft:cut_red_sandstone",
-            "minecraft:smooth_red_sandstone",
-            "minecraft:chiseled_red_sandstone",
-
-            "minecraft:bricks",
-            "minecraft:mud_bricks",
-            "minecraft:nether_bricks",
-            "minecraft:red_nether_bricks",
-
-            "minecraft:blackstone",
-            "minecraft:polished_blackstone",
-            "minecraft:polished_blackstone_bricks",
-            "minecraft:cracked_polished_blackstone_bricks",
-            "minecraft:chiseled_polished_blackstone",
-            "minecraft:basalt",
-            "minecraft:polished_basalt",
-            "minecraft:smooth_basalt",
-
-            "minecraft:quartz_block",
-            "minecraft:smooth_quartz",
-            "minecraft:quartz_bricks",
-            "minecraft:chiseled_quartz_block",
-
-            "minecraft:oak_planks",
-            "minecraft:spruce_planks",
-            "minecraft:birch_planks",
-            "minecraft:jungle_planks",
-            "minecraft:acacia_planks",
-            "minecraft:dark_oak_planks",
-            "minecraft:mangrove_planks",
-            "minecraft:cherry_planks",
-            "minecraft:bamboo_planks",
-            "minecraft:crimson_planks",
-            "minecraft:warped_planks",
-
-            "minecraft:white_concrete",
-            "minecraft:orange_concrete",
-            "minecraft:magenta_concrete",
-            "minecraft:light_blue_concrete",
-            "minecraft:yellow_concrete",
-            "minecraft:lime_concrete",
-            "minecraft:pink_concrete",
-            "minecraft:gray_concrete",
-            "minecraft:light_gray_concrete",
-            "minecraft:cyan_concrete",
-            "minecraft:purple_concrete",
-            "minecraft:blue_concrete",
-            "minecraft:brown_concrete",
-            "minecraft:green_concrete",
-            "minecraft:red_concrete",
-            "minecraft:black_concrete",
-
-            "minecraft:white_terracotta",
-            "minecraft:orange_terracotta",
-            "minecraft:magenta_terracotta",
-            "minecraft:light_blue_terracotta",
-            "minecraft:yellow_terracotta",
-            "minecraft:lime_terracotta",
-            "minecraft:pink_terracotta",
-            "minecraft:gray_terracotta",
-            "minecraft:light_gray_terracotta",
-            "minecraft:cyan_terracotta",
-            "minecraft:purple_terracotta",
-            "minecraft:blue_terracotta",
-            "minecraft:brown_terracotta",
-            "minecraft:green_terracotta",
-            "minecraft:red_terracotta",
-            "minecraft:black_terracotta",
-
-            "minecraft:glowstone",
-            "minecraft:sea_lantern"
-    );
-
-    private static final Set<String> FORBIDDEN_ID_PARTS = Set.of(
-            "barrier",
-            "command_block",
-            "structure_block",
-            "structure_void",
-            "jigsaw",
-            "light",
-            "spawner",
-            "bedrock",
-            "air",
-            "water",
-            "lava",
-            "fire",
-            "portal",
-            "end_portal",
-            "end_gateway",
-            "candle",
-            "torch",
-            "button",
-            "lever",
-            "pressure_plate",
-            "door",
-            "trapdoor",
-            "fence",
-            "gate",
-            "wall",
-            "pane",
-            "rail",
-            "sign",
-            "banner",
-            "bed",
-            "chest",
-            "barrel",
-            "furnace",
-            "hopper",
-            "dispenser",
-            "dropper",
-            "beacon",
-            "enchanting_table",
-            "anvil",
-            "cauldron",
-            "brewing_stand"
-    );
-
     private final Screen parent;
     private final Component pickerTitle;
     private final String currentBlockId;
@@ -249,8 +91,9 @@ public class PersonalSpaceBlockPickerScreen extends Screen {
     }
 
     private boolean isAllowedBlock(ResourceLocation id, Block block) {
-        String fullId = id.toString().toLowerCase(Locale.ROOT);
-        String namespace = id.getNamespace().toLowerCase(Locale.ROOT);
+        if (!CreateDimensionPacket.isAllowedPersonalSpaceBlock(id)) {
+            return false;
+        }
 
         if (block.asItem() == Items.AIR) {
             return false;
@@ -266,24 +109,7 @@ public class PersonalSpaceBlockPickerScreen extends Screen {
             return false;
         }
 
-        for (String forbidden : FORBIDDEN_ID_PARTS) {
-            if (fullId.contains(forbidden)) {
-                return false;
-            }
-        }
-
-        boolean isVanillaAllowed = ALLOWED_VANILLA_BLOCKS.contains(fullId);
-        boolean isAllowedMod =
-                namespace.equals("chisel")
-                        || namespace.equals("chisel_reborn")
-                        || namespace.equals("chiselreborn")
-                        || namespace.equals("xtones")
-                        || namespace.equals("xtones_reworked")
-                        || namespace.equals("xtonesreworked")
-                        || namespace.equals("xtones_reforged")
-                        || namespace.equals("xtonesreforged");
-
-        if (!isVanillaAllowed && !isAllowedMod) {
+        if (!state.getFluidState().isEmpty()) {
             return false;
         }
 

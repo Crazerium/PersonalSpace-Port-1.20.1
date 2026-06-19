@@ -2,7 +2,6 @@ package me.eigenraven.personalspace.dimension;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import me.eigenraven.personalspace.config.PSConfig;
 import me.eigenraven.personalspace.registry.PSChunkGenerators;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.RegistryAccess;

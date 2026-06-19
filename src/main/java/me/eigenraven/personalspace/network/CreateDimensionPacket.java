@@ -277,7 +277,7 @@ public class CreateDimensionPacket {
 
         String safeCenterMarkerBlock = sanitizeBlockId(
                 msg.centerMarkerBlock,
-                "minecraft:sea_lantern"
+                "minecraft:white_concrete"
         );
 
         ServerLevel sourceLevel = getSourceLevel(msg, player);
@@ -450,11 +450,299 @@ public class CreateDimensionPacket {
             return fallbackId;
         }
 
-        if (!BuiltInRegistries.BLOCK.containsKey(id)) {
+        if (!isAllowedPersonalSpaceBlock(id)) {
             return fallbackId;
         }
 
         return id.toString();
+    }
+
+    public static boolean isAllowedPersonalSpaceBlock(ResourceLocation id) {
+        if (!BuiltInRegistries.BLOCK.containsKey(id)) {
+            return false;
+        }
+
+        String namespace = id.getNamespace();
+        String path = id.getPath();
+        if (isForbiddenMaterialBlockName(path)) {
+            return false;
+        }
+        boolean decorativeModBlock =
+                namespace.equals("chisel")
+                        || namespace.equals("chisel_reborn")
+                        || namespace.equals("chiselreborn")
+                        || namespace.equals("xtones")
+                        || namespace.equals("xtones_reworked")
+                        || namespace.equals("xtonesreworked")
+                        || namespace.equals("xtones_reforged")
+                        || namespace.equals("xtonesreforged");
+
+        if (!namespace.equals("minecraft") && !decorativeModBlock) {
+            return false;
+        }
+
+        if (isForbiddenBlockName(path)) {
+            return false;
+        }
+
+        var block = BuiltInRegistries.BLOCK.get(id);
+        var state = block.defaultBlockState();
+
+        if (state.isAir()) {
+            return false;
+        }
+
+        if (!state.getFluidState().isEmpty()) {
+            return false;
+        }
+        if (state.hasBlockEntity()) {
+            return false;
+        }
+        if (namespace.equals("minecraft")) {
+            return isAllowedVanillaBuildingBlock(path);
+        }
+        return decorativeModBlock;
+    }
+
+
+    private static boolean isForbiddenBlockName(String path) {
+        return path.contains("log")
+                || path.contains("wood")
+                || path.contains("stem")
+                || path.contains("hyphae")
+                || path.contains("planks")
+                || path.contains("leaves")
+                || path.contains("sapling")
+                || path.contains("root")
+                || path.contains("mushroom")
+                || path.contains("fungus")
+                || path.contains("wart")
+                || path.contains("azalea")
+                || path.contains("bamboo")
+                || path.contains("cactus")
+                || path.contains("sugar_cane")
+                || path.contains("kelp")
+                || path.contains("coral")
+                || path.contains("flower")
+                || path.contains("tulip")
+                || path.contains("rose")
+                || path.contains("orchid")
+                || path.contains("allium")
+                || path.contains("daisy")
+                || path.contains("torchflower")
+                || path.contains("pitcher")
+                || path.contains("crop")
+                || path.contains("wheat")
+                || path.contains("carrot")
+                || path.contains("potato")
+                || path.contains("beetroot")
+                || path.contains("melon")
+                || path.contains("pumpkin")
+                || path.contains("ore")
+                || path.contains("raw_")
+                || path.contains("diamond")
+                || path.contains("emerald")
+                || path.contains("gold")
+                || path.contains("iron")
+                || path.contains("copper")
+                || path.contains("coal")
+                || path.contains("lapis")
+                || path.contains("redstone")
+                || path.contains("quartz")
+                || path.contains("netherite")
+                || path.contains("ancient_debris")
+                || path.contains("amethyst")
+                || path.contains("beacon")
+                || path.contains("barrier")
+                || path.contains("bedrock")
+                || path.contains("command")
+                || path.contains("structure")
+                || path.contains("jigsaw")
+                || path.contains("spawner")
+                || path.contains("chest")
+                || path.contains("barrel")
+                || path.contains("shulker")
+                || path.contains("furnace")
+                || path.contains("blast_furnace")
+                || path.contains("smoker")
+                || path.contains("hopper")
+                || path.contains("dispenser")
+                || path.contains("dropper")
+                || path.contains("piston")
+                || path.contains("observer")
+                || path.contains("comparator")
+                || path.contains("repeater")
+                || path.contains("daylight_detector")
+                || path.contains("enchanting")
+                || path.contains("anvil")
+                || path.contains("grindstone")
+                || path.contains("smithing")
+                || path.contains("brewing")
+                || path.contains("cauldron")
+                || path.contains("bell")
+                || path.contains("lectern")
+                || path.contains("portal")
+                || path.contains("end_gateway")
+                || path.contains("end_portal")
+                || path.contains("dragon_egg")
+                || path.contains("water")
+                || path.contains("lava")
+                || path.contains("ice")
+                || path.contains("snow")
+                || path.contains("powder_snow")
+                || path.contains("fire")
+                || path.contains("candle")
+                || path.contains("torch")
+                || path.contains("lantern")
+                || path.contains("sea_lantern")
+                || path.contains("glowstone")
+                || path.contains("soul")
+                || path.contains("skull")
+                || path.contains("end_stone")
+                || path.contains("endstone")
+                || path.contains("wool")
+                || path.contains("netherrack")
+                || path.contains("nether_brick")
+                || path.contains("netherbrick")
+                || path.contains("nether_bricks")
+                || path.contains("head");
+    }
+
+    private static boolean isForbiddenMaterialBlockName(String path) {
+        return path.contains("quartz")
+                || path.contains("iron")
+                || path.contains("gold")
+                || path.contains("copper")
+                || path.contains("diamond")
+                || path.contains("emerald")
+                || path.contains("lapis")
+                || path.contains("redstone")
+                || path.contains("coal")
+                || path.contains("netherite")
+                || path.contains("ancient_debris")
+                || path.contains("amethyst")
+                || path.contains("raw_")
+                || path.contains("ore")
+                || path.contains("metal")
+                || path.contains("steel")
+                || path.contains("bronze")
+                || path.contains("tin")
+                || path.contains("lead")
+                || path.contains("silver")
+                || path.contains("nickel")
+                || path.contains("uranium")
+                || path.contains("osmium")
+                || path.contains("aluminum")
+                || path.contains("aluminium");
+    }
+
+
+    private static boolean isAllowedVanillaBuildingBlock(String path) {
+        return path.equals("stone")
+                || path.equals("smooth_stone")
+                || path.equals("cobblestone")
+                || path.equals("mossy_cobblestone")
+                || path.equals("stone_bricks")
+                || path.equals("mossy_stone_bricks")
+                || path.equals("cracked_stone_bricks")
+                || path.equals("chiseled_stone_bricks")
+
+                || path.equals("granite")
+                || path.equals("polished_granite")
+                || path.equals("diorite")
+                || path.equals("polished_diorite")
+                || path.equals("andesite")
+                || path.equals("polished_andesite")
+
+                || path.equals("deepslate")
+                || path.equals("cobbled_deepslate")
+                || path.equals("polished_deepslate")
+                || path.equals("deepslate_bricks")
+                || path.equals("cracked_deepslate_bricks")
+                || path.equals("deepslate_tiles")
+                || path.equals("cracked_deepslate_tiles")
+                || path.equals("chiseled_deepslate")
+
+                || path.equals("tuff")
+                || path.equals("calcite")
+                || path.equals("dripstone_block")
+
+                || path.equals("basalt")
+                || path.equals("smooth_basalt")
+                || path.equals("polished_basalt")
+                || path.equals("blackstone")
+                || path.equals("polished_blackstone")
+                || path.equals("polished_blackstone_bricks")
+                || path.equals("cracked_polished_blackstone_bricks")
+                || path.equals("chiseled_polished_blackstone")
+                || path.equals("purpur_block")
+                || path.equals("purpur_pillar")
+                || path.equals("sandstone")
+                || path.equals("smooth_sandstone")
+                || path.equals("cut_sandstone")
+                || path.equals("chiseled_sandstone")
+                || path.equals("red_sandstone")
+                || path.equals("smooth_red_sandstone")
+                || path.equals("cut_red_sandstone")
+                || path.equals("chiseled_red_sandstone")
+
+                || path.equals("bricks")
+                || path.equals("mud_bricks")
+                || path.equals("packed_mud")
+
+                || path.equals("dirt")
+                || path.equals("coarse_dirt")
+                || path.equals("rooted_dirt")
+                || path.equals("grass_block")
+                || path.equals("podzol")
+                || path.equals("mycelium")
+                || path.equals("mud")
+                || path.equals("clay")
+                || path.equals("gravel")
+                || path.equals("sand")
+                || path.equals("red_sand")
+
+                || path.equals("glass")
+                || path.equals("tinted_glass")
+                || path.endsWith("_stained_glass")
+
+                || path.equals("terracotta")
+                || path.endsWith("_terracotta")
+                || path.endsWith("_glazed_terracotta")
+
+                || path.equals("white_concrete")
+                || path.equals("orange_concrete")
+                || path.equals("magenta_concrete")
+                || path.equals("light_blue_concrete")
+                || path.equals("yellow_concrete")
+                || path.equals("lime_concrete")
+                || path.equals("pink_concrete")
+                || path.equals("gray_concrete")
+                || path.equals("light_gray_concrete")
+                || path.equals("cyan_concrete")
+                || path.equals("purple_concrete")
+                || path.equals("blue_concrete")
+                || path.equals("brown_concrete")
+                || path.equals("green_concrete")
+                || path.equals("red_concrete")
+                || path.equals("black_concrete")
+
+                || path.equals("white_concrete_powder")
+                || path.equals("orange_concrete_powder")
+                || path.equals("magenta_concrete_powder")
+                || path.equals("light_blue_concrete_powder")
+                || path.equals("yellow_concrete_powder")
+                || path.equals("lime_concrete_powder")
+                || path.equals("pink_concrete_powder")
+                || path.equals("gray_concrete_powder")
+                || path.equals("light_gray_concrete_powder")
+                || path.equals("cyan_concrete_powder")
+                || path.equals("purple_concrete_powder")
+                || path.equals("blue_concrete_powder")
+                || path.equals("brown_concrete_powder")
+                || path.equals("green_concrete_powder")
+                || path.equals("red_concrete_powder")
+                || path.equals("black_concrete_powder");
     }
 
     private static String sanitizeLayersPreset(

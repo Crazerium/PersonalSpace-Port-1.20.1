@@ -44,7 +44,7 @@ public class PersonalSpaceData {
 
     private String boundaryBlock = "minecraft:yellow_concrete";
     private String roadBlock = "minecraft:black_concrete";
-    private String centerMarkerBlock = "minecraft:beacon";
+    private String centerMarkerBlock = "minecraft:white_concrete";
 
     private boolean centerMarkerEnabled = true;
     private boolean repeatingGridEnabled = false;

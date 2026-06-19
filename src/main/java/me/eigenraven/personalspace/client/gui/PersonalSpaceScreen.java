@@ -371,7 +371,7 @@ public class PersonalSpaceScreen extends Screen {
 
                 boundaryBlock = "minecraft:barrier";
                 roadBlock = "minecraft:light_gray_concrete";
-                centerMarkerBlock = "minecraft:sea_lantern";
+                centerMarkerBlock = "minecraft:white_concrete";
 
                 centerMarkerEnabled = true;
                 repeatingGridEnabled = false;
@@ -841,7 +841,6 @@ public class PersonalSpaceScreen extends Screen {
             createButton.active = hasValidHeight();
         }
     }
-
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         renderBackground(graphics);

@@ -100,5 +100,6 @@
   "gui.personalspace.block_picker.page": "Страница %s / %s",
   "gui.personalspace.block_picker.button": "%s: %s",
   "gui.personalspace.preset.road_grid": "Сетка дорог",
-  "message.personalspace.boundary_limit": "Достигнут предел личного измерения."
+  "message.personalspace.boundary_limit": "Достигнут предел личного измерения.",
+  "tooltip.personalspace.target": "Связан"
 }
