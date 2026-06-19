@@ -2,6 +2,7 @@ package me.eigenraven.personalspace;
 
 import com.mojang.logging.LogUtils;
 import me.eigenraven.personalspace.command.PSCommands;
+import me.eigenraven.personalspace.config.PSConfig;
 import me.eigenraven.personalspace.event.PSWorldRules;
 import me.eigenraven.personalspace.network.CreateDimensionPacket;
 import me.eigenraven.personalspace.network.SyncPersonalSpaceSettingsPacket;
@@ -14,7 +15,9 @@ import me.eigenraven.personalspace.registry.PSItems;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.eventbus.api.IEventBus;
+import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.network.NetworkRegistry;
 import net.minecraftforge.network.simple.SimpleChannel;
@@ -36,11 +39,17 @@ public final class PersonalSpace {
 
     public PersonalSpace() {
         IEventBus modBus = FMLJavaModLoadingContext.get().getModEventBus();
+        ModLoadingContext.get().registerConfig(
+                ModConfig.Type.SERVER,
+                PSConfig.SERVER_SPEC,
+                "personalspace-server.toml"
+        );
 
         PSBlocks.BLOCKS.register(modBus);
         PSItems.ITEMS.register(modBus);
         PSBlockEntities.BLOCK_ENTITIES.register(modBus);
         PSChunkGenerators.CHUNK_GENERATORS.register(modBus);
+
 
         CHANNEL.registerMessage(
                 0,

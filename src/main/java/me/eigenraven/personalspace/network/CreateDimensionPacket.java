@@ -299,7 +299,10 @@ public class CreateDimensionPacket {
             return;
         }
 
-        ResourceKey<Level> newLevelKey = PSDimensions.randomPersonalKey();
+        ResourceKey<Level> newLevelKey = PSDimensions.personalKeyForPlayer(
+                server,
+                player.getGameProfile().getName()
+        );
 
         PersonalSpaceData data = new PersonalSpaceData();
 

@@ -45,6 +45,85 @@ public final class PSDimensions {
         return key(id);
     }
 
+    public static ResourceKey<Level> personalKeyForPlayer(MinecraftServer server, String playerName) {
+        String safeName = sanitizeDimensionName(playerName);
+
+        if (safeName.isBlank()) {
+            return randomPersonalKey();
+        }
+
+        ResourceKey<Level> baseKey = ResourceKey.create(
+                Registries.DIMENSION,
+                new ResourceLocation(PersonalSpace.MODID, "ps_" + safeName)
+        );
+
+        if (server.getLevel(baseKey) == null) {
+            return baseKey;
+        }
+
+        for (int index = 2; index < 10_000; index++) {
+            ResourceKey<Level> candidate = ResourceKey.create(
+                    Registries.DIMENSION,
+                    new ResourceLocation(PersonalSpace.MODID, "ps_" + safeName + "_" + index)
+            );
+
+            if (server.getLevel(candidate) == null) {
+                return candidate;
+            }
+        }
+
+        return randomPersonalKey();
+    }
+
+
+    private static String sanitizeDimensionName(String rawName) {
+        if (rawName == null) {
+            return "";
+        }
+
+        String lowerName = rawName
+                .trim()
+                .toLowerCase(Locale.ROOT);
+
+        StringBuilder result = new StringBuilder();
+
+        for (int i = 0; i < lowerName.length(); i++) {
+            char c = lowerName.charAt(i);
+
+            if ((c >= 'a' && c <= 'z')
+                    || (c >= '0' && c <= '9')
+                    || c == '_'
+                    || c == '-'
+                    || c == '.') {
+                result.append(c);
+            } else {
+                result.append('_');
+            }
+        }
+
+        while (result.toString().contains("__")) {
+            int index = result.indexOf("__");
+            result.replace(index, index + 2, "_");
+        }
+
+        String safe = result.toString();
+
+        while (safe.startsWith("_")) {
+            safe = safe.substring(1);
+        }
+
+        while (safe.endsWith("_")) {
+            safe = safe.substring(0, safe.length() - 1);
+        }
+
+        if (safe.length() > 48) {
+            safe = safe.substring(0, 48);
+        }
+
+        return safe;
+    }
+
+
     public static ResourceKey<Level> key(String idOrPath) {
         ResourceLocation location;
 

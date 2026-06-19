@@ -99,5 +99,6 @@
   "gui.personalspace.block_picker.next": "Next",
   "gui.personalspace.block_picker.page": "Page %s / %s",
   "gui.personalspace.block_picker.button": "%s: %s",
-  "gui.personalspace.preset.road_grid": "Road Grid"
+  "gui.personalspace.preset.road_grid": "Road Grid",
+  "message.personalspace.boundary_limit": "Personal Space boundary reached."
 }
