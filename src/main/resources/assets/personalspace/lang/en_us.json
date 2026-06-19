@@ -1,0 +1,103 @@
+{
+  "gui.personalspace.create": "Personal Dimension",
+  "gui.personalspace.subtitle": "Configure parameters before creation",
+
+  "gui.personalspace.world_type": "World Type",
+  "gui.personalspace.world_type.void": "Void World",
+  "gui.personalspace.world_type.flat": "Flat World",
+  "gui.personalspace.world_type.tooltip": "Void World has no ground. Flat World creates a platform at the selected height.",
+
+  "gui.personalspace.preset": "Preset",
+  "gui.personalspace.preset.void": "Void",
+  "gui.personalspace.preset.flat": "Flat World",
+  "gui.personalspace.preset.tech": "Tech Platform",
+  "gui.personalspace.preset.night_void": "Night Void",
+  "gui.personalspace.preset.tooltip": "Quickly applies world type, time, sky, biome, and basic settings.",
+
+  "gui.personalspace.ground_height": "Ground Height",
+  "gui.personalspace.height.tooltip": "Allowed: %s–%s. The portal will appear 1 block higher.",
+  "gui.personalspace.portal_y": "Portal will appear at Y=%s",
+  "gui.personalspace.height_error": "Height must be from %s to %s",
+
+  "gui.personalspace.advanced.hidden": "Advanced settings: hidden",
+  "gui.personalspace.advanced.open": "Advanced settings: open",
+  "gui.personalspace.blocks_and_boundaries": "Blocks and Boundaries",
+  "gui.personalspace.back_to_world": "Back to World",
+
+  "gui.personalspace.create_and_teleport": "Create and Teleport",
+
+  "gui.personalspace.time": "Time",
+  "gui.personalspace.time.tooltip": "Time of day: 0–24000",
+  "gui.personalspace.star_brightness": "Star Brightness",
+  "gui.personalspace.star_brightness.tooltip": "Star brightness: 0.0–1.0",
+  "gui.personalspace.biome": "Biome",
+  "gui.personalspace.biome.tooltip": "Example: minecraft:plains",
+
+  "gui.personalspace.sky_red": "R",
+  "gui.personalspace.sky_green": "G",
+  "gui.personalspace.sky_blue": "B",
+  "gui.personalspace.color.tooltip": "%s: 0–255",
+
+  "gui.personalspace.trees": "Trees",
+  "gui.personalspace.foliage": "Foliage",
+  "gui.personalspace.weather": "Weather",
+  "gui.personalspace.clouds": "Clouds",
+  "gui.personalspace.center_marker": "Center Marker",
+
+  "gui.personalspace.layers": "World Layers",
+  "gui.personalspace.layers.tooltip": "Example: minecraft:bedrock,1;minecraft:dirt,2;minecraft:grass_block,1",
+  "gui.personalspace.boundary_block": "Boundary Block",
+  "gui.personalspace.road_block": "Road Block",
+  "gui.personalspace.center_block": "Center Block",
+  "gui.personalspace.block.tooltip": "%s, example: minecraft:stone",
+
+  "gui.personalspace.boundary_x": "X",
+  "gui.personalspace.boundary_z": "Z",
+  "gui.personalspace.gap": "Gap",
+  "gui.personalspace.int.tooltip": "%s: %s–%s",
+
+  "block.personalspace.personal_portal": "Personal Portal",
+  "item.personalspace.personal_portal": "Personal Portal",
+  "tooltip.personalspace.unlinked": "Unlinked",
+
+  "gui.personalspace.preview.title": "Will be created",
+  "gui.personalspace.preview.map": "Mini-map",
+  "gui.personalspace.preview.preset": "Preset: %s",
+  "gui.personalspace.preview.type": "Type: %s",
+  "gui.personalspace.preview.size": "Size: %s x %s",
+  "gui.personalspace.preview.gap": "Gap: %s",
+
+  "gui.personalspace.settings.title": "Personal Space Settings",
+  "gui.personalspace.settings.subtitle": "Only visual settings can be changed here",
+
+  "gui.personalspace.settings.time": "Time: %s",
+  "gui.personalspace.settings.time.morning": "Morning",
+  "gui.personalspace.settings.time.day": "Day",
+  "gui.personalspace.settings.time.evening": "Evening",
+  "gui.personalspace.settings.time.night": "Night",
+
+  "gui.personalspace.settings.sky_r": "Sky R: %s",
+  "gui.personalspace.settings.sky_g": "Sky G: %s",
+  "gui.personalspace.settings.sky_b": "Sky B: %s",
+  "gui.personalspace.settings.star_brightness": "Star brightness: %s",
+
+  "gui.personalspace.settings.weather": "Weather: %s",
+  "gui.personalspace.settings.clouds": "Clouds: %s",
+
+  "gui.personalspace.settings.save": "Save",
+  "gui.personalspace.settings.cancel": "Cancel",
+
+  "gui.personalspace.settings.worldgen_locked": "World generation is locked after creation",
+  "gui.personalspace.settings.locked_biome": "Biome: %s",
+
+  "gui.personalspace.on": "ON",
+  "gui.personalspace.off": "OFF",
+  "gui.personalspace.block_picker.search": "Search block...",
+  "gui.personalspace.block_picker.no_results": "No available blocks",
+  "gui.personalspace.block_picker.current": "Current block: %s",
+  "gui.personalspace.block_picker.previous": "Previous",
+  "gui.personalspace.block_picker.next": "Next",
+  "gui.personalspace.block_picker.page": "Page %s / %s",
+  "gui.personalspace.block_picker.button": "%s: %s",
+  "gui.personalspace.preset.road_grid": "Road Grid"
+}
