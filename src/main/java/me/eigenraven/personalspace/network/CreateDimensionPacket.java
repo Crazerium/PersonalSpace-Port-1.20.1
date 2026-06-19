@@ -293,6 +293,9 @@ public class CreateDimensionPacket {
         PersonalSpaceData.save(newLevel, data);
 
         newLevel.setDayTime(data.getTimeOfDay());
+        if (!data.isWeatherEnabled()) {
+            newLevel.setWeatherParameters(6000, 0, false, false);
+        }
 
         int groundY = data.getGroundLevel();
         BlockPos innerPortalPos = new BlockPos(7, groundY + 1, 7);

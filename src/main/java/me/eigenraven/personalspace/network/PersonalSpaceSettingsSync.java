@@ -16,6 +16,9 @@ public final class PersonalSpaceSettingsSync {
         }
         PersonalSpaceData data = PersonalSpaceData.load(level);
         level.setDayTime(data.getTimeOfDay());
+        if (!data.isWeatherEnabled()) {
+            level.setWeatherParameters(6000, 0, false, false);
+        }
         PersonalSpace.CHANNEL.send(
                 PacketDistributor.PLAYER.with(() -> player),
                 new SyncPersonalSpaceSettingsPacket(

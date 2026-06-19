@@ -65,5 +65,31 @@
   "gui.personalspace.preview.preset": "Пресет: %s",
   "gui.personalspace.preview.type": "Тип: %s",
   "gui.personalspace.preview.size": "Размер: %s x %s",
-  "gui.personalspace.preview.gap": "Промежуток: %s"
+  "gui.personalspace.preview.gap": "Промежуток: %s",
+
+  "gui.personalspace.settings.title": "Настройки Personal Space",
+  "gui.personalspace.settings.subtitle": "Здесь меняются только визуальные настройки",
+
+  "gui.personalspace.settings.time": "Время: %s",
+  "gui.personalspace.settings.time.morning": "Утро",
+  "gui.personalspace.settings.time.day": "День",
+  "gui.personalspace.settings.time.evening": "Вечер",
+  "gui.personalspace.settings.time.night": "Ночь",
+
+  "gui.personalspace.settings.sky_r": "Небо R: %s",
+  "gui.personalspace.settings.sky_g": "Небо G: %s",
+  "gui.personalspace.settings.sky_b": "Небо B: %s",
+  "gui.personalspace.settings.star_brightness": "Яркость звёзд: %s",
+
+  "gui.personalspace.settings.weather": "Погода: %s",
+  "gui.personalspace.settings.clouds": "Облака: %s",
+
+  "gui.personalspace.settings.save": "Сохранить",
+  "gui.personalspace.settings.cancel": "Отмена",
+
+  "gui.personalspace.settings.worldgen_locked": "Генерация мира заблокирована после создания",
+  "gui.personalspace.settings.locked_biome": "Биом: %s",
+
+  "gui.personalspace.on": "ВКЛ",
+  "gui.personalspace.off": "ВЫКЛ"
 }

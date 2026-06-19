@@ -10,6 +10,8 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 
+import java.util.Locale;
+
 public class PersonalSpaceSettingsScreen extends Screen {
     private final ResourceLocation levelId;
 
@@ -37,15 +39,28 @@ public class PersonalSpaceSettingsScreen extends Screen {
             18000L
     };
 
-    private static final String[] TIME_NAMES = {
-            "Утро",
-            "День",
-            "Вечер",
-            "Ночь"
+    private enum TimePreset {
+        MORNING("settings.time.morning"),
+        DAY("settings.time.day"),
+        EVENING("settings.time.evening"),
+        NIGHT("settings.time.night");
+
+        private final String key;
+
+        TimePreset(String key) {
+            this.key = key;
+        }
+    }
+
+    private static final TimePreset[] TIME_PRESETS = {
+            TimePreset.MORNING,
+            TimePreset.DAY,
+            TimePreset.EVENING,
+            TimePreset.NIGHT
     };
 
     public PersonalSpaceSettingsScreen(ResourceLocation levelId) {
-        super(Component.literal("Personal Space Settings"));
+        super(text("settings.title"));
         this.levelId = levelId;
 
         ClientPersonalSpaceSettings.Settings settings = ClientPersonalSpaceSettings.get(levelId);
@@ -64,6 +79,18 @@ public class PersonalSpaceSettingsScreen extends Screen {
         this.selectedCloudsEnabled = settings.cloudsEnabled();
 
         this.lockedLayersPreset = settings.layersPreset();
+    }
+
+    private static Component text(String key) {
+        return Component.translatable("gui.personalspace." + key);
+    }
+
+    private static Component text(String key, Object... args) {
+        return Component.translatable("gui.personalspace." + key, args);
+    }
+
+    private static Component onOff(boolean value) {
+        return value ? text("on") : text("off");
     }
 
     @Override
@@ -88,7 +115,7 @@ public class PersonalSpaceSettingsScreen extends Screen {
                 0,
                 255,
                 selectedRed,
-                value -> Component.literal("Sky R: " + value),
+                value -> text("settings.sky_r", value),
                 value -> {
                     selectedRed = value;
                     preview();
@@ -103,7 +130,7 @@ public class PersonalSpaceSettingsScreen extends Screen {
                 0,
                 255,
                 selectedGreen,
-                value -> Component.literal("Sky G: " + value),
+                value -> text("settings.sky_g", value),
                 value -> {
                     selectedGreen = value;
                     preview();
@@ -118,7 +145,7 @@ public class PersonalSpaceSettingsScreen extends Screen {
                 0,
                 255,
                 selectedBlue,
-                value -> Component.literal("Sky B: " + value),
+                value -> text("settings.sky_b", value),
                 value -> {
                     selectedBlue = value;
                     preview();
@@ -133,7 +160,10 @@ public class PersonalSpaceSettingsScreen extends Screen {
                 0,
                 100,
                 Math.round(selectedStarBrightness * 100.0F),
-                value -> Component.literal("Star brightness: " + String.format("%.2f", value / 100.0F)),
+                value -> text(
+                        "settings.star_brightness",
+                        String.format(Locale.ROOT, "%.2f", value / 100.0F)
+                ),
                 value -> {
                     selectedStarBrightness = value / 100.0F;
                     preview();
@@ -141,19 +171,19 @@ public class PersonalSpaceSettingsScreen extends Screen {
         ));
 
         weatherButton = Button.builder(
-                toggleText("Weather", selectedWeatherEnabled),
+                text("settings.weather", onOff(selectedWeatherEnabled)),
                 button -> {
                     selectedWeatherEnabled = !selectedWeatherEnabled;
-                    button.setMessage(toggleText("Weather", selectedWeatherEnabled));
+                    button.setMessage(text("settings.weather", onOff(selectedWeatherEnabled)));
                     preview();
                 }
         ).bounds(centerX - 120, startY + 155, 115, 20).build();
 
         cloudsButton = Button.builder(
-                toggleText("Clouds", selectedCloudsEnabled),
+                text("settings.clouds", onOff(selectedCloudsEnabled)),
                 button -> {
                     selectedCloudsEnabled = !selectedCloudsEnabled;
-                    button.setMessage(toggleText("Clouds", selectedCloudsEnabled));
+                    button.setMessage(text("settings.clouds", onOff(selectedCloudsEnabled)));
                     preview();
                 }
         ).bounds(centerX + 5, startY + 155, 115, 20).build();
@@ -162,7 +192,7 @@ public class PersonalSpaceSettingsScreen extends Screen {
         addRenderableWidget(cloudsButton);
 
         addRenderableWidget(Button.builder(
-                Component.literal("Сохранить"),
+                text("settings.save"),
                 button -> {
                     PersonalSpace.CHANNEL.sendToServer(new UpdatePersonalSpaceSettingsPacket(
                             selectedTime,
@@ -183,7 +213,7 @@ public class PersonalSpaceSettingsScreen extends Screen {
         ).bounds(centerX - 120, startY + 190, 115, 20).build());
 
         addRenderableWidget(Button.builder(
-                Component.literal("Отмена"),
+                text("settings.cancel"),
                 button -> Minecraft.getInstance().setScreen(null)
         ).bounds(centerX + 5, startY + 190, 115, 20).build());
 
@@ -230,7 +260,7 @@ public class PersonalSpaceSettingsScreen extends Screen {
     }
 
     private Component getTimeButtonText() {
-        return Component.literal("Время: " + TIME_NAMES[getTimeIndex()]);
+        return text("settings.time", text(TIME_PRESETS[getTimeIndex()].key));
     }
 
     private void cycleTime() {
@@ -244,17 +274,13 @@ public class PersonalSpaceSettingsScreen extends Screen {
         preview();
     }
 
-    private Component toggleText(String name, boolean value) {
-        return Component.literal(name + ": " + (value ? "ON" : "OFF"));
-    }
-
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         renderBackground(graphics);
 
         graphics.drawCenteredString(
                 font,
-                Component.literal("Настройки Personal Space"),
+                text("settings.title"),
                 width / 2,
                 height / 2 - 110,
                 0xFFFFFF
@@ -262,7 +288,7 @@ public class PersonalSpaceSettingsScreen extends Screen {
 
         graphics.drawCenteredString(
                 font,
-                Component.literal("Здесь меняются только визуальные настройки"),
+                text("settings.subtitle"),
                 width / 2,
                 height / 2 - 96,
                 0xAAAAAA
@@ -270,7 +296,7 @@ public class PersonalSpaceSettingsScreen extends Screen {
 
         graphics.drawString(
                 font,
-                Component.literal("Worldgen locked after creation"),
+                text("settings.worldgen_locked"),
                 width / 2 - 120,
                 height / 2 + 112,
                 0x777777,
@@ -279,7 +305,7 @@ public class PersonalSpaceSettingsScreen extends Screen {
 
         graphics.drawString(
                 font,
-                Component.literal("Biome: " + lockedBiomeName),
+                text("settings.locked_biome", lockedBiomeName),
                 width / 2 - 120,
                 height / 2 + 124,
                 0x777777,

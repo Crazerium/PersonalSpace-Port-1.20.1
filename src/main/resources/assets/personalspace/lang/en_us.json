@@ -65,5 +65,31 @@
   "gui.personalspace.preview.preset": "Preset: %s",
   "gui.personalspace.preview.type": "Type: %s",
   "gui.personalspace.preview.size": "Size: %s x %s",
-  "gui.personalspace.preview.gap": "Gap: %s"
+  "gui.personalspace.preview.gap": "Gap: %s",
+
+  "gui.personalspace.settings.title": "Personal Space Settings",
+  "gui.personalspace.settings.subtitle": "Only visual settings can be changed here",
+
+  "gui.personalspace.settings.time": "Time: %s",
+  "gui.personalspace.settings.time.morning": "Morning",
+  "gui.personalspace.settings.time.day": "Day",
+  "gui.personalspace.settings.time.evening": "Evening",
+  "gui.personalspace.settings.time.night": "Night",
+
+  "gui.personalspace.settings.sky_r": "Sky R: %s",
+  "gui.personalspace.settings.sky_g": "Sky G: %s",
+  "gui.personalspace.settings.sky_b": "Sky B: %s",
+  "gui.personalspace.settings.star_brightness": "Star brightness: %s",
+
+  "gui.personalspace.settings.weather": "Weather: %s",
+  "gui.personalspace.settings.clouds": "Clouds: %s",
+
+  "gui.personalspace.settings.save": "Save",
+  "gui.personalspace.settings.cancel": "Cancel",
+
+  "gui.personalspace.settings.worldgen_locked": "World generation is locked after creation",
+  "gui.personalspace.settings.locked_biome": "Biome: %s",
+
+  "gui.personalspace.on": "ON",
+  "gui.personalspace.off": "OFF"
 }

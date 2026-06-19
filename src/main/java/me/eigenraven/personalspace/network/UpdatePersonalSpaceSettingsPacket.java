@@ -128,12 +128,9 @@ public class UpdatePersonalSpaceSettingsPacket {
             level.setDayTime(data.getTimeOfDay());
 
             if (!data.isWeatherEnabled()) {
-                level.setWeatherParameters(
-                        6000,
-                        0,
-                        false,
-                        false
-                );
+                level.setRainLevel(0.0F);
+                level.setThunderLevel(0.0F);
+                level.setWeatherParameters(6000, 0, false, false);
             }
 
             PersonalSpaceSettingsSync.syncToPlayersIn(level);

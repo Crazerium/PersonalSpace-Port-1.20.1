@@ -554,5 +554,8 @@ public final class PSDimensions {
 
         PersonalSpaceData data = PersonalSpaceData.load(level);
         level.setDayTime(data.getTimeOfDay());
+        if (!data.isWeatherEnabled()) {
+            level.setWeatherParameters(6000, 0, false, false);
+        }
     }
 }
