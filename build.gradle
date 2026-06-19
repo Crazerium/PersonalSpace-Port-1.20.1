@@ -27,9 +27,6 @@ minecraft {
 
             property 'forge.logging.markers', 'REGISTRIES'
             property 'forge.logging.console.level', 'debug'
-
-            args '--mixin.config=personalspace.mixins.json'
-
             mods {
                 "${mod_id}" {
                     source sourceSets.main
@@ -54,12 +51,26 @@ repositories {
         name = 'Commoble Maven'
         url = 'https://maven.commoble.net/'
     }
+
+    maven {
+        name = 'CurseMaven'
+        url = 'https://cursemaven.com'
+        content {
+            includeGroup 'curse.maven'
+        }
+    }
 }
 
 dependencies {
     minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
+
     implementation fg.deobf("commoble.infiniverse:infiniverse-1.20.1:${infiniverse_version}")
     implementation 'com.google.code.gson:gson:2.10.1'
+    runtimeOnly fg.deobf("curse.maven:architectury-api-419699:5137938")
+    runtimeOnly fg.deobf("curse.maven:cryonicconfig-1208896:6247797")
+    runtimeOnly fg.deobf("curse.maven:chisel-reborn-551763:6266130")
+    runtimeOnly fg.deobf("curse.maven:xtones-reworked-694231:5907303")
+    runtimeOnly fg.deobf("curse.maven:gregtechceu-modern-890405:7917773")
 
     annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
 }

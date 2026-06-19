@@ -218,10 +218,20 @@ public class CreateDimensionPacket {
             return;
         }
 
+        if (server == null) {
+            return;
+        }
+
+        if (!isValidChunkValue(msg.boundaryChunksX)
+                || !isValidChunkValue(msg.boundaryChunksZ)
+                || !isValidChunkValue(msg.gapChunks)) {
+            player.sendSystemMessage(Component.literal("Boundary and gap values must be from 0 to 16."));
+            return;
+        }
+
         PersonalSpaceData.WorldType safeType = msg.type == null
                 ? PersonalSpaceData.WorldType.VOID
                 : msg.type;
-
         int safeHeight = net.minecraft.util.Mth.clamp(msg.height, 1, 240);
 
         long safeTimeOfDay = Math.max(0L, Math.min(24000L, msg.timeOfDay));
@@ -420,6 +430,11 @@ public class CreateDimensionPacket {
         PersonalSpaceSettingsSync.syncTo(player, newLevel);
     }
 
+    private static boolean isValidChunkValue(int value) {
+        return value >= 0 && value <= 16;
+    }
+
+
     private static String sanitizeBiomeId(
             MinecraftServer server,
             String rawId,
@@ -523,6 +538,7 @@ public class CreateDimensionPacket {
                 || path.contains("sugar_cane")
                 || path.contains("kelp")
                 || path.contains("coral")
+                || path.contains("prismarine")
                 || path.contains("flower")
                 || path.contains("tulip")
                 || path.contains("rose")

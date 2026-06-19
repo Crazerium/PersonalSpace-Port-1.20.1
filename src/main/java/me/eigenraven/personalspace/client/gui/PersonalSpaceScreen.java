@@ -25,6 +25,8 @@ public class PersonalSpaceScreen extends Screen {
 
     private static final int MIN_GROUND_LEVEL = 1;
     private static final int MAX_GROUND_LEVEL = 240;
+    private static final int MIN_CHUNKS_VALUE = 0;
+    private static final int MAX_CHUNKS_VALUE = 16;
 
     private PersonalSpaceData.WorldType selectedType = PersonalSpaceData.WorldType.VOID;
     private int selectedHeight = 64;
@@ -237,6 +239,11 @@ public class PersonalSpaceScreen extends Screen {
         createButton = Button.builder(
                 text("create_and_teleport"),
                 button -> {
+                    if (!hasValidHeight() || !hasValidChunkSettings()) {
+                        updateCreateButtonState();
+                        return;
+                    }
+
                     selectedHeight = getClampedHeight();
 
                     PersonalSpace.CHANNEL.sendToServer(new CreateDimensionPacket(
@@ -637,8 +644,8 @@ public class PersonalSpaceScreen extends Screen {
                 thirdWidth,
                 "boundary_x",
                 boundaryChunksX,
-                0,
-                16,
+                MIN_CHUNKS_VALUE,
+                MAX_CHUNKS_VALUE,
                 value -> boundaryChunksX = value
         );
 
@@ -648,8 +655,8 @@ public class PersonalSpaceScreen extends Screen {
                 thirdWidth,
                 "boundary_z",
                 boundaryChunksZ,
-                0,
-                16,
+                MIN_CHUNKS_VALUE,
+                MAX_CHUNKS_VALUE,
                 value -> boundaryChunksZ = value
         );
 
@@ -659,8 +666,8 @@ public class PersonalSpaceScreen extends Screen {
                 thirdWidth,
                 "gap",
                 gapChunks,
-                0,
-                16,
+                MIN_CHUNKS_VALUE,
+                MAX_CHUNKS_VALUE,
                 value -> gapChunks = value
         );
 
@@ -757,26 +764,22 @@ public class PersonalSpaceScreen extends Screen {
             int maxValue,
             IntValueSetter setter
     ) {
-        EditBox field = new EditBox(
-                font,
-                x,
-                y,
-                width,
-                20,
-                text(labelKey)
-        );
-
+        EditBox field = new EditBox(font, x, y, width, 20, text(labelKey));
         field.setValue(Integer.toString(currentValue));
-        field.setMaxLength(2);
-        field.setFilter(value -> value.isEmpty() || value.matches("\\d{1,2}"));
+        field.setMaxLength(3);
+        field.setFilter(value -> value.isEmpty() || value.matches("\\d{1,3}"));
+
         field.setResponder(value -> {
             try {
-                setter.set(Mth.clamp(Integer.parseInt(value), minValue, maxValue));
+                int parsed = Integer.parseInt(value);
+                setter.set(parsed);
             } catch (NumberFormatException ignored) {
             }
-        });
-        field.setTooltip(Tooltip.create(text("int.tooltip", text(labelKey), minValue, maxValue)));
 
+            updateCreateButtonState();
+        });
+
+        field.setTooltip(Tooltip.create(text("int.tooltip", text(labelKey), minValue, maxValue)));
         return field;
     }
 
@@ -836,9 +839,36 @@ public class PersonalSpaceScreen extends Screen {
         }
     }
 
+    private boolean hasValidChunkSettings() {
+        return isValidIntValue(boundaryChunksX, MIN_CHUNKS_VALUE, MAX_CHUNKS_VALUE)
+                && isValidIntValue(boundaryChunksZ, MIN_CHUNKS_VALUE, MAX_CHUNKS_VALUE)
+                && isValidIntValue(gapChunks, MIN_CHUNKS_VALUE, MAX_CHUNKS_VALUE)
+                && isValidIntField(boundaryChunksXField, MIN_CHUNKS_VALUE, MAX_CHUNKS_VALUE)
+                && isValidIntField(boundaryChunksZField, MIN_CHUNKS_VALUE, MAX_CHUNKS_VALUE)
+                && isValidIntField(gapChunksField, MIN_CHUNKS_VALUE, MAX_CHUNKS_VALUE);
+    }
+
+    private boolean isValidIntField(EditBox field, int minValue, int maxValue) {
+        if (field == null) {
+            return true;
+        }
+
+        try {
+            int value = Integer.parseInt(field.getValue().trim());
+            return isValidIntValue(value, minValue, maxValue);
+        } catch (NumberFormatException ignored) {
+            return false;
+        }
+    }
+
+    private boolean isValidIntValue(int value, int minValue, int maxValue) {
+        return value >= minValue && value <= maxValue;
+    }
+
+
     private void updateCreateButtonState() {
         if (createButton != null) {
-            createButton.active = hasValidHeight();
+            createButton.active = hasValidHeight() && hasValidChunkSettings();
         }
     }
     @Override
