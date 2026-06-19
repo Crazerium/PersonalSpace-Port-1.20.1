@@ -6,6 +6,7 @@ import me.eigenraven.personalspace.data.PersonalSpaceData;
 import me.eigenraven.personalspace.dimension.PSDimensions;
 import me.eigenraven.personalspace.registry.PSBlocks;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
@@ -207,6 +208,29 @@ public class CreateDimensionPacket {
             return;
         }
         int safeHeight = net.minecraft.util.Mth.clamp(msg.height, 1, 240);
+
+        long safeTimeOfDay = Math.max(0L, Math.min(24000L, msg.timeOfDay));
+
+        int safeSkyRed = net.minecraft.util.Mth.clamp(msg.skyRed, 0, 255);
+        int safeSkyGreen = net.minecraft.util.Mth.clamp(msg.skyGreen, 0, 255);
+        int safeSkyBlue = net.minecraft.util.Mth.clamp(msg.skyBlue, 0, 255);
+
+        float safeStarBrightness = net.minecraft.util.Mth.clamp(msg.starBrightness, 0.0F, 1.0F);
+
+        String safeBiomeName = sanitizeBiomeId(server, msg.biomeName, "minecraft:plains");
+
+        String safeLayersPreset = sanitizeLayersPreset(
+                msg.layersPreset,
+                "minecraft:bedrock,1;minecraft:dirt,2;minecraft:grass_block,1"
+        );
+
+        int safeBoundaryChunksX = net.minecraft.util.Mth.clamp(msg.boundaryChunksX, 0, 16);
+        int safeBoundaryChunksZ = net.minecraft.util.Mth.clamp(msg.boundaryChunksZ, 0, 16);
+        int safeGapChunks = net.minecraft.util.Mth.clamp(msg.gapChunks, 0, 16);
+
+        String safeBoundaryBlock = sanitizeBlockId(msg.boundaryBlock, "minecraft:barrier");
+        String safeRoadBlock = sanitizeBlockId(msg.roadBlock, "minecraft:stone");
+        String safeCenterMarkerBlock = sanitizeBlockId(msg.centerMarkerBlock, "minecraft:glowstone");
         ServerLevel sourceLevel = getSourceLevel(msg, player);
 
         if (sourceLevel == null) {
@@ -233,7 +257,7 @@ public class CreateDimensionPacket {
                 newLevelKey,
                 msg.type,
                 safeHeight,
-                msg.biomeName
+                safeBiomeName
         );
 
         PersonalSpaceData data = PersonalSpaceData.load(newLevel);
@@ -244,25 +268,25 @@ public class CreateDimensionPacket {
         data.setReturnLevel(sourceLevel.dimension().location().toString());
         data.setReturnPos(msg.sourcePortalPos);
 
-        data.setTimeOfDay(msg.timeOfDay);
-        data.setSkyColor(msg.skyRed, msg.skyGreen, msg.skyBlue);
+        data.setTimeOfDay(safeTimeOfDay);
+        data.setSkyColor(safeSkyRed, safeSkyGreen, safeSkyBlue);
 
-        data.setStarBrightness(msg.starBrightness);
-        data.setBiomeName(msg.biomeName);
+        data.setStarBrightness(safeStarBrightness);
+        data.setBiomeName(safeBiomeName);
 
         data.setTreesEnabled(msg.treesEnabled);
         data.setFoliageEnabled(msg.foliageEnabled);
         data.setWeatherEnabled(msg.weatherEnabled);
         data.setCloudsEnabled(msg.cloudsEnabled);
 
-        data.setLayersPreset(msg.layersPreset);
-        data.setBoundaryChunksX(msg.boundaryChunksX);
-        data.setBoundaryChunksZ(msg.boundaryChunksZ);
-        data.setGapChunks(msg.gapChunks);
+        data.setLayersPreset(safeLayersPreset);
+        data.setBoundaryChunksX(safeBoundaryChunksX);
+        data.setBoundaryChunksZ(safeBoundaryChunksZ);
+        data.setGapChunks(safeGapChunks);
 
-        data.setBoundaryBlock(msg.boundaryBlock);
-        data.setRoadBlock(msg.roadBlock);
-        data.setCenterMarkerBlock(msg.centerMarkerBlock);
+        data.setBoundaryBlock(safeBoundaryBlock);
+        data.setRoadBlock(safeRoadBlock);
+        data.setCenterMarkerBlock(safeCenterMarkerBlock);
 
         data.setCenterMarkerEnabled(msg.centerMarkerEnabled);
 
@@ -322,6 +346,87 @@ public class CreateDimensionPacket {
         );
 
         PersonalSpaceSettingsSync.syncTo(player, newLevel);
+    }
+
+    private static String sanitizeBiomeId(MinecraftServer server, String rawId, String fallbackId) {
+        ResourceLocation id = ResourceLocation.tryParse(cleanId(rawId));
+
+        if (id == null) {
+            return fallbackId;
+        }
+
+        if (!server.registryAccess().registryOrThrow(Registries.BIOME).containsKey(id)) {
+            return fallbackId;
+        }
+
+        return id.toString();
+    }
+
+    private static String sanitizeBlockId(String rawId, String fallbackId) {
+        ResourceLocation id = ResourceLocation.tryParse(cleanId(rawId));
+
+        if (id == null) {
+            return fallbackId;
+        }
+
+        if (!BuiltInRegistries.BLOCK.containsKey(id)) {
+            return fallbackId;
+        }
+
+        return id.toString();
+    }
+
+    private static String sanitizeLayersPreset(String rawPreset, String fallbackPreset) {
+        if (rawPreset == null || rawPreset.isBlank()) {
+            return fallbackPreset;
+        }
+
+        StringBuilder sanitized = new StringBuilder();
+        String[] layers = rawPreset.split(";");
+
+        for (String layer : layers) {
+            String[] parts = layer.split(",");
+
+            if (parts.length != 2) {
+                return fallbackPreset;
+            }
+
+            String blockId = sanitizeBlockId(parts[0], null);
+
+            if (blockId == null) {
+                return fallbackPreset;
+            }
+
+            int count;
+
+            try {
+                count = Integer.parseInt(parts[1].trim());
+            } catch (NumberFormatException ignored) {
+                return fallbackPreset;
+            }
+
+            count = net.minecraft.util.Mth.clamp(count, 1, 256);
+
+            if (!sanitized.isEmpty()) {
+                sanitized.append(";");
+            }
+
+            sanitized.append(blockId).append(",").append(count);
+        }
+
+        if (sanitized.isEmpty()) {
+            return fallbackPreset;
+        }
+
+        return sanitized.toString();
+    }
+
+    private static String cleanId(String rawId) {
+        if (rawId == null) {
+            return "";
+        }
+
+        return rawId.trim().toLowerCase();
     }
 
     private static ServerLevel getSourceLevel(CreateDimensionPacket msg, ServerPlayer player) {

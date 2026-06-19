@@ -1,6 +1,62 @@
 {
+  "gui.personalspace.create": "Личное измерение",
+  "gui.personalspace.subtitle": "Настрой параметры перед созданием",
+
+  "gui.personalspace.world_type": "Тип мира",
+  "gui.personalspace.world_type.void": "Пустой мир",
+  "gui.personalspace.world_type.flat": "Плоский мир",
+  "gui.personalspace.world_type.tooltip": "Пустой мир — без земли. Плоский мир — площадка на выбранной высоте.",
+
+  "gui.personalspace.preset": "Пресет",
+  "gui.personalspace.preset.void": "Пустота",
+  "gui.personalspace.preset.flat": "Плоский мир",
+  "gui.personalspace.preset.tech": "Тех. платформа",
+  "gui.personalspace.preset.night_void": "Ночная пустота",
+  "gui.personalspace.preset.tooltip": "Быстро применяет тип мира, время, небо, биом и базовые настройки.",
+
+  "gui.personalspace.ground_height": "Высота земли",
+  "gui.personalspace.height.tooltip": "Допустимо: %s–%s. Портал появится на 1 блок выше.",
+  "gui.personalspace.portal_y": "Портал появится на Y=%s",
+  "gui.personalspace.height_error": "Высота должна быть от %s до %s",
+
+  "gui.personalspace.advanced.hidden": "Расширенные настройки: скрыты",
+  "gui.personalspace.advanced.open": "Расширенные настройки: открыты",
+  "gui.personalspace.blocks_and_boundaries": "Блоки и границы",
+  "gui.personalspace.back_to_world": "Назад к миру",
+
+  "gui.personalspace.create_and_teleport": "Создать и телепортироваться",
+
+  "gui.personalspace.time": "Время",
+  "gui.personalspace.time.tooltip": "Время суток: 0–24000",
+  "gui.personalspace.star_brightness": "Яркость звёзд",
+  "gui.personalspace.star_brightness.tooltip": "Яркость звёзд: 0.0–1.0",
+  "gui.personalspace.biome": "Биом",
+  "gui.personalspace.biome.tooltip": "Например: minecraft:plains",
+
+  "gui.personalspace.sky_red": "R",
+  "gui.personalspace.sky_green": "G",
+  "gui.personalspace.sky_blue": "B",
+  "gui.personalspace.color.tooltip": "%s: 0–255",
+
+  "gui.personalspace.trees": "Деревья",
+  "gui.personalspace.foliage": "Листва",
+  "gui.personalspace.weather": "Погода",
+  "gui.personalspace.clouds": "Облака",
+  "gui.personalspace.center_marker": "Центр. маркер",
+
+  "gui.personalspace.layers": "Слои мира",
+  "gui.personalspace.layers.tooltip": "Например: minecraft:bedrock,1;minecraft:dirt,2;minecraft:grass_block,1",
+  "gui.personalspace.boundary_block": "Блок границы",
+  "gui.personalspace.road_block": "Блок дороги",
+  "gui.personalspace.center_block": "Блок центра",
+  "gui.personalspace.block.tooltip": "%s, например: minecraft:stone",
+
+  "gui.personalspace.boundary_x": "X",
+  "gui.personalspace.boundary_z": "Z",
+  "gui.personalspace.gap": "Gap",
+  "gui.personalspace.int.tooltip": "%s: %s–%s",
+
   "block.personalspace.personal_portal": "Персональный портал",
   "item.personalspace.personal_portal": "Персональный портал",
-  "tooltip.personalspace.target": "Цель: %s",
-  "tooltip.personalspace.unlinked": "Не привязан: первое использование создаст персональное измерение"
+  "tooltip.personalspace.unlinked": "Не привязан"
 }

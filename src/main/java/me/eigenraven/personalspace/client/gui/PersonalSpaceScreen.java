@@ -52,7 +52,9 @@ public class PersonalSpaceScreen extends Screen {
 
     private boolean centerMarkerEnabled = true;
     private boolean advancedVisible = false;
+
     private WorldPreset selectedPreset = WorldPreset.VOID;
+    private AdvancedPage advancedPage = AdvancedPage.WORLD;
 
     private final Level level;
     private final BlockPos portalPos;
@@ -65,24 +67,46 @@ public class PersonalSpaceScreen extends Screen {
     private EditBox skyBlueField;
     private EditBox starBrightnessField;
 
+    private EditBox layersPresetField;
+    private EditBox boundaryBlockField;
+    private EditBox roadBlockField;
+    private EditBox centerMarkerBlockField;
+    private EditBox boundaryChunksXField;
+    private EditBox boundaryChunksZField;
+    private EditBox gapChunksField;
+
     private Button createButton;
 
     public PersonalSpaceScreen(Level level, BlockPos portalPos) {
-        super(Component.translatable("gui.personalspace.create"));
+        super(text("create"));
         this.level = level;
         this.portalPos = portalPos;
     }
+
     private enum WorldPreset {
-        VOID("Пустота"),
-        FLAT("Плоский мир"),
-        TECH("Тех. платформа"),
-        NIGHT_VOID("Ночная пустота");
+        VOID("preset.void"),
+        FLAT("preset.flat"),
+        TECH("preset.tech"),
+        NIGHT_VOID("preset.night_void");
 
-        private final String displayName;
+        private final String translationKey;
 
-        WorldPreset(String displayName) {
-            this.displayName = displayName;
+        WorldPreset(String translationKey) {
+            this.translationKey = translationKey;
         }
+    }
+
+    private enum AdvancedPage {
+        WORLD,
+        BLOCKS
+    }
+
+    private static Component text(String key) {
+        return Component.translatable("gui.personalspace." + key);
+    }
+
+    private static Component text(String key, Object... args) {
+        return Component.translatable("gui.personalspace." + key, args);
     }
 
     @Override
@@ -106,17 +130,15 @@ public class PersonalSpaceScreen extends Screen {
                                 top,
                                 widgetWidth,
                                 20,
-                                Component.literal("Тип мира"),
+                                text("world_type"),
                                 (button, value) -> selectedType = value
                         );
 
-        worldTypeButton.setTooltip(Tooltip.create(Component.literal(
-                "Пустой мир — без земли. Плоский мир — площадка на выбранной высоте."
-        )));
+        worldTypeButton.setTooltip(Tooltip.create(text("world_type.tooltip")));
         addRenderableWidget(worldTypeButton);
 
         CycleButton<WorldPreset> presetButton =
-                CycleButton.<WorldPreset>builder(preset -> Component.literal(preset.displayName))
+                CycleButton.<WorldPreset>builder(preset -> text(preset.translationKey))
                         .withValues(WorldPreset.VOID, WorldPreset.FLAT, WorldPreset.TECH, WorldPreset.NIGHT_VOID)
                         .withInitialValue(selectedPreset)
                         .create(
@@ -124,7 +146,7 @@ public class PersonalSpaceScreen extends Screen {
                                 top + 28,
                                 widgetWidth,
                                 20,
-                                Component.literal("Пресет"),
+                                text("preset"),
                                 (button, value) -> {
                                     selectedPreset = value;
                                     applyPreset(value);
@@ -132,9 +154,7 @@ public class PersonalSpaceScreen extends Screen {
                                 }
                         );
 
-        presetButton.setTooltip(Tooltip.create(Component.literal(
-                "Быстро применяет тип мира, время, небо, биом и базовые настройки."
-        )));
+        presetButton.setTooltip(Tooltip.create(text("preset.tooltip")));
         addRenderableWidget(presetButton);
 
         heightField = new EditBox(
@@ -143,7 +163,7 @@ public class PersonalSpaceScreen extends Screen {
                 top + 56,
                 widgetWidth,
                 20,
-                Component.literal("Высота земли")
+                text("ground_height")
         );
         heightField.setValue(Integer.toString(selectedHeight));
         heightField.setMaxLength(3);
@@ -155,8 +175,10 @@ public class PersonalSpaceScreen extends Screen {
 
             updateCreateButtonState();
         });
-        heightField.setTooltip(Tooltip.create(Component.literal(
-                "Допустимо: " + MIN_GROUND_LEVEL + "–" + MAX_GROUND_LEVEL + ". Портал появится на 1 блок выше."
+        heightField.setTooltip(Tooltip.create(text(
+                "height.tooltip",
+                MIN_GROUND_LEVEL,
+                MAX_GROUND_LEVEL
         )));
         addRenderableWidget(heightField);
 
@@ -183,28 +205,26 @@ public class PersonalSpaceScreen extends Screen {
         ).bounds(left + (smallButtonWidth + 6) * 3, top + 84, smallButtonWidth, 20).build());
 
         int advancedTop = top + 118;
-        int halfWidth = (widgetWidth - 8) / 2;
 
         if (advancedVisible) {
             addAdvancedWidgets(left, advancedTop, widgetWidth);
         }
 
-        int advancedButtonX = advancedVisible ? left + halfWidth + 8 : left;
-        int advancedButtonY = advancedVisible ? advancedTop + 150 : panelY + panelHeight - 58;
-        int advancedButtonWidth = advancedVisible ? halfWidth : widgetWidth;
+        if (!advancedVisible) {
+            addRenderableWidget(Button.builder(
+                    text("advanced.hidden"),
+                    button -> {
+                        advancedVisible = true;
+                        advancedPage = AdvancedPage.WORLD;
+                        rebuildPersonalSpaceWidgets();
+                    }
+            ).bounds(left, panelY + panelHeight - 58, widgetWidth, 20).build());
+        }
 
-        addRenderableWidget(Button.builder(
-                Component.literal(advancedVisible ? "Расширенные настройки: открыты" : "Расширенные настройки: скрыты"),
-                button -> {
-                    advancedVisible = !advancedVisible;
-                    rebuildPersonalSpaceWidgets();
-                }
-        ).bounds(advancedButtonX, advancedButtonY, advancedButtonWidth, 20).build());
-
-        int createButtonY = advancedVisible ? advancedTop + 180 : panelY + panelHeight - 30;
+        int createButtonY = advancedVisible ? advancedTop + 174 : panelY + panelHeight - 30;
 
         createButton = Button.builder(
-                Component.literal("Создать и телепортироваться"),
+                text("create_and_teleport"),
                 button -> {
                     selectedHeight = getClampedHeight();
 
@@ -376,6 +396,14 @@ public class PersonalSpaceScreen extends Screen {
     }
 
     private void addAdvancedWidgets(int left, int top, int widgetWidth) {
+        if (advancedPage == AdvancedPage.WORLD) {
+            addWorldAdvancedWidgets(left, top, widgetWidth);
+        } else {
+            addBlocksAdvancedWidgets(left, top, widgetWidth);
+        }
+    }
+
+    private void addWorldAdvancedWidgets(int left, int top, int widgetWidth) {
         int halfWidth = (widgetWidth - 8) / 2;
         int thirdWidth = (widgetWidth - 16) / 3;
 
@@ -385,7 +413,7 @@ public class PersonalSpaceScreen extends Screen {
                 top,
                 halfWidth,
                 20,
-                Component.literal("Время")
+                text("time")
         );
         timeField.setValue(Long.toString(timeOfDay));
         timeField.setMaxLength(5);
@@ -397,7 +425,7 @@ public class PersonalSpaceScreen extends Screen {
             } catch (NumberFormatException ignored) {
             }
         });
-        timeField.setTooltip(Tooltip.create(Component.literal("Время суток: 0–24000")));
+        timeField.setTooltip(Tooltip.create(text("time.tooltip")));
         addRenderableWidget(timeField);
 
         starBrightnessField = new EditBox(
@@ -406,7 +434,7 @@ public class PersonalSpaceScreen extends Screen {
                 top,
                 halfWidth,
                 20,
-                Component.literal("Яркость звёзд")
+                text("star_brightness")
         );
         starBrightnessField.setValue(Float.toString(starBrightness));
         starBrightnessField.setMaxLength(4);
@@ -417,7 +445,7 @@ public class PersonalSpaceScreen extends Screen {
             } catch (NumberFormatException ignored) {
             }
         });
-        starBrightnessField.setTooltip(Tooltip.create(Component.literal("Яркость звёзд: 0.0–1.0")));
+        starBrightnessField.setTooltip(Tooltip.create(text("star_brightness.tooltip")));
         addRenderableWidget(starBrightnessField);
 
         biomeField = new EditBox(
@@ -426,7 +454,7 @@ public class PersonalSpaceScreen extends Screen {
                 top + 30,
                 widgetWidth,
                 20,
-                Component.literal("Биом")
+                text("biome")
         );
         biomeField.setValue(biomeName);
         biomeField.setMaxLength(80);
@@ -436,12 +464,12 @@ public class PersonalSpaceScreen extends Screen {
                 biomeName = value.trim();
             }
         });
-        biomeField.setTooltip(Tooltip.create(Component.literal("Например: minecraft:plains")));
+        biomeField.setTooltip(Tooltip.create(text("biome.tooltip")));
         addRenderableWidget(biomeField);
 
-        skyRedField = createColorField(left, top + 60, thirdWidth, "R", skyRed, value -> skyRed = value);
-        skyGreenField = createColorField(left + thirdWidth + 8, top + 60, thirdWidth, "G", skyGreen, value -> skyGreen = value);
-        skyBlueField = createColorField(left + (thirdWidth + 8) * 2, top + 60, thirdWidth, "B", skyBlue, value -> skyBlue = value);
+        skyRedField = createColorField(left, top + 60, thirdWidth, "sky_red", skyRed, value -> skyRed = value);
+        skyGreenField = createColorField(left + thirdWidth + 8, top + 60, thirdWidth, "sky_green", skyGreen, value -> skyGreen = value);
+        skyBlueField = createColorField(left + (thirdWidth + 8) * 2, top + 60, thirdWidth, "sky_blue", skyBlue, value -> skyBlue = value);
 
         addRenderableWidget(skyRedField);
         addRenderableWidget(skyGreenField);
@@ -453,7 +481,7 @@ public class PersonalSpaceScreen extends Screen {
                         top + 90,
                         halfWidth,
                         20,
-                        Component.literal("Деревья"),
+                        text("trees"),
                         (button, value) -> treesEnabled = value
                 ));
 
@@ -463,7 +491,7 @@ public class PersonalSpaceScreen extends Screen {
                         top + 90,
                         halfWidth,
                         20,
-                        Component.literal("Листва"),
+                        text("foliage"),
                         (button, value) -> foliageEnabled = value
                 ));
 
@@ -473,7 +501,7 @@ public class PersonalSpaceScreen extends Screen {
                         top + 120,
                         halfWidth,
                         20,
-                        Component.literal("Погода"),
+                        text("weather"),
                         (button, value) -> weatherEnabled = value
                 ));
 
@@ -483,7 +511,7 @@ public class PersonalSpaceScreen extends Screen {
                         top + 120,
                         halfWidth,
                         20,
-                        Component.literal("Облака"),
+                        text("clouds"),
                         (button, value) -> cloudsEnabled = value
                 ));
 
@@ -493,16 +521,133 @@ public class PersonalSpaceScreen extends Screen {
                         top + 150,
                         halfWidth,
                         20,
-                        Component.literal("Центр. маркер"),
+                        text("center_marker"),
                         (button, value) -> centerMarkerEnabled = value
                 ));
+
+        addRenderableWidget(Button.builder(
+                text("blocks_and_boundaries"),
+                button -> {
+                    advancedPage = AdvancedPage.BLOCKS;
+                    rebuildPersonalSpaceWidgets();
+                }
+        ).bounds(left + halfWidth + 8, top + 150, halfWidth, 20).build());
+    }
+
+    private void addBlocksAdvancedWidgets(int left, int top, int widgetWidth) {
+        int halfWidth = (widgetWidth - 8) / 2;
+        int thirdWidth = (widgetWidth - 16) / 3;
+
+        layersPresetField = new EditBox(
+                font,
+                left,
+                top,
+                widgetWidth,
+                20,
+                text("layers")
+        );
+        layersPresetField.setValue(layersPreset);
+        layersPresetField.setMaxLength(160);
+        layersPresetField.setFilter(value -> value.isEmpty() || value.matches("[a-z0-9_:.\\-/,;]+"));
+        layersPresetField.setResponder(value -> {
+            if (!value.isBlank()) {
+                layersPreset = value.trim();
+            }
+        });
+        layersPresetField.setTooltip(Tooltip.create(text("layers.tooltip")));
+        addRenderableWidget(layersPresetField);
+
+        boundaryBlockField = createBlockIdField(
+                left,
+                top + 30,
+                halfWidth,
+                "boundary_block",
+                boundaryBlock,
+                value -> boundaryBlock = value
+        );
+
+        roadBlockField = createBlockIdField(
+                left + halfWidth + 8,
+                top + 30,
+                halfWidth,
+                "road_block",
+                roadBlock,
+                value -> roadBlock = value
+        );
+
+        centerMarkerBlockField = createBlockIdField(
+                left,
+                top + 60,
+                widgetWidth,
+                "center_block",
+                centerMarkerBlock,
+                value -> centerMarkerBlock = value
+        );
+
+        addRenderableWidget(boundaryBlockField);
+        addRenderableWidget(roadBlockField);
+        addRenderableWidget(centerMarkerBlockField);
+
+        boundaryChunksXField = createIntField(
+                left,
+                top + 90,
+                thirdWidth,
+                "boundary_x",
+                boundaryChunksX,
+                0,
+                16,
+                value -> boundaryChunksX = value
+        );
+
+        boundaryChunksZField = createIntField(
+                left + thirdWidth + 8,
+                top + 90,
+                thirdWidth,
+                "boundary_z",
+                boundaryChunksZ,
+                0,
+                16,
+                value -> boundaryChunksZ = value
+        );
+
+        gapChunksField = createIntField(
+                left + (thirdWidth + 8) * 2,
+                top + 90,
+                thirdWidth,
+                "gap",
+                gapChunks,
+                0,
+                16,
+                value -> gapChunks = value
+        );
+
+        addRenderableWidget(boundaryChunksXField);
+        addRenderableWidget(boundaryChunksZField);
+        addRenderableWidget(gapChunksField);
+
+        addRenderableWidget(Button.builder(
+                text("back_to_world"),
+                button -> {
+                    advancedPage = AdvancedPage.WORLD;
+                    rebuildPersonalSpaceWidgets();
+                }
+        ).bounds(left, top + 150, halfWidth, 20).build());
+
+        addRenderableWidget(Button.builder(
+                text("advanced.open"),
+                button -> {
+                    advancedVisible = false;
+                    advancedPage = AdvancedPage.WORLD;
+                    rebuildPersonalSpaceWidgets();
+                }
+        ).bounds(left + halfWidth + 8, top + 150, halfWidth, 20).build());
     }
 
     private EditBox createColorField(
             int x,
             int y,
             int width,
-            String label,
+            String labelKey,
             int currentValue,
             IntValueSetter setter
     ) {
@@ -512,7 +657,7 @@ public class PersonalSpaceScreen extends Screen {
                 y,
                 width,
                 20,
-                Component.literal(label)
+                text(labelKey)
         );
 
         field.setValue(Integer.toString(currentValue));
@@ -524,7 +669,70 @@ public class PersonalSpaceScreen extends Screen {
             } catch (NumberFormatException ignored) {
             }
         });
-        field.setTooltip(Tooltip.create(Component.literal(label + ": 0–255")));
+        field.setTooltip(Tooltip.create(text("color.tooltip", text(labelKey))));
+
+        return field;
+    }
+
+    private EditBox createBlockIdField(
+            int x,
+            int y,
+            int width,
+            String labelKey,
+            String currentValue,
+            StringValueSetter setter
+    ) {
+        EditBox field = new EditBox(
+                font,
+                x,
+                y,
+                width,
+                20,
+                text(labelKey)
+        );
+
+        field.setValue(currentValue);
+        field.setMaxLength(80);
+        field.setFilter(value -> value.isEmpty() || value.matches("[a-z0-9_:.\\-/]+"));
+        field.setResponder(value -> {
+            if (!value.isBlank()) {
+                setter.set(value.trim());
+            }
+        });
+        field.setTooltip(Tooltip.create(text("block.tooltip", text(labelKey))));
+
+        return field;
+    }
+
+    private EditBox createIntField(
+            int x,
+            int y,
+            int width,
+            String labelKey,
+            int currentValue,
+            int minValue,
+            int maxValue,
+            IntValueSetter setter
+    ) {
+        EditBox field = new EditBox(
+                font,
+                x,
+                y,
+                width,
+                20,
+                text(labelKey)
+        );
+
+        field.setValue(Integer.toString(currentValue));
+        field.setMaxLength(2);
+        field.setFilter(value -> value.isEmpty() || value.matches("\\d{1,2}"));
+        field.setResponder(value -> {
+            try {
+                setter.set(Mth.clamp(Integer.parseInt(value), minValue, maxValue));
+            } catch (NumberFormatException ignored) {
+            }
+        });
+        field.setTooltip(Tooltip.create(text("int.tooltip", text(labelKey), minValue, maxValue)));
 
         return field;
     }
@@ -540,8 +748,8 @@ public class PersonalSpaceScreen extends Screen {
 
     private Component worldTypeName(PersonalSpaceData.WorldType type) {
         return switch (type) {
-            case VOID -> Component.literal("Пустой мир");
-            case FLAT -> Component.literal("Плоский мир");
+            case VOID -> text("world_type.void");
+            case FLAT -> text("world_type.flat");
         };
     }
 
@@ -607,7 +815,7 @@ public class PersonalSpaceScreen extends Screen {
 
         graphics.drawCenteredString(
                 font,
-                Component.literal("Личное измерение"),
+                text("create"),
                 width / 2,
                 panelY + 12,
                 0xFFFFFF
@@ -615,25 +823,16 @@ public class PersonalSpaceScreen extends Screen {
 
         graphics.drawCenteredString(
                 font,
-                Component.literal("Настрой параметры перед созданием"),
+                text("subtitle"),
                 width / 2,
                 panelY + 24,
                 0xA0A0A0
         );
 
-        graphics.drawString(
-                font,
-                Component.literal("Высота земли:"),
-                panelX + 20,
-                panelY + 84,
-                0xD0D0D0,
-                false
-        );
-
         if (hasValidHeight()) {
             graphics.drawCenteredString(
                     font,
-                    Component.literal("Портал появится на Y=" + (getClampedHeight() + 1)),
+                    text("portal_y", getClampedHeight() + 1),
                     width / 2,
                     panelY + 146,
                     0x808080
@@ -641,7 +840,7 @@ public class PersonalSpaceScreen extends Screen {
         } else {
             graphics.drawCenteredString(
                     font,
-                    Component.literal("Высота должна быть от " + MIN_GROUND_LEVEL + " до " + MAX_GROUND_LEVEL),
+                    text("height_error", MIN_GROUND_LEVEL, MAX_GROUND_LEVEL),
                     width / 2,
                     panelY + 146,
                     0xFF5555
@@ -659,5 +858,10 @@ public class PersonalSpaceScreen extends Screen {
     @FunctionalInterface
     private interface IntValueSetter {
         void set(int value);
+    }
+
+    @FunctionalInterface
+    private interface StringValueSetter {
+        void set(String value);
     }
 }
