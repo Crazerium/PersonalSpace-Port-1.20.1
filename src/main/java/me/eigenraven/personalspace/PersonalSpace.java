@@ -16,6 +16,7 @@ import me.eigenraven.personalspace.registry.PSChunkGenerators;
 import me.eigenraven.personalspace.registry.PSItems;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.event.RegisterCommandsEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.common.Mod;
@@ -94,7 +95,11 @@ public final class PersonalSpace {
         MinecraftForge.EVENT_BUS.addListener(PSWorldRules::onEntityJoinLevel);
         MinecraftForge.EVENT_BUS.addListener(PSWorldRules::onPlayerLoggedIn);
         MinecraftForge.EVENT_BUS.addListener(PSWorldRules::onPlayerChangedDimension);
-        MinecraftForge.EVENT_BUS.addListener(PSCommands::register);
         MinecraftForge.EVENT_BUS.addListener(PSWorldRules::onServerTick);
+        MinecraftForge.EVENT_BUS.addListener(this::registerCommands);
+    }
+
+    private void registerCommands(RegisterCommandsEvent event) {
+        PSCommands.register(event.getDispatcher());
     }
 }

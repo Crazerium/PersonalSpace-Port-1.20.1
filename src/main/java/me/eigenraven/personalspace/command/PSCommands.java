@@ -4,113 +4,88 @@ import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import me.eigenraven.personalspace.PersonalSpace;
 import me.eigenraven.personalspace.dimension.PSDimensions;
-import me.eigenraven.personalspace.item.PortalBlockItem;
-import me.eigenraven.personalspace.registry.PSBlocks;
+import me.eigenraven.personalspace.registry.PSItems;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.EntityArgument;
-import net.minecraft.commands.arguments.coordinates.BlockPosArgument;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.event.RegisterCommandsEvent;
 
 public final class PSCommands {
+    private static final BlockPos DEFAULT_PORTAL_TARGET_POS = new BlockPos(7, 65, 7);
+
     private PSCommands() {
     }
 
-    public static void register(RegisterCommandsEvent event) {
-        CommandDispatcher<CommandSourceStack> dispatcher = event.getDispatcher();
-
-        dispatcher.register(
-                Commands.literal("pspace")
-                        .requires(source -> source.hasPermission(2))
-
-                        .then(Commands.literal("ls")
-                                .executes(context -> listPersonalDimensions(context.getSource())))
-
-                        .then(Commands.literal("where")
-                                .then(Commands.argument("player", EntityArgument.player())
-                                        .executes(context -> where(
+    public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
+        dispatcher.register(Commands.literal("personalspace")
+                .requires(source -> source.hasPermission(2))
+                .then(Commands.literal("dimension")
+                        .then(Commands.argument("name", StringArgumentType.word())
+                                .then(Commands.literal("tp")
+                                        .executes(context -> teleportToDimension(
                                                 context.getSource(),
-                                                EntityArgument.getPlayer(context, "player")
-                                        ))))
-
-                        .then(Commands.literal("give-portal")
-                                .then(Commands.argument("player", EntityArgument.player())
-                                        .then(Commands.argument("dimension", StringArgumentType.word())
+                                                StringArgumentType.getString(context, "name")
+                                        ))
+                                )
+                                .then(Commands.literal("giveportal")
+                                        .executes(context -> givePortal(
+                                                context.getSource(),
+                                                StringArgumentType.getString(context, "name"),
+                                                context.getSource().getPlayerOrException()
+                                        ))
+                                        .then(Commands.argument("player", EntityArgument.player())
                                                 .executes(context -> givePortal(
                                                         context.getSource(),
-                                                        EntityArgument.getPlayer(context, "player"),
-                                                        StringArgumentType.getString(context, "dimension"),
-                                                        new BlockPos(0, 80, 0)
+                                                        StringArgumentType.getString(context, "name"),
+                                                        EntityArgument.getPlayer(context, "player")
                                                 ))
-                                                .then(Commands.argument("pos", BlockPosArgument.blockPos())
-                                                        .executes(context -> givePortal(
-                                                                context.getSource(),
-                                                                EntityArgument.getPlayer(context, "player"),
-                                                                StringArgumentType.getString(context, "dimension"),
-                                                                BlockPosArgument.getLoadedBlockPos(context, "pos")
-                                                        ))))))
-
-                        .then(Commands.literal("tpx")
-                                .then(Commands.argument("player", EntityArgument.player())
-                                        .then(Commands.argument("dimension", StringArgumentType.word())
-                                                .executes(context -> teleport(
-                                                        context.getSource(),
-                                                        EntityArgument.getPlayer(context, "player"),
-                                                        StringArgumentType.getString(context, "dimension"),
-                                                        new BlockPos(0, 80, 0)
-                                                ))
-                                                .then(Commands.argument("pos", BlockPosArgument.blockPos())
-                                                        .executes(context -> teleport(
-                                                                context.getSource(),
-                                                                EntityArgument.getPlayer(context, "player"),
-                                                                StringArgumentType.getString(context, "dimension"),
-                                                                BlockPosArgument.getLoadedBlockPos(context, "pos")
-                                                        ))))))
+                                        )
+                                )
+                        )
+                )
         );
     }
 
-    private static int givePortal(
-            CommandSourceStack source,
-            ServerPlayer player,
-            String dimension,
-            BlockPos targetPos
-    ) {
-        ResourceKey<Level> key = PSDimensions.key(dimension);
-        ServerLevel level = PSDimensions.getOrCreate(source.getServer(), key);
-        ItemStack stack = PortalBlockItem.createLinkedPortal(
-                PSBlocks.PERSONAL_PORTAL.get(),
-                key,
-                targetPos
-        );
+    private static int teleportToDimension(CommandSourceStack source, String dimensionName) {
+        ServerPlayer player;
 
-        player.getInventory().placeItemBackInInventory(stack);
+        try {
+            player = source.getPlayerOrException();
+        } catch (Exception exception) {
+            source.sendFailure(Component.literal("This command can only be used by a player."));
+            return 0;
+        }
 
-        source.sendSuccess(
-                () -> Component.literal("Gave Personal Space portal to " + player.getGameProfile().getName()
-                        + " -> " + key.location()),
-                true
-        );
+        MinecraftServer server = source.getServer();
+        ResourceKey<Level> dimensionKey = getPersonalSpaceDimensionKey(dimensionName);
 
-        return 1;
-    }
+        ServerLevel destination = server.getLevel(dimensionKey);
 
-    private static int teleport(
-            CommandSourceStack source,
-            ServerPlayer player,
-            String dimension,
-            BlockPos targetPos
-    ) {
-        ResourceKey<Level> key = PSDimensions.key(dimension);
-        ServerLevel level = PSDimensions.getOrCreate(source.getServer(), key);
+        if (destination == null) {
+            destination = PSDimensions.getOrCreate(server, dimensionKey);
+        }
+
+        if (destination == null) {
+            source.sendFailure(Component.literal("Personal Space dimension not found: " + dimensionKey.location()));
+            return 0;
+        }
+
+        BlockPos targetPos = DEFAULT_PORTAL_TARGET_POS;
+
+        destination.getChunkAt(targetPos);
+
         player.teleportTo(
-                level,
+                destination,
                 targetPos.getX() + 0.5D,
                 targetPos.getY() + 1.0D,
                 targetPos.getZ() + 0.5D,
@@ -119,43 +94,88 @@ public final class PSCommands {
         );
 
         source.sendSuccess(
-                () -> Component.literal("Teleported " + player.getGameProfile().getName()
-                        + " to " + key.location()),
+                () -> Component.literal("Teleported to Personal Space dimension: " + dimensionKey.location()),
                 true
         );
 
         return 1;
     }
 
-    private static int where(CommandSourceStack source, ServerPlayer player) {
+    private static int givePortal(
+            CommandSourceStack source,
+            String dimensionName,
+            ServerPlayer targetPlayer
+    ) {
+        ResourceKey<Level> dimensionKey = getPersonalSpaceDimensionKey(dimensionName);
+
+        ItemStack stack = new ItemStack(PSItems.PERSONAL_PORTAL.get());
+
+        CompoundTag blockEntityTag = new CompoundTag();
+        blockEntityTag.putBoolean("Active", true);
+        blockEntityTag.putBoolean("ReturnPortal", false);
+        blockEntityTag.putString("TargetLevel", dimensionKey.location().toString());
+        blockEntityTag.putLong("TargetPos", DEFAULT_PORTAL_TARGET_POS.asLong());
+
+        stack.getOrCreateTag().put("BlockEntityTag", blockEntityTag);
+        stack.setHoverName(Component.literal("Personal Portal: " + formatDimensionName(dimensionKey.location())));
+
+        boolean inserted = targetPlayer.getInventory().add(stack);
+
+        if (!inserted) {
+            targetPlayer.drop(stack, false);
+        }
+
         source.sendSuccess(
-                () -> Component.literal(player.getGameProfile().getName()
-                        + " is in " + player.level().dimension().location()),
-                false
+                () -> Component.literal(
+                        "Gave Personal Portal for " + dimensionKey.location()
+                                + " to " + targetPlayer.getGameProfile().getName()
+                ),
+                true
         );
 
         return 1;
     }
 
-    private static int listPersonalDimensions(CommandSourceStack source) {
-        int[] count = {0};
+    private static ResourceKey<Level> getPersonalSpaceDimensionKey(String rawName) {
+        ResourceLocation location = parsePersonalSpaceDimensionId(rawName);
 
-        for (ServerLevel level : source.getServer().getAllLevels()) {
-            if (PersonalSpace.MODID.equals(level.dimension().location().getNamespace())) {
-                count[0]++;
-                source.sendSuccess(
-                        () -> Component.literal(level.dimension().location().toString()),
-                        false
-                );
+        return ResourceKey.create(
+                Registries.DIMENSION,
+                location
+        );
+    }
+
+    private static ResourceLocation parsePersonalSpaceDimensionId(String rawName) {
+        String value = rawName.trim();
+
+        if (value.contains(":")) {
+            ResourceLocation parsed = ResourceLocation.tryParse(value);
+
+            if (parsed != null) {
+                return parsed;
             }
         }
 
-        if (count[0] == 0) {
-            source.sendSuccess(
-                    () -> Component.literal("No loaded Personal Space dimensions."),
-                    false
-            );
+        String path = value;
+
+        if (!path.startsWith("ps_")) {
+            path = "ps_" + path;
         }
-        return 0;
+
+        return new ResourceLocation(PersonalSpace.MODID, path);
+    }
+
+    private static String formatDimensionName(ResourceLocation location) {
+        if (location.getNamespace().equals(PersonalSpace.MODID)) {
+            String path = location.getPath();
+
+            if (path.startsWith("ps_")) {
+                return path.substring(3);
+            }
+
+            return path;
+        }
+
+        return location.toString();
     }
 }
