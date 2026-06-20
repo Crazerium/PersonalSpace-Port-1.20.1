@@ -1,19 +1,11 @@
-# Personal Space 1.20.1 Port Notice
+# Notice
 
-This project is a Forge 1.20.1 port of Personal Space.
+This project is an unofficial port of the original Personal Space mod to Minecraft Forge 1.20.1.
 
-Original author:
-- eigenraven
+Original Personal Space mod by the original authors/contributors.
 
-Original project lineage:
-- PersonalSpace by eigenraven
-- GTNewHorizons/PersonalSpace fork
-- Crazerium/PersonalSpace-Port-1.20.1 port repository
+Unofficial 1.20.1 port by Crazer.
 
-License:
-- GNU Lesser General Public License v3.0
+This project is licensed under the GNU Lesser General Public License v3.0.
 
-Port maintenance:
-- Crazerium
-
-The original authorship is preserved. Port-specific changes are maintained separately from the original authorship metadata.
+This project is not affiliated with, endorsed by, or maintained by the original Personal Space authors unless stated otherwise.
