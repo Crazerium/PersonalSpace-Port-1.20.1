@@ -3,8 +3,9 @@ package me.eigenraven.personalspace.block;
 import me.eigenraven.personalspace.PersonalSpace;
 import me.eigenraven.personalspace.client.gui.PersonalSpaceScreen;
 import me.eigenraven.personalspace.client.gui.PersonalSpaceSettingsScreen;
+import me.eigenraven.personalspace.client.gui.PortalTeleportConfirmScreen;
 import me.eigenraven.personalspace.data.PersonalSpaceData;
-import me.eigenraven.personalspace.network.UsePortalPacket;
+import net.minecraft.network.chat.Component;
 import me.eigenraven.personalspace.registry.PSItems;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
@@ -33,6 +34,7 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
+import java.awt.*;
 import java.util.List;
 
 public final class PortalBlock extends BaseEntityBlock {
@@ -41,7 +43,7 @@ public final class PortalBlock extends BaseEntityBlock {
     public PortalBlock() {
         super(BlockBehaviour.Properties.of()
                 .mapColor(MapColor.COLOR_PURPLE)
-                .strength(25.0F, 3_600_000.0F)
+                .strength(3.0F, 1200.0F)
                 .noOcclusion()
                 .lightLevel(state -> 8));
 
@@ -77,13 +79,10 @@ public final class PortalBlock extends BaseEntityBlock {
             handleClientClick(level, pos, player, state);
             return InteractionResult.SUCCESS;
         }
-
         if (player instanceof ServerPlayer serverPlayer && level instanceof ServerLevel serverLevel) {
             if (serverPlayer.isShiftKeyDown() && isPersonalSpaceDimension(serverLevel)) {
                 return InteractionResult.CONSUME;
             }
-
-            handlePortalUseOnServer(serverLevel, pos, serverPlayer);
             return InteractionResult.CONSUME;
         }
 
@@ -107,10 +106,7 @@ public final class PortalBlock extends BaseEntityBlock {
         boolean activePortal = blockEntity instanceof PortalBlockEntity portal && portal.isActive();
 
         if (returnPortal || activePortal) {
-            PersonalSpace.CHANNEL.sendToServer(new UsePortalPacket(
-                    pos,
-                    level.dimension().location()
-            ));
+            openTeleportConfirmGui(level, pos, returnPortal);
             return;
         }
 
@@ -250,6 +246,62 @@ public final class PortalBlock extends BaseEntityBlock {
     @OnlyIn(Dist.CLIENT)
     private static void openSettingsGui(ResourceLocation levelId) {
         Minecraft.getInstance().setScreen(new PersonalSpaceSettingsScreen(levelId));
+    }
+
+    @OnlyIn(Dist.CLIENT)
+    private static void openTeleportConfirmGui(Level level, BlockPos pos, boolean returnPortal) {
+        ResourceLocation clickedLevelId = level.dimension().location();
+
+        BlockEntity blockEntity = level.getBlockEntity(pos);
+
+        ResourceLocation targetLevelId = null;
+
+        if (blockEntity instanceof PortalBlockEntity portal && portal.getTargetLevel() != null) {
+            targetLevelId = portal.getTargetLevel().location();
+        }
+
+        Component dimensionName;
+
+        if (returnPortal) {
+            dimensionName = Component.translatable(
+                    "screen.personalspace.portal.return_to",
+                    formatDimensionName(targetLevelId)
+            );
+        } else {
+            dimensionName = Component.translatable(
+                    "screen.personalspace.portal.enter_dimension",
+                    formatDimensionName(targetLevelId)
+            );
+        }
+
+        Minecraft.getInstance().setScreen(new PortalTeleportConfirmScreen(
+                pos,
+                clickedLevelId,
+                dimensionName
+        ));
+    }
+
+    @OnlyIn(Dist.CLIENT)
+    private static String formatDimensionName(ResourceLocation levelId) {
+        if (levelId == null) {
+            return "Unknown";
+        }
+
+        if (levelId.getNamespace().equals("minecraft") && levelId.getPath().equals("overworld")) {
+            return "Overworld";
+        }
+
+        if (levelId.getNamespace().equals(PersonalSpace.MODID)) {
+            String path = levelId.getPath();
+
+            if (path.startsWith("ps_")) {
+                path = path.substring(3);
+            }
+
+            return path;
+        }
+
+        return levelId.toString();
     }
 
     @Override

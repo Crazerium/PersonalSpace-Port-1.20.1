@@ -101,5 +101,9 @@
   "gui.personalspace.block_picker.button": "%s: %s",
   "gui.personalspace.preset.road_grid": "Road Grid",
   "message.personalspace.boundary_limit": "Personal Space boundary reached.",
-  "tooltip.personalspace.target": "Connected"
+  "tooltip.personalspace.target": "Connected",
+  "screen.personalspace.portal.title": "Personal Portal",
+  "screen.personalspace.portal.enter": "Teleport",
+  "screen.personalspace.portal.enter_dimension": "Dimension: %s",
+  "screen.personalspace.portal.return_to": "Return to: %s"
 }
