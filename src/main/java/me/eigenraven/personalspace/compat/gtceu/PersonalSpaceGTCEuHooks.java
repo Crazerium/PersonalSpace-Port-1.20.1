@@ -21,12 +21,17 @@ public final class PersonalSpaceGTCEuHooks {
                     "me.eigenraven.personalspace.compat.gtceu.PersonalSpaceBedrockFluidVeins"
             );
 
-            Method method = veinsClass.getMethod(
+            Method addOwnDimensionMethod = veinsClass.getMethod(
                     "addPersonalSpaceDimension",
                     ResourceKey.class
             );
+            addOwnDimensionMethod.invoke(null, levelKey);
 
-            method.invoke(null, levelKey);
+            Method patchExistingMethod = veinsClass.getMethod(
+                    "addPersonalSpaceDimensionToExistingGTCEuVeins",
+                    ResourceKey.class
+            );
+            patchExistingMethod.invoke(null, levelKey);
         } catch (ReflectiveOperationException exception) {
             PersonalSpace.LOGGER.warn(
                     "Failed to add Personal Space dimension '{}' to GTCEu bedrock fluid veins.",

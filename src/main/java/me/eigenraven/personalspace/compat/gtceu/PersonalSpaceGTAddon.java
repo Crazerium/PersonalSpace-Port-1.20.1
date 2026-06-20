@@ -25,6 +25,7 @@ public final class PersonalSpaceGTAddon implements IGTAddon {
 
     @Override
     public void registerFluidVeins() {
+        PersonalSpace.LOGGER.info("GTCEu addon registerFluidVeins() called.");
         PersonalSpaceBedrockFluidVeins.init();
     }
 }

@@ -3,6 +3,7 @@ package me.eigenraven.personalspace;
 import com.mojang.logging.LogUtils;
 import me.eigenraven.personalspace.command.PSCommands;
 import me.eigenraven.personalspace.compat.gtceu.PersonalSpaceGTCEuConfig;
+import me.eigenraven.personalspace.compat.gtceu.PersonalSpaceGTCEuHooks;
 import me.eigenraven.personalspace.config.PSConfig;
 import me.eigenraven.personalspace.event.PSWorldRules;
 import me.eigenraven.personalspace.network.CreateDimensionPacket;
@@ -56,7 +57,6 @@ public final class PersonalSpace {
         PSItems.ITEMS.register(modBus);
         PSBlockEntities.BLOCK_ENTITIES.register(modBus);
         PSChunkGenerators.CHUNK_GENERATORS.register(modBus);
-
 
         CHANNEL.registerMessage(
                 0,

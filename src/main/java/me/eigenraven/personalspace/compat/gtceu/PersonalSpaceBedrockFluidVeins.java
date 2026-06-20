@@ -1,6 +1,7 @@
 package me.eigenraven.personalspace.compat.gtceu;
 
 import com.gregtechceu.gtceu.api.data.worldgen.bedrockfluid.BedrockFluidDefinition;
+import com.gregtechceu.gtceu.api.registry.GTRegistries;
 import me.eigenraven.personalspace.PersonalSpace;
 import me.eigenraven.personalspace.dimension.PSDimensions;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -23,6 +24,59 @@ public final class PersonalSpaceBedrockFluidVeins {
                     new ResourceLocation(PersonalSpace.MODID, "ps_wildcard_placeholder")
             );
     private PersonalSpaceBedrockFluidVeins() {
+    }
+
+
+    private static final Set<ResourceLocation> GTO_STANDARD_VOID_FLUIDS = Set.of(
+            new ResourceLocation("gtceu", "oil_heavy"),
+            new ResourceLocation("gtceu", "oil_medium"),
+            new ResourceLocation("gtceu", "oil_light"),
+            new ResourceLocation("gtceu", "oil"),
+            new ResourceLocation("gtceu", "natural_gas"),
+            new ResourceLocation("gtceu", "salt_water")
+    );
+
+    public static void addPersonalSpaceDimensionToExistingGTCEuVeins(ResourceKey<Level> levelKey) {
+        if (levelKey == null || !PSDimensions.isPersonalSpaceDimension(levelKey.location())) {
+            return;
+        }
+
+        int patched = 0;
+
+        for (BedrockFluidDefinition definition : GTRegistries.BEDROCK_FLUID_DEFINITIONS.values()) {
+            ResourceLocation fluidId;
+
+            try {
+                Fluid fluid = definition.getStoredFluid().get();
+                fluidId = BuiltInRegistries.FLUID.getKey(fluid);
+            } catch (Exception exception) {
+                continue;
+            }
+
+            if (!GTO_STANDARD_VOID_FLUIDS.contains(fluidId)) {
+                continue;
+            }
+
+            Set<ResourceKey<Level>> dimensionFilter = definition.getDimensionFilter();
+
+            if (dimensionFilter == null) {
+                dimensionFilter = new HashSet<>();
+            } else {
+                dimensionFilter = new HashSet<>(dimensionFilter);
+            }
+
+            if (dimensionFilter.add(levelKey)) {
+                patched++;
+            }
+
+            definition.setDimensionFilter(dimensionFilter);
+        }
+
+        PersonalSpace.LOGGER.info(
+                "Added Personal Space dimension '{}' to {} existing GTCEu/GTO matching bedrock fluid vein(s).",
+                levelKey.location(),
+                patched
+        );
     }
 
     public static void init() {
@@ -117,14 +171,7 @@ public final class PersonalSpaceBedrockFluidVeins {
 
         Fluid fluid = BuiltInRegistries.FLUID.get(fluidId);
 
-        if (fluid == null || fluid == BuiltInRegistries.FLUID.get(new ResourceLocation("minecraft", "empty"))) {
-            PersonalSpace.LOGGER.warn(
-                    "GTCEu bedrock fluid vein '{}' uses invalid fluid '{}'.",
-                    veinId,
-                    fluidId
-            );
-            return;
-        }
+
 
         int weight = parseInt(parts[3], 20);
         int minYield = parseInt(parts[4], 120);
@@ -141,7 +188,7 @@ public final class PersonalSpaceBedrockFluidVeins {
 
         BedrockFluidDefinition definition = BedrockFluidDefinition.builder(veinId)
                 .dimensions(new HashSet<>(dimensions))
-                .fluid(() -> fluid)
+                .fluid(() -> BuiltInRegistries.FLUID.get(fluidId))
                 .weight(weight)
                 .yield(minYield, maxYield)
                 .depletionAmount(depletionAmount)
