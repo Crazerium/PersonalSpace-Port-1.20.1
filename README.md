@@ -18,6 +18,14 @@
 - Forge 47.x
 - Infiniverse
 
+## Modpack Usage
+
+By default, the personal portal has no crafting recipe.
+
+This is intentional. The portal is designed for modpack developers and server owners, so they can decide when and how players receive it, for example through quests, progression systems, shops, commands, or custom recipes.
+
+This prevents players from freely crafting and spamming portals.
+
 ## Optional Compatibility
 
 - GTCEu
