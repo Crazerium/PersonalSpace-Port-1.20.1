@@ -22,3 +22,11 @@ crash-reports/
 # OS files
 .DS_Store
 Thumbs.db
+
+# Java
+*.class
+
+# Archives / local artifacts
+*.zip
+*.tar
+*.tar.gz
