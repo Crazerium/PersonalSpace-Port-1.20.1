@@ -1,24 +1,26 @@
 modLoader="javafml"
 loaderVersion="[47,)"
 license="LGPL-3.0"
+issueTrackerURL="https://github.com/Crazerium/PersonalSpace-Port-1.20.1/issues"
 
 [[mods]]
 modId="personalspace"
-version="1.0.0"
+version="${file.jarVersion}"
 displayName="Personal Space"
+displayURL="https://github.com/Crazerium/PersonalSpace-Port-1.20.1"
+logoFile="personalspace.png"
+credits="Original Personal Space mod by the original authors/contributors. Unofficial Forge 1.20.1 port by Crazerium."
 authors="eigenraven, Crazerium"
-credits="Original mod by eigenraven. Forge 1.20.1 port by Crazerium."
-displayURL="https://github.com/Crazerium/PersonalSpace-Port-1.20.1/tree/forge-1.20.1-clean"
 description='''
 Personal Space adds private configurable dimensions for players.
 
-Requires Infiniverse API.
+This is an unofficial Forge 1.20.1 port of the original Personal Space mod.
 
-Create your own personal world, customize its terrain, sky, time, weather,
-world border, and visual style. Designed for modpacks where players need
-safe isolated building spaces without overloading the main world.
-
-Forge 1.20.1 port by Crazerium.
+Features:
+- Personal player-owned dimensions
+- Configurable dimension blocks, size, height, time, weather, sky color, clouds, stars, biome, trees, and foliage
+- Personal portal block for entering and leaving dimensions
+- Optional GTCEu / GT Odyssey compatibility
 '''
 
 [[dependencies.personalspace]]

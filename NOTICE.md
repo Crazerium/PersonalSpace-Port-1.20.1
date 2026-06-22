@@ -1,11 +1,17 @@
 # Notice
 
-This project is an unofficial port of the original Personal Space mod to Minecraft Forge 1.20.1.
+This project is an unofficial Forge 1.20.1 port of the original Personal Space mod.
 
-Original Personal Space mod by the original authors/contributors.
+Original project:
+- Personal Space
+- Original authors/contributors: original Personal Space project contributors
 
-Unofficial 1.20.1 port by Crazer.
+Port:
+- Personal Space: Unofficial 1.20.1 Port
+- Port author: Crazerium
 
-This project is licensed under the GNU Lesser General Public License v3.0.
+This project keeps the original LGPL-3.0 licensing requirements.
 
-This project is not affiliated with, endorsed by, or maintained by the original Personal Space authors unless stated otherwise.
+Portal texture/model assets are used with permission from the asset author.
+
+This project is not affiliated with or endorsed by Mojang, Microsoft, Forge, GTCEu, GT Odyssey, or the original Personal Space maintainers unless explicitly stated.
