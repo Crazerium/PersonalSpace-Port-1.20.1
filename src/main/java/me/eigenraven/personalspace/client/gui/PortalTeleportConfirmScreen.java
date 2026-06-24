@@ -311,7 +311,7 @@ public final class PortalTeleportConfirmScreen extends Screen {
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        renderBackground(graphics, mouseX, mouseY, partialTick);
+        renderPersonalSpaceBackground(graphics);
 
         int centerX = width / 2;
         int startY = personalSpaceLevel ? height / 2 - 145 : height / 2 - 45;
@@ -365,6 +365,14 @@ public final class PortalTeleportConfirmScreen extends Screen {
         }
 
         super.render(graphics, mouseX, mouseY, partialTick);
+    }
+
+    @Override
+    protected void renderBlurredBackground(float partialTick) {
+    }
+
+    private void renderPersonalSpaceBackground(GuiGraphics graphics) {
+        graphics.fill(0, 0, width, height, 0x66000000);
     }
 
     @Override

@@ -276,7 +276,7 @@ public class PersonalSpaceSettingsScreen extends Screen {
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        renderBackground(graphics, mouseX, mouseY, partialTick);
+        renderPersonalSpaceBackground(graphics);
 
         graphics.drawCenteredString(
                 font,
@@ -313,6 +313,14 @@ public class PersonalSpaceSettingsScreen extends Screen {
         );
 
         super.render(graphics, mouseX, mouseY, partialTick);
+    }
+
+    @Override
+    protected void renderBlurredBackground(float partialTick) {
+    }
+
+    private void renderPersonalSpaceBackground(GuiGraphics graphics) {
+        graphics.fill(0, 0, width, height, 0x66000000);
     }
 
     @Override

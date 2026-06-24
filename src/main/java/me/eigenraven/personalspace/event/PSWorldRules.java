@@ -1,7 +1,9 @@
 package me.eigenraven.personalspace.event;
 
 import me.eigenraven.personalspace.PersonalSpace;
+import me.eigenraven.personalspace.data.PersonalSpaceData;
 import me.eigenraven.personalspace.network.PersonalSpaceSettingsSync;
+import net.minecraft.network.protocol.game.ClientboundSetTimePacket;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.Level;
@@ -73,12 +75,28 @@ public final class PSWorldRules {
                 continue;
             }
 
-            level.setWeatherParameters(
-                    6000,
-                    0,
-                    false,
-                    false
-            );
+            PersonalSpaceData data = PersonalSpaceData.load(level);
+
+            level.setDayTime(data.getTimeOfDay());
+
+            for (ServerPlayer player : level.players()) {
+                player.connection.send(new ClientboundSetTimePacket(
+                        level.getGameTime(),
+                        data.getTimeOfDay(),
+                        false
+                ));
+            }
+
+            if (!data.isWeatherEnabled()) {
+                level.setRainLevel(0.0F);
+                level.setThunderLevel(0.0F);
+                level.setWeatherParameters(
+                        6000,
+                        0,
+                        false,
+                        false
+                );
+            }
         }
     }
 

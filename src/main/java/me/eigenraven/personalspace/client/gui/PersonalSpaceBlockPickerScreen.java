@@ -183,7 +183,7 @@ public class PersonalSpaceBlockPickerScreen extends Screen {
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        renderBackground(graphics, mouseX, mouseY, partialTick);
+        renderPersonalSpaceBackground(graphics);
 
         int panelX = (width - PANEL_WIDTH) / 2;
         int panelY = (height - PANEL_HEIGHT) / 2;
@@ -335,6 +335,14 @@ public class PersonalSpaceBlockPickerScreen extends Screen {
         }
 
         return Math.max(0, (filteredBlocks.size() - 1) / BLOCKS_PER_PAGE);
+    }
+
+    @Override
+    protected void renderBlurredBackground(float partialTick) {
+    }
+
+    private void renderPersonalSpaceBackground(GuiGraphics graphics) {
+        graphics.fill(0, 0, width, height, 0x66000000);
     }
 
     @Override

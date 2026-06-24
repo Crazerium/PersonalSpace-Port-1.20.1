@@ -840,7 +840,7 @@ public class PersonalSpaceScreen extends Screen {
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        renderBackground(graphics, mouseX, mouseY, partialTick);
+        renderPersonalSpaceBackground(graphics);
 
         int panelHeight = getPanelHeight();
         int panelX = (width - PANEL_WIDTH) / 2;
@@ -1159,6 +1159,14 @@ public class PersonalSpaceScreen extends Screen {
         if (id.contains("planks")) return 0xFFA67C52;
 
         return fallback;
+    }
+
+    @Override
+    protected void renderBlurredBackground(float partialTick) {
+    }
+
+    private void renderPersonalSpaceBackground(GuiGraphics graphics) {
+        graphics.fill(0, 0, width, height, 0x66000000);
     }
 
     @Override
