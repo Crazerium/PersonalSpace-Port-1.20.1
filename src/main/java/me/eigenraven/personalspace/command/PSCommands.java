@@ -7,6 +7,7 @@ import me.eigenraven.personalspace.dimension.PSDimensions;
 import me.eigenraven.personalspace.registry.PSItems;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
+import net.minecraft.commands.SharedSuggestionProvider;
 import net.minecraft.commands.arguments.EntityArgument;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.component.DataComponents;
@@ -22,6 +23,9 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.level.Level;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public final class PSCommands {
     private static final BlockPos DEFAULT_PORTAL_TARGET_POS = new BlockPos(7, 65, 7);
 
@@ -33,6 +37,10 @@ public final class PSCommands {
                 .requires(source -> source.hasPermission(2))
                 .then(Commands.literal("dimension")
                         .then(Commands.argument("name", StringArgumentType.word())
+                                .suggests((context, builder) -> SharedSuggestionProvider.suggest(
+                                        getPersonalSpaceDimensionSuggestions(context.getSource().getServer()),
+                                        builder
+                                ))
                                 .then(Commands.literal("tp")
                                         .executes(context -> teleportToDimension(
                                                 context.getSource(),
@@ -113,15 +121,20 @@ public final class PSCommands {
         ItemStack stack = new ItemStack(PSItems.PERSONAL_PORTAL.get());
 
         CompoundTag blockEntityTag = new CompoundTag();
+        blockEntityTag.putString(
+                "id",
+                ResourceLocation.fromNamespaceAndPath(PersonalSpace.MODID, "personal_portal").toString()
+        );
         blockEntityTag.putBoolean("Active", true);
         blockEntityTag.putBoolean("ReturnPortal", false);
         blockEntityTag.putString("TargetLevel", dimensionKey.location().toString());
         blockEntityTag.putLong("TargetPos", DEFAULT_PORTAL_TARGET_POS.asLong());
 
         stack.set(DataComponents.BLOCK_ENTITY_DATA, CustomData.of(blockEntityTag));
-        stack.set(DataComponents.CUSTOM_NAME, Component.literal(
-                "Personal Portal: " + formatDimensionName(dimensionKey.location())
-        ));
+        stack.set(
+                DataComponents.CUSTOM_NAME,
+                Component.literal("Personal Portal: " + formatDimensionName(dimensionKey.location()))
+        );
 
         boolean inserted = targetPlayer.getInventory().add(stack);
 
@@ -181,5 +194,37 @@ public final class PSCommands {
         }
 
         return location.toString();
+    }
+
+    private static List<String> getPersonalSpaceDimensionSuggestions(MinecraftServer server) {
+        List<String> suggestions = new ArrayList<>();
+
+        for (ServerLevel level : server.getAllLevels()) {
+            ResourceLocation location = level.dimension().location();
+
+            if (!location.getNamespace().equals(PersonalSpace.MODID)) {
+                continue;
+            }
+
+            String path = location.getPath();
+
+            if (path.startsWith("ps_") && path.length() > 3) {
+                addSuggestionIfMissing(suggestions, path.substring(3));
+            } else {
+                addSuggestionIfMissing(suggestions, path);
+            }
+        }
+
+        return suggestions;
+    }
+
+    private static void addSuggestionIfMissing(List<String> suggestions, String value) {
+        if (value == null || value.isBlank()) {
+            return;
+        }
+
+        if (!suggestions.contains(value)) {
+            suggestions.add(value);
+        }
     }
 }
