@@ -5,6 +5,7 @@ import me.eigenraven.personalspace.client.gui.PersonalSpaceScreen;
 import me.eigenraven.personalspace.client.gui.PersonalSpaceSettingsScreen;
 import me.eigenraven.personalspace.client.gui.PortalTeleportConfirmScreen;
 import me.eigenraven.personalspace.data.PersonalSpaceData;
+import me.eigenraven.personalspace.dimension.PSDimensions;
 import net.minecraft.network.chat.Component;
 import me.eigenraven.personalspace.registry.PSItems;
 import net.minecraft.client.Minecraft;
@@ -34,7 +35,6 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
-import java.awt.*;
 import java.util.List;
 
 public final class PortalBlock extends BaseEntityBlock {
@@ -235,7 +235,7 @@ public final class PortalBlock extends BaseEntityBlock {
     }
 
     private static boolean isPersonalSpaceDimension(Level level) {
-        return level.dimension().location().getNamespace().equals(PersonalSpace.MODID);
+        return PSDimensions.isPersonalSpaceDimension(level.dimension().location());
     }
 
     @OnlyIn(Dist.CLIENT)
@@ -293,6 +293,10 @@ public final class PortalBlock extends BaseEntityBlock {
 
         if (levelId.getNamespace().equals(PersonalSpace.MODID)) {
             String path = levelId.getPath();
+
+            if (path.startsWith(PSDimensions.PERSONAL_SPACE_DIMENSION_FOLDER + "/")) {
+                path = path.substring((PSDimensions.PERSONAL_SPACE_DIMENSION_FOLDER + "/").length());
+            }
 
             if (path.startsWith("ps_")) {
                 path = path.substring(3);

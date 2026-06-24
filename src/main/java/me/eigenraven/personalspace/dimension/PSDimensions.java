@@ -37,12 +37,16 @@ import java.util.UUID;
 
 public final class PSDimensions {
     private static final int DEFAULT_GROUND_LEVEL = 64;
+    public static final String PERSONAL_SPACE_DIMENSION_FOLDER = "personal_space_dimensions";
 
     private PSDimensions() {
     }
 
     public static ResourceKey<Level> randomPersonalKey() {
-        String id = "ps_" + UUID.randomUUID().toString().replace("-", "").toLowerCase(Locale.ROOT);
+        String id = PERSONAL_SPACE_DIMENSION_FOLDER
+                + "/ps_"
+                + UUID.randomUUID().toString().replace("-", "").toLowerCase(Locale.ROOT);
+
         return key(id);
     }
 
@@ -53,20 +57,14 @@ public final class PSDimensions {
             return randomPersonalKey();
         }
 
-        ResourceKey<Level> baseKey = ResourceKey.create(
-                Registries.DIMENSION,
-                new ResourceLocation(PersonalSpace.MODID, "ps_" + safeName)
-        );
+        ResourceKey<Level> baseKey = key("ps_" + safeName);
 
         if (server.getLevel(baseKey) == null) {
             return baseKey;
         }
 
         for (int index = 2; index < 10_000; index++) {
-            ResourceKey<Level> candidate = ResourceKey.create(
-                    Registries.DIMENSION,
-                    new ResourceLocation(PersonalSpace.MODID, "ps_" + safeName + "_" + index)
-            );
+            ResourceKey<Level> candidate = key("ps_" + safeName + "_" + index);
 
             if (server.getLevel(candidate) == null) {
                 return candidate;
@@ -131,7 +129,13 @@ public final class PSDimensions {
         if (idOrPath.contains(":")) {
             location = new ResourceLocation(idOrPath.toLowerCase(Locale.ROOT));
         } else {
-            location = new ResourceLocation(PersonalSpace.MODID, idOrPath.toLowerCase(Locale.ROOT));
+            String path = idOrPath.toLowerCase(Locale.ROOT);
+
+            if (!path.startsWith(PERSONAL_SPACE_DIMENSION_FOLDER + "/")) {
+                path = PERSONAL_SPACE_DIMENSION_FOLDER + "/" + path;
+            }
+
+            location = new ResourceLocation(PersonalSpace.MODID, path);
         }
 
         return ResourceKey.create(Registries.DIMENSION, location);
@@ -810,9 +814,17 @@ public final class PSDimensions {
     }
 
     public static boolean isPersonalSpaceDimension(ResourceLocation id) {
-        return id != null
-                && id.getNamespace().equals(PersonalSpace.MODID)
-                && id.getPath().startsWith("ps_");
+        if (id == null || !id.getNamespace().equals(PersonalSpace.MODID)) {
+            return false;
+        }
+
+        String path = id.getPath();
+
+        if (path.startsWith(PERSONAL_SPACE_DIMENSION_FOLDER + "/")) {
+            path = path.substring((PERSONAL_SPACE_DIMENSION_FOLDER + "/").length());
+        }
+
+        return path.startsWith("ps_");
     }
 
 

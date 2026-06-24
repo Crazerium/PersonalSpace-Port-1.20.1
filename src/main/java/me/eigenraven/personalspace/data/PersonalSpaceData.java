@@ -25,6 +25,9 @@ public class PersonalSpaceData {
     private int returnPosX = 0;
     private int returnPosY = 64;
     private int returnPosZ = 0;
+    private int respawnPosX = 7;
+    private int respawnPosY = 66;
+    private int respawnPosZ = 7;
     private long timeOfDay = 6000L;
     private int skyRed = 128;
     private int skyGreen = 192;
@@ -287,6 +290,9 @@ public class PersonalSpaceData {
         if (centerMarkerBlock == null || centerMarkerBlock.isBlank()) {
             centerMarkerBlock = "minecraft:beacon";
         }
+        if (respawnPosY <= -64 || respawnPosY >= 320) {
+            resetRespawnPos();
+        }
     }
 
     private static long normalizeTime(long value) {
@@ -310,6 +316,15 @@ public class PersonalSpaceData {
     }
     public void setGroundLevel(int groundLevel) {
         this.groundLevel = groundLevel;
+
+        if (respawnPosX == 7 && respawnPosZ == 7) {
+            int oldDefaultY = respawnPosY;
+            int newDefaultY = groundLevel + 2;
+
+            if (oldDefaultY <= 0 || Math.abs(oldDefaultY - newDefaultY) <= 4) {
+                respawnPosY = newDefaultY;
+            }
+        }
     }
     public String getReturnLevel() {
         return returnLevel;
@@ -328,6 +343,33 @@ public class PersonalSpaceData {
         this.returnPosY = pos.getY();
         this.returnPosZ = pos.getZ();
     }
+
+    public BlockPos getRespawnPos() {
+        return new BlockPos(respawnPosX, respawnPosY, respawnPosZ);
+    }
+
+    public void setRespawnPos(BlockPos pos) {
+        if (pos == null) {
+            return;
+        }
+
+        this.respawnPosX = pos.getX();
+        this.respawnPosY = pos.getY();
+        this.respawnPosZ = pos.getZ();
+    }
+
+    public void resetRespawnPos() {
+        BlockPos defaultRespawnPos = getDefaultRespawnPos();
+
+        this.respawnPosX = defaultRespawnPos.getX();
+        this.respawnPosY = defaultRespawnPos.getY();
+        this.respawnPosZ = defaultRespawnPos.getZ();
+    }
+
+    public BlockPos getDefaultRespawnPos() {
+        return new BlockPos(7, groundLevel + 2, 7);
+    }
+
     public long getTimeOfDay() {
         return normalizeTime(timeOfDay);
     }

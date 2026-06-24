@@ -105,5 +105,16 @@
   "screen.personalspace.portal.title": "Персональный портал",
   "screen.personalspace.portal.enter": "Телепортироваться",
   "screen.personalspace.portal.enter_dimension": "Измерение: %s",
-  "screen.personalspace.portal.return_to": "Вернуться в: %s"
+  "screen.personalspace.portal.return_to": "Вернуться в: %s",
+  "command.personalspace.player_only": "Эту команду может использовать только игрок.",
+  "command.personalspace.dimension_not_found": "Измерение Personal Space не найдено: %s",
+  "command.personalspace.dimension_not_loaded": "Измерение Personal Space не загружено: %s",
+  "command.personalspace.teleported": "Телепортация в измерение Personal Space: %s, позиция: %s",
+  "command.personalspace.gave_portal": "Выдан персональный портал для %s игроку %s, позиция: %s",
+  "command.personalspace.respawn_get": "Точка респавна для %s: %s",
+  "command.personalspace.respawn_set": "Точка респавна для %s установлена на %s",
+  "command.personalspace.respawn_reset": "Точка респавна для %s сброшена на %s",
+  "command.personalspace.respawn_set_wrong_dimension": "Вы должны находиться внутри %s, чтобы установить его точку респавна.",
+  "message.personalspace.portal_not_active": "[PersonalSpace] Портал не активен!",
+  "message.personalspace.target_dimension_not_found": "[PersonalSpace] Целевое измерение не найдено: %s"
 }

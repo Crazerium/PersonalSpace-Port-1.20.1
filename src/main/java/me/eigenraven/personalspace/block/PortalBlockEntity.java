@@ -1,6 +1,7 @@
 package me.eigenraven.personalspace.block;
 
 import me.eigenraven.personalspace.PersonalSpace;
+import me.eigenraven.personalspace.data.PersonalSpaceData;
 import me.eigenraven.personalspace.dimension.PSDimensions;
 import me.eigenraven.personalspace.network.PersonalSpaceSettingsSync;
 import me.eigenraven.personalspace.registry.PSBlockEntities;
@@ -77,7 +78,7 @@ public class PortalBlockEntity extends BlockEntity {
 
     public void teleport(ServerPlayer player) {
         if (!isActive()) {
-            player.sendSystemMessage(Component.literal("[PersonalSpace] Portal is not active!"));
+            player.sendSystemMessage(Component.translatable("message.personalspace.portal_not_active"));
             return;
         }
 
@@ -89,6 +90,7 @@ public class PortalBlockEntity extends BlockEntity {
 
         if (level != null) {
             long now = level.getGameTime();
+
             if (lastTeleportGameTime >= 0L && now - lastTeleportGameTime < 10L) {
                 return;
             }
@@ -97,30 +99,47 @@ public class PortalBlockEntity extends BlockEntity {
         }
 
         ServerLevel destination = server.getLevel(targetLevel);
+
         if (destination == null
                 && targetLevel.location().getNamespace().equals(PersonalSpace.MODID)) {
             destination = PSDimensions.getOrCreate(server, targetLevel);
         }
 
         if (destination == null) {
-            player.sendSystemMessage(Component.literal(
-                    "[PersonalSpace] Target dimension not found: " + targetLevel.location()
+            player.sendSystemMessage(Component.translatable(
+                    "message.personalspace.target_dimension_not_found",
+                    targetLevel.location()
             ));
             return;
         }
 
-        destination.getChunkAt(targetPos);
+        BlockPos teleportPos = getActualTeleportPos(destination);
+
+        destination.getChunkAt(teleportPos);
 
         player.teleportTo(
                 destination,
-                targetPos.getX() + 0.5D,
-                targetPos.getY() + 1.0D,
-                targetPos.getZ() + 0.5D,
+                teleportPos.getX() + 0.5D,
+                teleportPos.getY(),
+                teleportPos.getZ() + 0.5D,
                 player.getYRot(),
                 player.getXRot()
         );
 
         PersonalSpaceSettingsSync.syncTo(player, destination);
+    }
+
+    private BlockPos getActualTeleportPos(ServerLevel destination) {
+        if (!returnPortal && isPersonalSpaceDimension(destination)) {
+            PersonalSpaceData data = PersonalSpaceData.load(destination);
+            return data.getRespawnPos();
+        }
+
+        return targetPos;
+    }
+
+    private static boolean isPersonalSpaceDimension(Level level) {
+        return level.dimension().location().getNamespace().equals(PersonalSpace.MODID);
     }
 
     public void saveToItem(ItemStack stack) {
