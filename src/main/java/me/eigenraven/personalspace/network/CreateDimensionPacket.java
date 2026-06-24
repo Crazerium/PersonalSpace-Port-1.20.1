@@ -1,5 +1,6 @@
 package me.eigenraven.personalspace.network;
 
+import me.eigenraven.personalspace.PersonalSpace;
 import me.eigenraven.personalspace.block.PortalBlock;
 import me.eigenraven.personalspace.block.PortalBlockEntity;
 import me.eigenraven.personalspace.data.PersonalSpaceData;
@@ -10,6 +11,8 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
@@ -20,7 +23,17 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 
-public class CreateDimensionPacket {
+public class CreateDimensionPacket implements CustomPacketPayload {
+    public static final Type<CreateDimensionPacket> TYPE = new Type<>(
+            ResourceLocation.fromNamespaceAndPath(PersonalSpace.MODID, "create_dimension")
+    );
+
+    public static final StreamCodec<FriendlyByteBuf, CreateDimensionPacket> STREAM_CODEC =
+            StreamCodec.ofMember(
+                    CreateDimensionPacket::encode,
+                    CreateDimensionPacket::decode
+            );
+
     private final PersonalSpaceData.WorldType type;
     private final int height;
     private final BlockPos sourcePortalPos;
@@ -107,42 +120,47 @@ public class CreateDimensionPacket {
         this.repeatingGridEnabled = repeatingGridEnabled;
     }
 
-    public static void encode(CreateDimensionPacket msg, FriendlyByteBuf buf) {
-        buf.writeEnum(msg.type);
-        buf.writeInt(msg.height);
-        buf.writeBlockPos(msg.sourcePortalPos);
+    @Override
+    public Type<? extends CustomPacketPayload> type() {
+        return TYPE;
+    }
 
-        buf.writeBoolean(msg.sourceLevelId != null);
+    public void encode(FriendlyByteBuf buf) {
+        buf.writeEnum(type);
+        buf.writeInt(height);
+        buf.writeBlockPos(sourcePortalPos);
 
-        if (msg.sourceLevelId != null) {
-            buf.writeResourceLocation(msg.sourceLevelId);
+        buf.writeBoolean(sourceLevelId != null);
+
+        if (sourceLevelId != null) {
+            buf.writeResourceLocation(sourceLevelId);
         }
 
-        buf.writeLong(msg.timeOfDay);
-        buf.writeInt(msg.skyRed);
-        buf.writeInt(msg.skyGreen);
-        buf.writeInt(msg.skyBlue);
+        buf.writeLong(timeOfDay);
+        buf.writeInt(skyRed);
+        buf.writeInt(skyGreen);
+        buf.writeInt(skyBlue);
 
-        buf.writeFloat(msg.starBrightness);
-        buf.writeUtf(msg.biomeName);
+        buf.writeFloat(starBrightness);
+        buf.writeUtf(biomeName);
 
-        buf.writeBoolean(msg.treesEnabled);
-        buf.writeBoolean(msg.foliageEnabled);
-        buf.writeBoolean(msg.weatherEnabled);
-        buf.writeBoolean(msg.cloudsEnabled);
+        buf.writeBoolean(treesEnabled);
+        buf.writeBoolean(foliageEnabled);
+        buf.writeBoolean(weatherEnabled);
+        buf.writeBoolean(cloudsEnabled);
 
-        buf.writeUtf(msg.layersPreset);
+        buf.writeUtf(layersPreset);
 
-        buf.writeInt(msg.boundaryChunksX);
-        buf.writeInt(msg.boundaryChunksZ);
-        buf.writeInt(msg.gapChunks);
+        buf.writeInt(boundaryChunksX);
+        buf.writeInt(boundaryChunksZ);
+        buf.writeInt(gapChunks);
 
-        buf.writeUtf(msg.boundaryBlock);
-        buf.writeUtf(msg.roadBlock);
-        buf.writeUtf(msg.centerMarkerBlock);
+        buf.writeUtf(boundaryBlock);
+        buf.writeUtf(roadBlock);
+        buf.writeUtf(centerMarkerBlock);
 
-        buf.writeBoolean(msg.centerMarkerEnabled);
-        buf.writeBoolean(msg.repeatingGridEnabled);
+        buf.writeBoolean(centerMarkerEnabled);
+        buf.writeBoolean(repeatingGridEnabled);
     }
 
     public static CreateDimensionPacket decode(FriendlyByteBuf buf) {
@@ -845,7 +863,7 @@ public class CreateDimensionPacket {
         return portal;
     }
 
-    public PersonalSpaceData.WorldType type() {
+    public PersonalSpaceData.WorldType selectedType() {
         return type;
     }
 
@@ -859,81 +877,5 @@ public class CreateDimensionPacket {
 
     public ResourceLocation sourceLevelId() {
         return sourceLevelId;
-    }
-
-    public long timeOfDay() {
-        return timeOfDay;
-    }
-
-    public int skyRed() {
-        return skyRed;
-    }
-
-    public int skyGreen() {
-        return skyGreen;
-    }
-
-    public int skyBlue() {
-        return skyBlue;
-    }
-
-    public float starBrightness() {
-        return starBrightness;
-    }
-
-    public String biomeName() {
-        return biomeName;
-    }
-
-    public boolean treesEnabled() {
-        return treesEnabled;
-    }
-
-    public boolean foliageEnabled() {
-        return foliageEnabled;
-    }
-
-    public boolean weatherEnabled() {
-        return weatherEnabled;
-    }
-
-    public boolean cloudsEnabled() {
-        return cloudsEnabled;
-    }
-
-    public String layersPreset() {
-        return layersPreset;
-    }
-
-    public int boundaryChunksX() {
-        return boundaryChunksX;
-    }
-
-    public int boundaryChunksZ() {
-        return boundaryChunksZ;
-    }
-
-    public int gapChunks() {
-        return gapChunks;
-    }
-
-    public String boundaryBlock() {
-        return boundaryBlock;
-    }
-
-    public String roadBlock() {
-        return roadBlock;
-    }
-
-    public String centerMarkerBlock() {
-        return centerMarkerBlock;
-    }
-
-    public boolean centerMarkerEnabled() {
-        return centerMarkerEnabled;
-    }
-
-    public boolean repeatingGridEnabled() {
-        return repeatingGridEnabled;
     }
 }

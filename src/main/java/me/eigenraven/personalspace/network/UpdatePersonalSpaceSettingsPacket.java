@@ -3,10 +3,23 @@ package me.eigenraven.personalspace.network;
 import me.eigenraven.personalspace.PersonalSpace;
 import me.eigenraven.personalspace.data.PersonalSpaceData;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 
-public class UpdatePersonalSpaceSettingsPacket {
+public class UpdatePersonalSpaceSettingsPacket implements CustomPacketPayload {
+    public static final Type<UpdatePersonalSpaceSettingsPacket> TYPE = new Type<>(
+            ResourceLocation.fromNamespaceAndPath(PersonalSpace.MODID, "update_personal_space_settings")
+    );
+
+    public static final StreamCodec<FriendlyByteBuf, UpdatePersonalSpaceSettingsPacket> STREAM_CODEC =
+            StreamCodec.ofMember(
+                    UpdatePersonalSpaceSettingsPacket::encode,
+                    UpdatePersonalSpaceSettingsPacket::decode
+            );
+
     private final long timeOfDay;
     private final int skyRed;
     private final int skyGreen;
@@ -48,21 +61,26 @@ public class UpdatePersonalSpaceSettingsPacket {
         this.layersPreset = layersPreset;
     }
 
-    public static void encode(UpdatePersonalSpaceSettingsPacket msg, FriendlyByteBuf buf) {
-        buf.writeLong(msg.timeOfDay);
-        buf.writeInt(msg.skyRed);
-        buf.writeInt(msg.skyGreen);
-        buf.writeInt(msg.skyBlue);
+    @Override
+    public Type<? extends CustomPacketPayload> type() {
+        return TYPE;
+    }
 
-        buf.writeFloat(msg.starBrightness);
-        buf.writeUtf(msg.biomeName);
+    public void encode(FriendlyByteBuf buf) {
+        buf.writeLong(timeOfDay);
+        buf.writeInt(skyRed);
+        buf.writeInt(skyGreen);
+        buf.writeInt(skyBlue);
 
-        buf.writeBoolean(msg.treesEnabled);
-        buf.writeBoolean(msg.foliageEnabled);
-        buf.writeBoolean(msg.weatherEnabled);
-        buf.writeBoolean(msg.cloudsEnabled);
+        buf.writeFloat(starBrightness);
+        buf.writeUtf(biomeName);
 
-        buf.writeUtf(msg.layersPreset);
+        buf.writeBoolean(treesEnabled);
+        buf.writeBoolean(foliageEnabled);
+        buf.writeBoolean(weatherEnabled);
+        buf.writeBoolean(cloudsEnabled);
+
+        buf.writeUtf(layersPreset);
     }
 
     public static UpdatePersonalSpaceSettingsPacket decode(FriendlyByteBuf buf) {

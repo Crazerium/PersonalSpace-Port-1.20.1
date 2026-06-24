@@ -1,10 +1,23 @@
 package me.eigenraven.personalspace.network;
 
+import me.eigenraven.personalspace.PersonalSpace;
 import me.eigenraven.personalspace.client.ClientPersonalSpaceSettings;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
 
-public class SyncPersonalSpaceSettingsPacket {
+public class SyncPersonalSpaceSettingsPacket implements CustomPacketPayload {
+    public static final Type<SyncPersonalSpaceSettingsPacket> TYPE = new Type<>(
+            ResourceLocation.fromNamespaceAndPath(PersonalSpace.MODID, "sync_personal_space_settings")
+    );
+
+    public static final StreamCodec<FriendlyByteBuf, SyncPersonalSpaceSettingsPacket> STREAM_CODEC =
+            StreamCodec.ofMember(
+                    SyncPersonalSpaceSettingsPacket::encode,
+                    SyncPersonalSpaceSettingsPacket::decode
+            );
+
     private final ResourceLocation levelId;
 
     private final long timeOfDay;
@@ -50,23 +63,28 @@ public class SyncPersonalSpaceSettingsPacket {
         this.layersPreset = layersPreset;
     }
 
-    public static void encode(SyncPersonalSpaceSettingsPacket msg, FriendlyByteBuf buf) {
-        buf.writeResourceLocation(msg.levelId);
+    @Override
+    public Type<? extends CustomPacketPayload> type() {
+        return TYPE;
+    }
 
-        buf.writeLong(msg.timeOfDay);
-        buf.writeInt(msg.skyRed);
-        buf.writeInt(msg.skyGreen);
-        buf.writeInt(msg.skyBlue);
+    public void encode(FriendlyByteBuf buf) {
+        buf.writeResourceLocation(levelId);
 
-        buf.writeFloat(msg.starBrightness);
-        buf.writeUtf(msg.biomeName);
+        buf.writeLong(timeOfDay);
+        buf.writeInt(skyRed);
+        buf.writeInt(skyGreen);
+        buf.writeInt(skyBlue);
 
-        buf.writeBoolean(msg.treesEnabled);
-        buf.writeBoolean(msg.foliageEnabled);
-        buf.writeBoolean(msg.weatherEnabled);
-        buf.writeBoolean(msg.cloudsEnabled);
+        buf.writeFloat(starBrightness);
+        buf.writeUtf(biomeName);
 
-        buf.writeUtf(msg.layersPreset);
+        buf.writeBoolean(treesEnabled);
+        buf.writeBoolean(foliageEnabled);
+        buf.writeBoolean(weatherEnabled);
+        buf.writeBoolean(cloudsEnabled);
+
+        buf.writeUtf(layersPreset);
     }
 
     public static SyncPersonalSpaceSettingsPacket decode(FriendlyByteBuf buf) {
@@ -90,7 +108,7 @@ public class SyncPersonalSpaceSettingsPacket {
         );
     }
 
-    public void applyClientSide() {
+    public void handleClientSide() {
         ClientPersonalSpaceSettings.set(
                 levelId,
                 timeOfDay,

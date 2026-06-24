@@ -2,6 +2,8 @@ package me.eigenraven.personalspace.client.gui;
 
 import me.eigenraven.personalspace.PersonalSpace;
 import me.eigenraven.personalspace.client.ClientPersonalSpaceSettings;
+import me.eigenraven.personalspace.network.UpdatePersonalSpaceSettingsPacket;
+import me.eigenraven.personalspace.network.UsePortalPacket;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
@@ -9,6 +11,7 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.neoforged.neoforge.network.PacketDistributor;
 
 import java.util.Locale;
 
@@ -113,11 +116,10 @@ public final class PortalTeleportConfirmScreen extends Screen {
         addRenderableWidget(Button.builder(
                 Component.translatable("screen.personalspace.portal.enter"),
                 button -> {
-                    PersonalSpace.LOGGER.warn(
-                            "Portal use packet is not implemented yet. Position={}, level={}",
+                    PacketDistributor.sendToServer(new UsePortalPacket(
                             portalPos,
                             clickedLevelId
-                    );
+                    ));
 
                     Minecraft.getInstance().setScreen(null);
                 }
@@ -223,10 +225,19 @@ public final class PortalTeleportConfirmScreen extends Screen {
         addRenderableWidget(Button.builder(
                 settingsText("settings.save"),
                 button -> {
-                    PersonalSpace.LOGGER.warn(
-                            "Update personal space settings packet is not implemented yet. Level={}",
-                            clickedLevelId
-                    );
+                    PacketDistributor.sendToServer(new UpdatePersonalSpaceSettingsPacket(
+                            selectedTime,
+                            selectedRed,
+                            selectedGreen,
+                            selectedBlue,
+                            selectedStarBrightness,
+                            lockedBiomeName,
+                            lockedTreesEnabled,
+                            lockedFoliageEnabled,
+                            selectedWeatherEnabled,
+                            selectedCloudsEnabled,
+                            lockedLayersPreset
+                    ));
 
                     Minecraft.getInstance().setScreen(null);
                 }

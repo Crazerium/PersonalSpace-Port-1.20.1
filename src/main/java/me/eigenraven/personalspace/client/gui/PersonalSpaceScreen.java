@@ -1,7 +1,7 @@
 package me.eigenraven.personalspace.client.gui;
 
-import me.eigenraven.personalspace.PersonalSpace;
 import me.eigenraven.personalspace.data.PersonalSpaceData;
+import me.eigenraven.personalspace.network.CreateDimensionPacket;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
@@ -13,6 +13,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.Level;
+import net.neoforged.neoforge.network.PacketDistributor;
 
 public class PersonalSpaceScreen extends Screen {
     private static final int PANEL_WIDTH = 460;
@@ -241,32 +242,37 @@ public class PersonalSpaceScreen extends Screen {
 
                     selectedHeight = getClampedHeight();
 
-                    PersonalSpace.LOGGER.warn(
-                            "Create dimension packet is not implemented yet. Type={}, height={}, portalPos={}, level={}, time={}, sky=({}, {}, {}), stars={}, biome={}, trees={}, foliage={}, weather={}, clouds={}, layers={}, boundary=({}, {}), gap={}, blocks=({}, {}, {}), centerMarker={}, repeatingGrid={}",
+                    PacketDistributor.sendToServer(new CreateDimensionPacket(
                             selectedType,
                             selectedHeight,
                             portalPos,
                             level.dimension().location(),
+
                             timeOfDay,
                             skyRed,
                             skyGreen,
                             skyBlue,
+
                             starBrightness,
                             biomeName,
+
                             treesEnabled,
                             foliageEnabled,
                             weatherEnabled,
                             cloudsEnabled,
+
                             layersPreset,
                             boundaryChunksX,
                             boundaryChunksZ,
                             gapChunks,
+
                             boundaryBlock,
                             roadBlock,
                             centerMarkerBlock,
+
                             centerMarkerEnabled,
                             repeatingGridEnabled
-                    );
+                    ));
 
                     Minecraft.getInstance().setScreen(null);
                 }

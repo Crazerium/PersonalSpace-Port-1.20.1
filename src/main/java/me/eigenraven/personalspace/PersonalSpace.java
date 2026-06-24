@@ -4,6 +4,7 @@ import com.mojang.logging.LogUtils;
 import me.eigenraven.personalspace.command.PSCommands;
 import me.eigenraven.personalspace.config.PSConfig;
 import me.eigenraven.personalspace.event.PSWorldRules;
+import me.eigenraven.personalspace.network.PSNetwork;
 import me.eigenraven.personalspace.registry.PSBlockEntities;
 import me.eigenraven.personalspace.registry.PSBlocks;
 import me.eigenraven.personalspace.registry.PSChunkGenerators;
@@ -34,6 +35,8 @@ public final class PersonalSpace {
         PSBlockEntities.BLOCK_ENTITIES.register(modBus);
         PSChunkGenerators.CHUNK_GENERATORS.register(modBus);
         PSCreativeTabs.CREATIVE_MODE_TABS.register(modBus);
+
+        modBus.addListener(PSNetwork::register);
 
         NeoForge.EVENT_BUS.addListener(PSWorldRules::onPotentialSpawns);
         NeoForge.EVENT_BUS.addListener(PSWorldRules::onMobSpawnPositionCheck);
