@@ -1,46 +1,64 @@
-# Personal Space: Unofficial 1.20.1 Port
+# Personal Space Unofficial
 
-**Personal Space: Unofficial 1.20.1 Port** is a Forge port of the original Personal Space mod for Minecraft 1.20.1.
+Personal Space Unofficial is an unofficial modern port of the original Personal Space mod for newer Minecraft versions.
 
-> This is an unofficial port. It is not an official continuation of the original Personal Space mod.
+The mod adds private player-owned dimensions that can be used as personal utility spaces. It is useful for modpacks and servers where players need their own configurable private area.
+
+## Supported Versions
+
+* Minecraft 1.20.1 — Forge
+* Minecraft 1.21.1 — NeoForge
 
 ## Features
 
-- Create private player-owned dimensions.
-- Configure dimension size, height, boundaries, gaps, floor, wall, and roof blocks.
-- Configure time of day, weather, clouds, sky color, star brightness, biome, trees, and foliage.
-- Use a personal portal block to enter and leave your dimension.
-- Optional GTCEu / GT Odyssey compatibility for Personal Space dimensions.
-
-## Requirements
-
-- Minecraft 1.20.1
-- Forge 47.x
-- Infiniverse
+* Create private player-owned dimensions
+* Configure dimension size, height, boundaries, gaps, floor, wall, and roof blocks
+* Configure time of day, weather, clouds, sky color, star brightness, biome, trees, and foliage
+* Use a personal portal block to enter and leave your dimension
+* Optional compatibility with GTCEu / GT Odyssey where supported
 
 ## Modpack Usage
 
 By default, the personal portal has no crafting recipe.
 
-This is intentional. The portal is designed for modpack developers and server owners, so they can decide when and how players receive it, for example through quests, progression systems, shops, commands, or custom recipes.
+This is intentional. The portal is designed for modpack developers and server owners, so they can decide how players receive it, for example through quests, progression systems, shops, commands, or custom recipes.
 
 This prevents players from freely crafting and spamming portals.
 
-## Optional Compatibility
+## Requirements
 
-- GTCEu
-- GT Odyssey / GTO
+Requirements depend on the downloaded file.
+
+### Forge
+
+* Minecraft 1.20.1
+* Forge 47.x
+* Infiniverse
+
+### NeoForge
+
+* Minecraft 1.21.1
+* NeoForge
+* Infiniverse
+
+## Important
+
+This is an unofficial port and is not an official continuation of the original Personal Space mod.
 
 ## License
 
-This project is licensed under the GNU Lesser General Public License v3.0.
+LGPL-3.0
 
-See [`LICENSE`](LICENSE) for details.
+## Original Project
+
+This is an unofficial modern port of the original Personal Space project.
+
+Original CurseForge project: https://www.curseforge.com/minecraft/mc-mods/personal-space
+
+I am not the original author of Personal Space. All rights to the original project belong to its original creator.
+
+This project follows the original project's GNU Lesser General Public License.
 
 ## Credits
 
 Original Personal Space mod by the original authors and contributors.
-
-Unofficial Forge 1.20.1 port by Crazerium.
-
-Portal texture/model assets are used with permission from the asset author.
