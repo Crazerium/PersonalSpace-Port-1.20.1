@@ -4,7 +4,6 @@ import me.eigenraven.personalspace.PersonalSpace;
 import me.eigenraven.personalspace.data.PersonalSpaceData;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraftforge.network.PacketDistributor;
 
 public final class PersonalSpaceSettingsSync {
     private PersonalSpaceSettingsSync() {
@@ -14,27 +13,19 @@ public final class PersonalSpaceSettingsSync {
         if (!isPersonalSpace(level)) {
             return;
         }
+
         PersonalSpaceData data = PersonalSpaceData.load(level);
+
         level.setDayTime(data.getTimeOfDay());
+
         if (!data.isWeatherEnabled()) {
             level.setWeatherParameters(6000, 0, false, false);
         }
-        PersonalSpace.CHANNEL.send(
-                PacketDistributor.PLAYER.with(() -> player),
-                new SyncPersonalSpaceSettingsPacket(
-                        level.dimension().location(),
-                        data.getTimeOfDay(),
-                        data.getSkyRed(),
-                        data.getSkyGreen(),
-                        data.getSkyBlue(),
-                        data.getStarBrightness(),
-                        data.getBiomeName(),
-                        data.isTreesEnabled(),
-                        data.isFoliageEnabled(),
-                        data.isWeatherEnabled(),
-                        data.isCloudsEnabled(),
-                        data.getLayersPreset()
-                )
+
+        PersonalSpace.LOGGER.debug(
+                "Personal Space settings sync packet is not implemented yet. Player={}, level={}",
+                player.getGameProfile().getName(),
+                level.dimension().location()
         );
     }
 

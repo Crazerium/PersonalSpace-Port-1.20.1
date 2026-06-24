@@ -15,12 +15,10 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.util.Mth;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraftforge.network.NetworkEvent;
-
-import java.util.function.Supplier;
 
 public class CreateDimensionPacket {
     private final PersonalSpaceData.WorldType type;
@@ -192,112 +190,89 @@ public class CreateDimensionPacket {
         );
     }
 
-    public static void handle(
-            CreateDimensionPacket msg,
-            Supplier<NetworkEvent.Context> ctx
-    ) {
-        NetworkEvent.Context context = ctx.get();
-
-        context.enqueueWork(() -> {
-            ServerPlayer player = context.getSender();
-
-            if (player == null) {
-                return;
-            }
-
-            handleOnServer(msg, player);
-        });
-
-        context.setPacketHandled(true);
-    }
-
-    private static void handleOnServer(CreateDimensionPacket msg, ServerPlayer player) {
+    public void handleServerSide(ServerPlayer player) {
         MinecraftServer server = player.server;
 
         if (server == null) {
             return;
         }
 
-        if (server == null) {
-            return;
-        }
-
-        if (!isValidChunkValue(msg.boundaryChunksX)
-                || !isValidChunkValue(msg.boundaryChunksZ)
-                || !isValidChunkValue(msg.gapChunks)) {
+        if (!isValidChunkValue(boundaryChunksX)
+                || !isValidChunkValue(boundaryChunksZ)
+                || !isValidChunkValue(gapChunks)) {
             player.sendSystemMessage(Component.literal("Boundary and gap values must be from 0 to 16."));
             return;
         }
 
-        PersonalSpaceData.WorldType safeType = msg.type == null
+        PersonalSpaceData.WorldType safeType = type == null
                 ? PersonalSpaceData.WorldType.VOID
-                : msg.type;
-        int safeHeight = net.minecraft.util.Mth.clamp(msg.height, 1, 240);
+                : type;
 
-        long safeTimeOfDay = Math.max(0L, Math.min(24000L, msg.timeOfDay));
+        int safeHeight = Mth.clamp(height, 1, 240);
+        long safeTimeOfDay = Math.max(0L, Math.min(24000L, timeOfDay));
 
-        int safeSkyRed = net.minecraft.util.Mth.clamp(msg.skyRed, 0, 255);
-        int safeSkyGreen = net.minecraft.util.Mth.clamp(msg.skyGreen, 0, 255);
-        int safeSkyBlue = net.minecraft.util.Mth.clamp(msg.skyBlue, 0, 255);
+        int safeSkyRed = Mth.clamp(skyRed, 0, 255);
+        int safeSkyGreen = Mth.clamp(skyGreen, 0, 255);
+        int safeSkyBlue = Mth.clamp(skyBlue, 0, 255);
 
-        float safeStarBrightness = net.minecraft.util.Mth.clamp(
-                msg.starBrightness,
+        float safeStarBrightness = Mth.clamp(
+                starBrightness,
                 0.0F,
                 1.0F
         );
 
         String safeBiomeName = sanitizeBiomeId(
                 server,
-                msg.biomeName,
+                biomeName,
                 "minecraft:plains"
         );
 
         String safeLayersPreset = sanitizeLayersPreset(
-                msg.layersPreset,
+                layersPreset,
                 "minecraft:bedrock,1;minecraft:dirt,3;minecraft:grass_block,1"
         );
 
-        int safeBoundaryChunksX = net.minecraft.util.Mth.clamp(
-                msg.boundaryChunksX,
+        int safeBoundaryChunksX = Mth.clamp(
+                boundaryChunksX,
                 0,
                 16
         );
 
-        int safeBoundaryChunksZ = net.minecraft.util.Mth.clamp(
-                msg.boundaryChunksZ,
+        int safeBoundaryChunksZ = Mth.clamp(
+                boundaryChunksZ,
                 0,
                 16
         );
 
-        int safeGapChunks = net.minecraft.util.Mth.clamp(
-                msg.gapChunks,
+        int safeGapChunks = Mth.clamp(
+                gapChunks,
                 0,
                 16
         );
 
         String safeBoundaryBlock = sanitizeBlockId(
-                msg.boundaryBlock,
+                boundaryBlock,
                 "minecraft:white_concrete"
         );
 
         String safeRoadBlock = sanitizeBlockId(
-                msg.roadBlock,
+                roadBlock,
                 "minecraft:cobbled_deepslate"
         );
 
         String safeCenterMarkerBlock = sanitizeBlockId(
-                msg.centerMarkerBlock,
+                centerMarkerBlock,
                 "minecraft:white_concrete"
         );
 
-        ServerLevel sourceLevel = getSourceLevel(msg, player);
+        ServerLevel sourceLevel = getSourceLevel(this, player);
 
         if (sourceLevel == null) {
             player.sendSystemMessage(Component.literal("Source dimension was not found."));
             return;
         }
 
-        BlockEntity sourceBlockEntity = sourceLevel.getBlockEntity(msg.sourcePortalPos);
+        BlockEntity sourceBlockEntity = sourceLevel.getBlockEntity(sourcePortalPos);
 
         if (!(sourceBlockEntity instanceof PortalBlockEntity sourcePortal)) {
             player.sendSystemMessage(Component.literal("Personal Space portal was not found."));
@@ -320,7 +295,7 @@ public class CreateDimensionPacket {
         data.setGroundLevel(safeHeight);
 
         data.setReturnLevel(sourceLevel.dimension().location().toString());
-        data.setReturnPos(msg.sourcePortalPos);
+        data.setReturnPos(sourcePortalPos);
 
         data.setTimeOfDay(safeTimeOfDay);
         data.setSkyColor(safeSkyRed, safeSkyGreen, safeSkyBlue);
@@ -328,10 +303,10 @@ public class CreateDimensionPacket {
         data.setStarBrightness(safeStarBrightness);
         data.setBiomeName(safeBiomeName);
 
-        data.setTreesEnabled(msg.treesEnabled);
-        data.setFoliageEnabled(msg.foliageEnabled);
-        data.setWeatherEnabled(msg.weatherEnabled);
-        data.setCloudsEnabled(msg.cloudsEnabled);
+        data.setTreesEnabled(treesEnabled);
+        data.setFoliageEnabled(foliageEnabled);
+        data.setWeatherEnabled(weatherEnabled);
+        data.setCloudsEnabled(cloudsEnabled);
 
         data.setLayersPreset(safeLayersPreset);
 
@@ -343,8 +318,8 @@ public class CreateDimensionPacket {
         data.setRoadBlock(safeRoadBlock);
         data.setCenterMarkerBlock(safeCenterMarkerBlock);
 
-        data.setCenterMarkerEnabled(msg.centerMarkerEnabled);
-        data.setRepeatingGridEnabled(msg.repeatingGridEnabled);
+        data.setCenterMarkerEnabled(centerMarkerEnabled);
+        data.setRepeatingGridEnabled(repeatingGridEnabled);
 
         BlockPos innerPortalPos = new BlockPos(
                 7,
@@ -434,7 +409,6 @@ public class CreateDimensionPacket {
         return value >= 0 && value <= 16;
     }
 
-
     private static String sanitizeBiomeId(
             MinecraftServer server,
             String rawId,
@@ -479,9 +453,11 @@ public class CreateDimensionPacket {
 
         String namespace = id.getNamespace();
         String path = id.getPath();
+
         if (isForbiddenMaterialBlockName(path)) {
             return false;
         }
+
         boolean decorativeModBlock =
                 namespace.equals("chisel")
                         || namespace.equals("chisel_reborn")
@@ -510,15 +486,17 @@ public class CreateDimensionPacket {
         if (!state.getFluidState().isEmpty()) {
             return false;
         }
+
         if (state.hasBlockEntity()) {
             return false;
         }
+
         if (namespace.equals("minecraft")) {
             return isAllowedVanillaBuildingBlock(path);
         }
+
         return decorativeModBlock;
     }
-
 
     private static boolean isForbiddenBlockName(String path) {
         return path.contains("log")
@@ -651,7 +629,6 @@ public class CreateDimensionPacket {
                 || path.contains("aluminum")
                 || path.contains("aluminium");
     }
-
 
     private static boolean isAllowedVanillaBuildingBlock(String path) {
         return path.equals("stone")
@@ -793,7 +770,7 @@ public class CreateDimensionPacket {
                 return fallbackPreset;
             }
 
-            count = net.minecraft.util.Mth.clamp(count, 1, 256);
+            count = Mth.clamp(count, 1, 256);
 
             if (!sanitized.isEmpty()) {
                 sanitized.append(";");
@@ -866,5 +843,97 @@ public class CreateDimensionPacket {
         level.setBlockEntity(portal);
 
         return portal;
+    }
+
+    public PersonalSpaceData.WorldType type() {
+        return type;
+    }
+
+    public int height() {
+        return height;
+    }
+
+    public BlockPos sourcePortalPos() {
+        return sourcePortalPos;
+    }
+
+    public ResourceLocation sourceLevelId() {
+        return sourceLevelId;
+    }
+
+    public long timeOfDay() {
+        return timeOfDay;
+    }
+
+    public int skyRed() {
+        return skyRed;
+    }
+
+    public int skyGreen() {
+        return skyGreen;
+    }
+
+    public int skyBlue() {
+        return skyBlue;
+    }
+
+    public float starBrightness() {
+        return starBrightness;
+    }
+
+    public String biomeName() {
+        return biomeName;
+    }
+
+    public boolean treesEnabled() {
+        return treesEnabled;
+    }
+
+    public boolean foliageEnabled() {
+        return foliageEnabled;
+    }
+
+    public boolean weatherEnabled() {
+        return weatherEnabled;
+    }
+
+    public boolean cloudsEnabled() {
+        return cloudsEnabled;
+    }
+
+    public String layersPreset() {
+        return layersPreset;
+    }
+
+    public int boundaryChunksX() {
+        return boundaryChunksX;
+    }
+
+    public int boundaryChunksZ() {
+        return boundaryChunksZ;
+    }
+
+    public int gapChunks() {
+        return gapChunks;
+    }
+
+    public String boundaryBlock() {
+        return boundaryBlock;
+    }
+
+    public String roadBlock() {
+        return roadBlock;
+    }
+
+    public String centerMarkerBlock() {
+        return centerMarkerBlock;
+    }
+
+    public boolean centerMarkerEnabled() {
+        return centerMarkerEnabled;
+    }
+
+    public boolean repeatingGridEnabled() {
+        return repeatingGridEnabled;
     }
 }

@@ -5,6 +5,8 @@ import me.eigenraven.personalspace.dimension.PSDimensions;
 import me.eigenraven.personalspace.network.PersonalSpaceSettingsSync;
 import me.eigenraven.personalspace.registry.PSBlockEntities;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.HolderLookup;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.Connection;
@@ -16,6 +18,7 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
@@ -89,6 +92,7 @@ public class PortalBlockEntity extends BlockEntity {
 
         if (level != null) {
             long now = level.getGameTime();
+
             if (lastTeleportGameTime >= 0L && now - lastTeleportGameTime < 10L) {
                 return;
             }
@@ -97,6 +101,7 @@ public class PortalBlockEntity extends BlockEntity {
         }
 
         ServerLevel destination = server.getLevel(targetLevel);
+
         if (destination == null
                 && targetLevel.location().getNamespace().equals(PersonalSpace.MODID)) {
             destination = PSDimensions.getOrCreate(server, targetLevel);
@@ -125,14 +130,11 @@ public class PortalBlockEntity extends BlockEntity {
 
     public void saveToItem(ItemStack stack) {
         CompoundTag blockEntityTag = new CompoundTag();
-        saveAdditional(blockEntityTag);
-        stack.getOrCreateTag().put("BlockEntityTag", blockEntityTag);
+        saveToTag(blockEntityTag);
+        stack.set(DataComponents.BLOCK_ENTITY_DATA, CustomData.of(blockEntityTag));
     }
 
-    @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
-
+    private void saveToTag(CompoundTag tag) {
         tag.putBoolean(TAG_ACTIVE, active);
         tag.putBoolean(TAG_RETURN_PORTAL, returnPortal);
 
@@ -145,10 +147,7 @@ public class PortalBlockEntity extends BlockEntity {
         }
     }
 
-    @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
-
+    private void loadFromTag(CompoundTag tag) {
         boolean savedActive = tag.getBoolean(TAG_ACTIVE);
         boolean savedReturnPortal = tag.getBoolean(TAG_RETURN_PORTAL);
 
@@ -174,28 +173,40 @@ public class PortalBlockEntity extends BlockEntity {
     }
 
     @Override
+    protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
+        super.saveAdditional(tag, registries);
+        saveToTag(tag);
+    }
+
+    @Override
+    protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
+        super.loadAdditional(tag, registries);
+        loadFromTag(tag);
+    }
+
+    @Override
     public ClientboundBlockEntityDataPacket getUpdatePacket() {
         return ClientboundBlockEntityDataPacket.create(this);
     }
 
     @Override
-    public CompoundTag getUpdateTag() {
-        CompoundTag tag = new CompoundTag();
-        saveAdditional(tag);
+    public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
+        CompoundTag tag = super.getUpdateTag(registries);
+        saveToTag(tag);
         return tag;
     }
 
     @Override
-    public void handleUpdateTag(CompoundTag tag) {
-        load(tag);
+    public void handleUpdateTag(CompoundTag tag, HolderLookup.Provider registries) {
+        loadFromTag(tag);
     }
 
     @Override
-    public void onDataPacket(Connection net, ClientboundBlockEntityDataPacket packet) {
+    public void onDataPacket(Connection net, ClientboundBlockEntityDataPacket packet, HolderLookup.Provider registries) {
         CompoundTag tag = packet.getTag();
 
         if (tag != null) {
-            load(tag);
+            loadFromTag(tag);
         }
     }
 }

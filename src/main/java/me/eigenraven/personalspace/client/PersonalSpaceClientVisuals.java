@@ -3,15 +3,14 @@ package me.eigenraven.personalspace.client;
 import me.eigenraven.personalspace.PersonalSpace;
 import net.minecraft.client.Minecraft;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.client.event.ViewportEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.client.event.ViewportEvent;
 
-@Mod.EventBusSubscriber(
+@EventBusSubscriber(
         modid = PersonalSpace.MODID,
-        value = Dist.CLIENT,
-        bus = Mod.EventBusSubscriber.Bus.FORGE
+        value = net.neoforged.api.distmarker.Dist.CLIENT,
+        bus = EventBusSubscriber.Bus.GAME
 )
 public final class PersonalSpaceClientVisuals {
     private PersonalSpaceClientVisuals() {

@@ -10,9 +10,6 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.network.NetworkEvent;
-
-import java.util.function.Supplier;
 
 public class UsePortalPacket {
     private final BlockPos portalPos;
@@ -35,44 +32,40 @@ public class UsePortalPacket {
         );
     }
 
-    public static void handle(UsePortalPacket msg, Supplier<NetworkEvent.Context> ctx) {
-        NetworkEvent.Context context = ctx.get();
+    public void handleServerSide(ServerPlayer player) {
+        MinecraftServer server = player.getServer();
 
-        context.enqueueWork(() -> {
-            ServerPlayer player = context.getSender();
+        if (server == null) {
+            return;
+        }
 
-            if (player == null) {
-                return;
-            }
+        ResourceKey<Level> sourceKey = ResourceKey.create(
+                Registries.DIMENSION,
+                sourceLevelId
+        );
 
-            MinecraftServer server = player.getServer();
+        ServerLevel sourceLevel = server.getLevel(sourceKey);
 
-            if (server == null) {
-                return;
-            }
+        if (sourceLevel == null && player.level() instanceof ServerLevel currentLevel) {
+            sourceLevel = currentLevel;
+        }
 
-            ResourceKey<Level> sourceKey = ResourceKey.create(
-                    Registries.DIMENSION,
-                    msg.sourceLevelId
-            );
+        if (sourceLevel == null) {
+            return;
+        }
 
-            ServerLevel sourceLevel = server.getLevel(sourceKey);
+        PortalBlock.handlePortalUseOnServer(
+                sourceLevel,
+                portalPos,
+                player
+        );
+    }
 
-            if (sourceLevel == null && player.level() instanceof ServerLevel currentLevel) {
-                sourceLevel = currentLevel;
-            }
+    public BlockPos portalPos() {
+        return portalPos;
+    }
 
-            if (sourceLevel == null) {
-                return;
-            }
-
-            PortalBlock.handlePortalUseOnServer(
-                    sourceLevel,
-                    msg.portalPos,
-                    player
-            );
-        });
-
-        context.setPacketHandled(true);
+    public ResourceLocation sourceLevelId() {
+        return sourceLevelId;
     }
 }

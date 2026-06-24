@@ -1,21 +1,22 @@
 package me.eigenraven.personalspace.block;
 
+import com.mojang.serialization.MapCodec;
 import me.eigenraven.personalspace.PersonalSpace;
 import me.eigenraven.personalspace.client.gui.PersonalSpaceScreen;
 import me.eigenraven.personalspace.client.gui.PersonalSpaceSettingsScreen;
 import me.eigenraven.personalspace.client.gui.PortalTeleportConfirmScreen;
 import me.eigenraven.personalspace.data.PersonalSpaceData;
-import net.minecraft.network.chat.Component;
 import me.eigenraven.personalspace.registry.PSItems;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.ItemInteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
@@ -31,13 +32,12 @@ import net.minecraft.world.level.material.MapColor;
 import net.minecraft.world.level.storage.loot.LootParams;
 import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
 import net.minecraft.world.phys.BlockHitResult;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
 
-import java.awt.*;
 import java.util.List;
 
 public final class PortalBlock extends BaseEntityBlock {
+    public static final MapCodec<PortalBlock> CODEC = simpleCodec(properties -> new PortalBlock());
+
     public static final BooleanProperty RETURN_PORTAL = BooleanProperty.create("return_portal");
 
     public PortalBlock() {
@@ -52,6 +52,11 @@ public final class PortalBlock extends BaseEntityBlock {
     }
 
     @Override
+    protected MapCodec<? extends BaseEntityBlock> codec() {
+        return CODEC;
+    }
+
+    @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
         builder.add(RETURN_PORTAL);
     }
@@ -62,31 +67,58 @@ public final class PortalBlock extends BaseEntityBlock {
     }
 
     @Override
-    public RenderShape getRenderShape(BlockState state) {
+    protected RenderShape getRenderShape(BlockState state) {
         return RenderShape.MODEL;
     }
 
     @Override
-    public InteractionResult use(
+    protected InteractionResult useWithoutItem(
             BlockState state,
             Level level,
             BlockPos pos,
             Player player,
-            InteractionHand hand,
             BlockHitResult hit
     ) {
         if (level.isClientSide) {
             handleClientClick(level, pos, player, state);
             return InteractionResult.SUCCESS;
         }
+
         if (player instanceof ServerPlayer serverPlayer && level instanceof ServerLevel serverLevel) {
             if (serverPlayer.isShiftKeyDown() && isPersonalSpaceDimension(serverLevel)) {
                 return InteractionResult.CONSUME;
             }
+
             return InteractionResult.CONSUME;
         }
 
         return InteractionResult.PASS;
+    }
+
+    @Override
+    protected ItemInteractionResult useItemOn(
+            ItemStack stack,
+            BlockState state,
+            Level level,
+            BlockPos pos,
+            Player player,
+            net.minecraft.world.InteractionHand hand,
+            BlockHitResult hit
+    ) {
+        if (level.isClientSide) {
+            handleClientClick(level, pos, player, state);
+            return ItemInteractionResult.SUCCESS;
+        }
+
+        if (player instanceof ServerPlayer serverPlayer && level instanceof ServerLevel serverLevel) {
+            if (serverPlayer.isShiftKeyDown() && isPersonalSpaceDimension(serverLevel)) {
+                return ItemInteractionResult.CONSUME;
+            }
+
+            return ItemInteractionResult.CONSUME;
+        }
+
+        return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
     }
 
     private static void handleClientClick(
@@ -238,17 +270,14 @@ public final class PortalBlock extends BaseEntityBlock {
         return level.dimension().location().getNamespace().equals(PersonalSpace.MODID);
     }
 
-    @OnlyIn(Dist.CLIENT)
     private static void openCreateGui(Player player, BlockPos pos) {
         Minecraft.getInstance().setScreen(new PersonalSpaceScreen(player.level(), pos));
     }
 
-    @OnlyIn(Dist.CLIENT)
     private static void openSettingsGui(ResourceLocation levelId) {
         Minecraft.getInstance().setScreen(new PersonalSpaceSettingsScreen(levelId));
     }
 
-    @OnlyIn(Dist.CLIENT)
     private static void openTeleportConfirmGui(Level level, BlockPos pos, boolean returnPortal) {
         ResourceLocation clickedLevelId = level.dimension().location();
 
@@ -281,7 +310,6 @@ public final class PortalBlock extends BaseEntityBlock {
         ));
     }
 
-    @OnlyIn(Dist.CLIENT)
     private static String formatDimensionName(ResourceLocation levelId) {
         if (levelId == null) {
             return "Unknown";
@@ -318,7 +346,7 @@ public final class PortalBlock extends BaseEntityBlock {
     }
 
     @Override
-    public void onRemove(
+    protected void onRemove(
             BlockState oldState,
             Level level,
             BlockPos pos,

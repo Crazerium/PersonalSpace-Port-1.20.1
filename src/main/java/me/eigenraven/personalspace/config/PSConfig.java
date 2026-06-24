@@ -1,22 +1,22 @@
 package me.eigenraven.personalspace.config;
 
-import net.minecraftforge.common.ForgeConfigSpec;
+import net.neoforged.neoforge.common.ModConfigSpec;
 
 public final class PSConfig {
-    public static final ForgeConfigSpec SERVER_SPEC;
+    public static final ModConfigSpec SERVER_SPEC;
     public static final Server SERVER;
 
     static {
-        ForgeConfigSpec.Builder builder = new ForgeConfigSpec.Builder();
+        ModConfigSpec.Builder builder = new ModConfigSpec.Builder();
 
         SERVER = new Server(builder);
         SERVER_SPEC = builder.build();
     }
 
     public static final class Server {
-        public final ForgeConfigSpec.IntValue maxPersonalSpaceSizeBlocks;
+        public final ModConfigSpec.IntValue maxPersonalSpaceSizeBlocks;
 
-        private Server(ForgeConfigSpec.Builder builder) {
+        private Server(ModConfigSpec.Builder builder) {
             builder.push("personal_space_limits");
 
             maxPersonalSpaceSizeBlocks = builder

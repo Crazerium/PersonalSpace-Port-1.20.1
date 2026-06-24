@@ -4,15 +4,14 @@ import me.eigenraven.personalspace.PersonalSpace;
 import net.minecraft.client.CloudStatus;
 import net.minecraft.client.Minecraft;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.client.event.ClientTickEvent;
 
-@Mod.EventBusSubscriber(
+@EventBusSubscriber(
         modid = PersonalSpace.MODID,
-        value = Dist.CLIENT,
-        bus = Mod.EventBusSubscriber.Bus.FORGE
+        value = net.neoforged.api.distmarker.Dist.CLIENT,
+        bus = EventBusSubscriber.Bus.GAME
 )
 public final class ClientVisualSettingsEvents {
     private static CloudStatus previousCloudStatus = null;
@@ -22,11 +21,7 @@ public final class ClientVisualSettingsEvents {
     }
 
     @SubscribeEvent
-    public static void onClientTick(TickEvent.ClientTickEvent event) {
-        if (event.phase != TickEvent.Phase.END) {
-            return;
-        }
-
+    public static void onClientTick(ClientTickEvent.Post event) {
         Minecraft minecraft = Minecraft.getInstance();
 
         if (minecraft.level == null || minecraft.player == null) {

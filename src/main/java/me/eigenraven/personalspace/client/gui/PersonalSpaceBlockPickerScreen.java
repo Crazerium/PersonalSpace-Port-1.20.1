@@ -1,6 +1,5 @@
 package me.eigenraven.personalspace.client.gui;
 
-import me.eigenraven.personalspace.PersonalSpace;
 import me.eigenraven.personalspace.network.CreateDimensionPacket;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -16,14 +15,11 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.level.EmptyBlockGetter;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.fml.loading.FMLEnvironment;
 
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
-import java.util.Set;
 import java.util.function.Consumer;
 
 public class PersonalSpaceBlockPickerScreen extends Screen {
@@ -37,6 +33,7 @@ public class PersonalSpaceBlockPickerScreen extends Screen {
 
     private static final int GRID_WIDTH = GRID_COLUMNS * CELL_SIZE;
     private static final int GRID_HEIGHT = GRID_ROWS * CELL_SIZE;
+
     private final Screen parent;
     private final Component pickerTitle;
     private final String currentBlockId;
@@ -170,16 +167,12 @@ public class PersonalSpaceBlockPickerScreen extends Screen {
 
         addRenderableWidget(Button.builder(
                 text("block_picker.previous"),
-                button -> {
-                    page = Math.max(0, page - 1);
-                }
+                button -> page = Math.max(0, page - 1)
         ).bounds(left, panelY + PANEL_HEIGHT - 30, 90, 20).build());
 
         addRenderableWidget(Button.builder(
                 text("block_picker.next"),
-                button -> {
-                    page = Math.min(getMaxPage(), page + 1);
-                }
+                button -> page = Math.min(getMaxPage(), page + 1)
         ).bounds(left + 98, panelY + PANEL_HEIGHT - 30, 90, 20).build());
 
         addRenderableWidget(Button.builder(
@@ -190,7 +183,7 @@ public class PersonalSpaceBlockPickerScreen extends Screen {
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        renderBackground(graphics);
+        renderBackground(graphics, mouseX, mouseY, partialTick);
 
         int panelX = (width - PANEL_WIDTH) / 2;
         int panelY = (height - PANEL_HEIGHT) / 2;
@@ -322,18 +315,18 @@ public class PersonalSpaceBlockPickerScreen extends Screen {
     }
 
     @Override
-    public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
-        if (delta < 0) {
+    public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
+        if (scrollY < 0) {
             page = Math.min(getMaxPage(), page + 1);
             return true;
         }
 
-        if (delta > 0) {
+        if (scrollY > 0) {
             page = Math.max(0, page - 1);
             return true;
         }
 
-        return super.mouseScrolled(mouseX, mouseY, delta);
+        return super.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
     }
 
     private int getMaxPage() {

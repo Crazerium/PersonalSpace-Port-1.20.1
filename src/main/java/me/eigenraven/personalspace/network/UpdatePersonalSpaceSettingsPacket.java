@@ -5,9 +5,6 @@ import me.eigenraven.personalspace.data.PersonalSpaceData;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraftforge.network.NetworkEvent;
-
-import java.util.function.Supplier;
 
 public class UpdatePersonalSpaceSettingsPacket {
     private final long timeOfDay;
@@ -87,55 +84,84 @@ public class UpdatePersonalSpaceSettingsPacket {
         );
     }
 
-    public static void handle(
-            UpdatePersonalSpaceSettingsPacket msg,
-            Supplier<NetworkEvent.Context> ctx
-    ) {
-        NetworkEvent.Context context = ctx.get();
+    public void handleServerSide(ServerPlayer player) {
+        if (!(player.level() instanceof ServerLevel level)) {
+            return;
+        }
 
-        context.enqueueWork(() -> {
-            ServerPlayer player = context.getSender();
+        if (!level.dimension().location().getNamespace().equals(PersonalSpace.MODID)) {
+            return;
+        }
 
-            if (player == null) {
-                return;
-            }
+        PersonalSpaceData data = PersonalSpaceData.load(level);
 
-            if (!(player.level() instanceof ServerLevel level)) {
-                return;
-            }
+        data.setTimeOfDay(timeOfDay);
+        data.setSkyColor(skyRed, skyGreen, skyBlue);
 
-            if (!level.dimension().location().getNamespace().equals(PersonalSpace.MODID)) {
-                return;
-            }
+        data.setStarBrightness(starBrightness);
+        data.setBiomeName(biomeName);
 
-            PersonalSpaceData data = PersonalSpaceData.load(level);
+        data.setTreesEnabled(treesEnabled);
+        data.setFoliageEnabled(foliageEnabled);
+        data.setWeatherEnabled(weatherEnabled);
+        data.setCloudsEnabled(cloudsEnabled);
 
-            data.setTimeOfDay(msg.timeOfDay);
-            data.setSkyColor(msg.skyRed, msg.skyGreen, msg.skyBlue);
+        data.setLayersPreset(layersPreset);
 
-            data.setStarBrightness(msg.starBrightness);
-            data.setBiomeName(msg.biomeName);
+        PersonalSpaceData.save(level, data);
 
-            data.setTreesEnabled(msg.treesEnabled);
-            data.setFoliageEnabled(msg.foliageEnabled);
-            data.setWeatherEnabled(msg.weatherEnabled);
-            data.setCloudsEnabled(msg.cloudsEnabled);
+        level.setDayTime(data.getTimeOfDay());
 
-            data.setLayersPreset(msg.layersPreset);
+        if (!data.isWeatherEnabled()) {
+            level.setRainLevel(0.0F);
+            level.setThunderLevel(0.0F);
+            level.setWeatherParameters(6000, 0, false, false);
+        }
 
-            PersonalSpaceData.save(level, data);
+        PersonalSpaceSettingsSync.syncToPlayersIn(level);
+    }
 
-            level.setDayTime(data.getTimeOfDay());
+    public long timeOfDay() {
+        return timeOfDay;
+    }
 
-            if (!data.isWeatherEnabled()) {
-                level.setRainLevel(0.0F);
-                level.setThunderLevel(0.0F);
-                level.setWeatherParameters(6000, 0, false, false);
-            }
+    public int skyRed() {
+        return skyRed;
+    }
 
-            PersonalSpaceSettingsSync.syncToPlayersIn(level);
-        });
+    public int skyGreen() {
+        return skyGreen;
+    }
 
-        context.setPacketHandled(true);
+    public int skyBlue() {
+        return skyBlue;
+    }
+
+    public float starBrightness() {
+        return starBrightness;
+    }
+
+    public String biomeName() {
+        return biomeName;
+    }
+
+    public boolean treesEnabled() {
+        return treesEnabled;
+    }
+
+    public boolean foliageEnabled() {
+        return foliageEnabled;
+    }
+
+    public boolean weatherEnabled() {
+        return weatherEnabled;
+    }
+
+    public boolean cloudsEnabled() {
+        return cloudsEnabled;
+    }
+
+    public String layersPreset() {
+        return layersPreset;
     }
 }

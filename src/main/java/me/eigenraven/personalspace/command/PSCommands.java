@@ -9,6 +9,7 @@ import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.EntityArgument;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
@@ -18,6 +19,7 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.level.Level;
 
 public final class PSCommands {
@@ -116,8 +118,10 @@ public final class PSCommands {
         blockEntityTag.putString("TargetLevel", dimensionKey.location().toString());
         blockEntityTag.putLong("TargetPos", DEFAULT_PORTAL_TARGET_POS.asLong());
 
-        stack.getOrCreateTag().put("BlockEntityTag", blockEntityTag);
-        stack.setHoverName(Component.literal("Personal Portal: " + formatDimensionName(dimensionKey.location())));
+        stack.set(DataComponents.BLOCK_ENTITY_DATA, CustomData.of(blockEntityTag));
+        stack.set(DataComponents.CUSTOM_NAME, Component.literal(
+                "Personal Portal: " + formatDimensionName(dimensionKey.location())
+        ));
 
         boolean inserted = targetPlayer.getInventory().add(stack);
 
@@ -162,7 +166,7 @@ public final class PSCommands {
             path = "ps_" + path;
         }
 
-        return new ResourceLocation(PersonalSpace.MODID, path);
+        return ResourceLocation.fromNamespaceAndPath(PersonalSpace.MODID, path);
     }
 
     private static String formatDimensionName(ResourceLocation location) {

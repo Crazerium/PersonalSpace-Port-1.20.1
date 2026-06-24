@@ -9,25 +9,21 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.border.WorldBorder;
-import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 
-@Mod.EventBusSubscriber(
+@EventBusSubscriber(
         modid = PersonalSpace.MODID,
-        bus = Mod.EventBusSubscriber.Bus.FORGE
+        bus = EventBusSubscriber.Bus.GAME
 )
 public final class PersonalSpaceLimitEvents {
     private PersonalSpaceLimitEvents() {
     }
 
     @SubscribeEvent
-    public static void onPlayerTick(TickEvent.PlayerTickEvent event) {
-        if (event.phase != TickEvent.Phase.END) {
-            return;
-        }
-
-        if (!(event.player instanceof ServerPlayer player)) {
+    public static void onPlayerTick(PlayerTickEvent.Post event) {
+        if (!(event.getEntity() instanceof ServerPlayer player)) {
             return;
         }
 
@@ -39,7 +35,6 @@ public final class PersonalSpaceLimitEvents {
             return;
         }
 
-        // Проверяем раз в секунду, не каждый тик.
         if (player.tickCount % 20 != 0) {
             return;
         }
@@ -66,10 +61,7 @@ public final class PersonalSpaceLimitEvents {
         }
 
         applyPersonalSpaceWorldBorder(level, centerX, centerZ, maxSizeBlocks);
-
-        // ВАЖНО: без этого клиент может не рисовать красную ванильную границу.
         syncWorldBorderToPlayer(player, level);
-
         keepPlayerInsideBorder(player, level, centerX, centerZ, maxSizeBlocks, data);
     }
 
@@ -93,8 +85,6 @@ public final class PersonalSpaceLimitEvents {
             border.setSize(maxSizeBlocks);
         }
 
-        // При маленьком размере, например 100, стенка будет видна рядом.
-        // При 10000 она появится только около края.
         int warningBlocks = Math.min(maxSizeBlocks / 2, 256);
 
         border.setWarningBlocks(warningBlocks);

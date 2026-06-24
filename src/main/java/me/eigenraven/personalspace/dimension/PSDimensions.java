@@ -1,9 +1,8 @@
 package me.eigenraven.personalspace.dimension;
 
-import commoble.infiniverse.api.InfiniverseAPI;
 import me.eigenraven.personalspace.PersonalSpace;
-import me.eigenraven.personalspace.compat.gtceu.PersonalSpaceGTCEuHooks;
 import me.eigenraven.personalspace.data.PersonalSpaceData;
+import net.commoble.infiniverse.api.InfiniverseAPI;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.HolderSet;
@@ -55,7 +54,7 @@ public final class PSDimensions {
 
         ResourceKey<Level> baseKey = ResourceKey.create(
                 Registries.DIMENSION,
-                new ResourceLocation(PersonalSpace.MODID, "ps_" + safeName)
+                ResourceLocation.fromNamespaceAndPath(PersonalSpace.MODID, "ps_" + safeName)
         );
 
         if (server.getLevel(baseKey) == null) {
@@ -65,7 +64,7 @@ public final class PSDimensions {
         for (int index = 2; index < 10_000; index++) {
             ResourceKey<Level> candidate = ResourceKey.create(
                     Registries.DIMENSION,
-                    new ResourceLocation(PersonalSpace.MODID, "ps_" + safeName + "_" + index)
+                    ResourceLocation.fromNamespaceAndPath(PersonalSpace.MODID, "ps_" + safeName + "_" + index)
             );
 
             if (server.getLevel(candidate) == null) {
@@ -75,7 +74,6 @@ public final class PSDimensions {
 
         return randomPersonalKey();
     }
-
 
     private static String sanitizeDimensionName(String rawName) {
         if (rawName == null) {
@@ -124,14 +122,16 @@ public final class PSDimensions {
         return safe;
     }
 
-
     public static ResourceKey<Level> key(String idOrPath) {
         ResourceLocation location;
 
         if (idOrPath.contains(":")) {
-            location = new ResourceLocation(idOrPath.toLowerCase(Locale.ROOT));
+            location = ResourceLocation.parse(idOrPath.toLowerCase(Locale.ROOT));
         } else {
-            location = new ResourceLocation(PersonalSpace.MODID, idOrPath.toLowerCase(Locale.ROOT));
+            location = ResourceLocation.fromNamespaceAndPath(
+                    PersonalSpace.MODID,
+                    idOrPath.toLowerCase(Locale.ROOT)
+            );
         }
 
         return ResourceKey.create(Registries.DIMENSION, location);
@@ -148,6 +148,7 @@ public final class PSDimensions {
 
         return level;
     }
+
     public static ServerLevel createPersonalDimension(
             MinecraftServer server,
             ResourceKey<Level> levelKey,
@@ -167,8 +168,6 @@ public final class PSDimensions {
         );
 
         PersonalSpaceData.save(newLevel, data);
-
-        PersonalSpaceGTCEuHooks.onPersonalDimensionCreated(levelKey);
 
         applyStoredSettings(newLevel);
 
@@ -205,6 +204,7 @@ public final class PSDimensions {
                         .registryOrThrow(Registries.BIOME)
                         .getHolderOrThrow(fallbackKey));
     }
+
     private static LevelStem createStem(
             MinecraftServer server,
             PersonalSpaceData.WorldType type,
@@ -233,9 +233,11 @@ public final class PSDimensions {
 
             layers.add(new FlatLayerInfo(1, Blocks.GRASS_BLOCK));
         }
+
         Optional<HolderSet<StructureSet>> noStructures = Optional.of(
                 HolderSet.direct(List.<Holder<StructureSet>>of())
         );
+
         FlatLevelGeneratorSettings settings = new FlatLevelGeneratorSettings(
                 noStructures,
                 biome,
@@ -293,7 +295,6 @@ public final class PSDimensions {
                 data.getBiomeName()
         );
     }
-
 
     public static int clampGroundLevel(ServerLevel level, int y) {
         int min = level.getMinBuildHeight();
@@ -376,8 +377,6 @@ public final class PSDimensions {
 
         data.setRepeatingGridOrigin(originX, originZ);
     }
-
-
 
     private static void applyRepeatingGridChunk(
             ServerLevel level,
@@ -546,6 +545,7 @@ public final class PSDimensions {
             }
         }
     }
+
     private static void applyBoundaryRoadsAndMarker(
             ServerLevel level,
             BlockPos portalPos,
@@ -623,6 +623,7 @@ public final class PSDimensions {
             }
         }
     }
+
     private static void applyVegetation(
             ServerLevel level,
             BlockPos portalPos,
@@ -814,8 +815,6 @@ public final class PSDimensions {
                 && id.getNamespace().equals(PersonalSpace.MODID)
                 && id.getPath().startsWith("ps_");
     }
-
-
 
     private static void applyStoredSettings(ServerLevel level) {
         if (!isPersonalSpaceDimension(level.dimension().location())) {

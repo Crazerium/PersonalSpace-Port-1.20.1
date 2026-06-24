@@ -6,12 +6,11 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
-import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.event.entity.EntityJoinLevelEvent;
-import net.minecraftforge.event.entity.living.MobSpawnEvent;
-import net.minecraftforge.event.entity.player.PlayerEvent;
-import net.minecraftforge.event.level.LevelEvent;
-import net.minecraftforge.eventbus.api.Event;
+import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
+import net.neoforged.neoforge.event.entity.living.MobSpawnEvent;
+import net.neoforged.neoforge.event.entity.player.PlayerEvent;
+import net.neoforged.neoforge.event.level.LevelEvent;
+import net.neoforged.neoforge.event.tick.ServerTickEvent;
 
 public final class PSWorldRules {
     private PSWorldRules() {
@@ -25,7 +24,7 @@ public final class PSWorldRules {
 
     public static void onMobSpawnPositionCheck(MobSpawnEvent.PositionCheck event) {
         if (isPersonalSpace(event.getLevel())) {
-            event.setResult(Event.Result.DENY);
+            event.setResult(MobSpawnEvent.PositionCheck.Result.FAIL);
         }
     }
 
@@ -38,10 +37,10 @@ public final class PSWorldRules {
             return;
         }
 
-        // All mobs are banned in PD
-//        if (event.getEntity() instanceof Mob) {
-//            event.setCanceled(true);
-//        }
+        // All mobs are banned in Personal Space.
+        // if (event.getEntity() instanceof Mob) {
+        //     event.setCanceled(true);
+        // }
     }
 
     public static void onPlayerLoggedIn(PlayerEvent.PlayerLoggedInEvent event) {
@@ -64,18 +63,7 @@ public final class PSWorldRules {
         }
     }
 
-    private static boolean isPersonalSpace(LevelAccessor level) {
-        if (level instanceof Level realLevel) {
-            return realLevel.dimension().location().getNamespace().equals(PersonalSpace.MODID);
-        }
-
-        return false;
-    }
-    public static void onServerTick(TickEvent.ServerTickEvent event) {
-        if (event.phase != TickEvent.Phase.END) {
-            return;
-        }
-
+    public static void onServerTick(ServerTickEvent.Post event) {
         if (event.getServer().getTickCount() % 20 != 0) {
             return;
         }
@@ -92,5 +80,13 @@ public final class PSWorldRules {
                     false
             );
         }
+    }
+
+    private static boolean isPersonalSpace(LevelAccessor level) {
+        if (level instanceof Level realLevel) {
+            return realLevel.dimension().location().getNamespace().equals(PersonalSpace.MODID);
+        }
+
+        return false;
     }
 }

@@ -2,7 +2,6 @@ package me.eigenraven.personalspace.client.gui;
 
 import me.eigenraven.personalspace.PersonalSpace;
 import me.eigenraven.personalspace.client.ClientPersonalSpaceSettings;
-import me.eigenraven.personalspace.network.UpdatePersonalSpaceSettingsPacket;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
@@ -194,19 +193,10 @@ public class PersonalSpaceSettingsScreen extends Screen {
         addRenderableWidget(Button.builder(
                 text("settings.save"),
                 button -> {
-                    PersonalSpace.CHANNEL.sendToServer(new UpdatePersonalSpaceSettingsPacket(
-                            selectedTime,
-                            selectedRed,
-                            selectedGreen,
-                            selectedBlue,
-                            selectedStarBrightness,
-                            lockedBiomeName,
-                            lockedTreesEnabled,
-                            lockedFoliageEnabled,
-                            selectedWeatherEnabled,
-                            selectedCloudsEnabled,
-                            lockedLayersPreset
-                    ));
+                    PersonalSpace.LOGGER.warn(
+                            "Update personal space settings packet is not implemented yet. Level={}",
+                            levelId
+                    );
 
                     Minecraft.getInstance().setScreen(null);
                 }
@@ -276,7 +266,7 @@ public class PersonalSpaceSettingsScreen extends Screen {
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        renderBackground(graphics);
+        renderBackground(graphics, mouseX, mouseY, partialTick);
 
         graphics.drawCenteredString(
                 font,

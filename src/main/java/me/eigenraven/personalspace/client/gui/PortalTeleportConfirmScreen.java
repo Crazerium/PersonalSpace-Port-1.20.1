@@ -2,8 +2,6 @@ package me.eigenraven.personalspace.client.gui;
 
 import me.eigenraven.personalspace.PersonalSpace;
 import me.eigenraven.personalspace.client.ClientPersonalSpaceSettings;
-import me.eigenraven.personalspace.network.UpdatePersonalSpaceSettingsPacket;
-import me.eigenraven.personalspace.network.UsePortalPacket;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
@@ -115,10 +113,11 @@ public final class PortalTeleportConfirmScreen extends Screen {
         addRenderableWidget(Button.builder(
                 Component.translatable("screen.personalspace.portal.enter"),
                 button -> {
-                    PersonalSpace.CHANNEL.sendToServer(new UsePortalPacket(
+                    PersonalSpace.LOGGER.warn(
+                            "Portal use packet is not implemented yet. Position={}, level={}",
                             portalPos,
                             clickedLevelId
-                    ));
+                    );
 
                     Minecraft.getInstance().setScreen(null);
                 }
@@ -224,19 +223,10 @@ public final class PortalTeleportConfirmScreen extends Screen {
         addRenderableWidget(Button.builder(
                 settingsText("settings.save"),
                 button -> {
-                    PersonalSpace.CHANNEL.sendToServer(new UpdatePersonalSpaceSettingsPacket(
-                            selectedTime,
-                            selectedRed,
-                            selectedGreen,
-                            selectedBlue,
-                            selectedStarBrightness,
-                            lockedBiomeName,
-                            lockedTreesEnabled,
-                            lockedFoliageEnabled,
-                            selectedWeatherEnabled,
-                            selectedCloudsEnabled,
-                            lockedLayersPreset
-                    ));
+                    PersonalSpace.LOGGER.warn(
+                            "Update personal space settings packet is not implemented yet. Level={}",
+                            clickedLevelId
+                    );
 
                     Minecraft.getInstance().setScreen(null);
                 }
@@ -310,7 +300,7 @@ public final class PortalTeleportConfirmScreen extends Screen {
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        renderBackground(graphics);
+        renderBackground(graphics, mouseX, mouseY, partialTick);
 
         int centerX = width / 2;
         int startY = personalSpaceLevel ? height / 2 - 145 : height / 2 - 45;

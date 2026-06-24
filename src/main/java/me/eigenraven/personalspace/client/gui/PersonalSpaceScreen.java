@@ -2,7 +2,6 @@ package me.eigenraven.personalspace.client.gui;
 
 import me.eigenraven.personalspace.PersonalSpace;
 import me.eigenraven.personalspace.data.PersonalSpaceData;
-import me.eigenraven.personalspace.network.CreateDimensionPacket;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
@@ -20,7 +19,6 @@ public class PersonalSpaceScreen extends Screen {
     private static final int BASE_PANEL_HEIGHT = 225;
     private static final int ADVANCED_PANEL_HEIGHT = 350;
     private static final int PREVIEW_WIDTH = 190;
-    private static final int PREVIEW_HEIGHT = 210;
     private static final int PREVIEW_GAP = 10;
 
     private static final int MIN_GROUND_LEVEL = 1;
@@ -74,9 +72,6 @@ public class PersonalSpaceScreen extends Screen {
     private EditBox starBrightnessField;
 
     private EditBox layersPresetField;
-    private EditBox boundaryBlockField;
-    private EditBox roadBlockField;
-    private EditBox centerMarkerBlockField;
     private EditBox boundaryChunksXField;
     private EditBox boundaryChunksZField;
     private EditBox gapChunksField;
@@ -246,37 +241,32 @@ public class PersonalSpaceScreen extends Screen {
 
                     selectedHeight = getClampedHeight();
 
-                    PersonalSpace.CHANNEL.sendToServer(new CreateDimensionPacket(
+                    PersonalSpace.LOGGER.warn(
+                            "Create dimension packet is not implemented yet. Type={}, height={}, portalPos={}, level={}, time={}, sky=({}, {}, {}), stars={}, biome={}, trees={}, foliage={}, weather={}, clouds={}, layers={}, boundary=({}, {}), gap={}, blocks=({}, {}, {}), centerMarker={}, repeatingGrid={}",
                             selectedType,
                             selectedHeight,
                             portalPos,
                             level.dimension().location(),
-
                             timeOfDay,
                             skyRed,
                             skyGreen,
                             skyBlue,
-
                             starBrightness,
                             biomeName,
-
                             treesEnabled,
                             foliageEnabled,
                             weatherEnabled,
                             cloudsEnabled,
-
                             layersPreset,
                             boundaryChunksX,
                             boundaryChunksZ,
                             gapChunks,
-
                             boundaryBlock,
                             roadBlock,
                             centerMarkerBlock,
-
                             centerMarkerEnabled,
                             repeatingGridEnabled
-                    ));
+                    );
 
                     Minecraft.getInstance().setScreen(null);
                 }
@@ -415,6 +405,7 @@ public class PersonalSpaceScreen extends Screen {
                 centerMarkerEnabled = true;
                 repeatingGridEnabled = false;
             }
+
             case ROAD_GRID -> {
                 selectedType = PersonalSpaceData.WorldType.FLAT;
                 selectedHeight = 64;
@@ -724,36 +715,6 @@ public class PersonalSpaceScreen extends Screen {
         return field;
     }
 
-    private EditBox createBlockIdField(
-            int x,
-            int y,
-            int width,
-            String labelKey,
-            String currentValue,
-            StringValueSetter setter
-    ) {
-        EditBox field = new EditBox(
-                font,
-                x,
-                y,
-                width,
-                20,
-                text(labelKey)
-        );
-
-        field.setValue(currentValue);
-        field.setMaxLength(80);
-        field.setFilter(value -> value.isEmpty() || value.matches("[a-z0-9_:.\\-/]+"));
-        field.setResponder(value -> {
-            if (!value.isBlank()) {
-                setter.set(value.trim());
-            }
-        });
-        field.setTooltip(Tooltip.create(text("block.tooltip", text(labelKey))));
-
-        return field;
-    }
-
     private EditBox createIntField(
             int x,
             int y,
@@ -865,15 +826,15 @@ public class PersonalSpaceScreen extends Screen {
         return value >= minValue && value <= maxValue;
     }
 
-
     private void updateCreateButtonState() {
         if (createButton != null) {
             createButton.active = hasValidHeight() && hasValidChunkSettings();
         }
     }
+
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        renderBackground(graphics);
+        renderBackground(graphics, mouseX, mouseY, partialTick);
 
         int panelHeight = getPanelHeight();
         int panelX = (width - PANEL_WIDTH) / 2;
@@ -918,6 +879,7 @@ public class PersonalSpaceScreen extends Screen {
                     0xFF5555
             );
         }
+
         renderPresetPreview(graphics, panelX, panelY, panelHeight);
         super.render(graphics, mouseX, mouseY, partialTick);
     }
@@ -1015,7 +977,6 @@ public class PersonalSpaceScreen extends Screen {
 
         return shortenForPreview(blockId, 18);
     }
-
 
     private void renderTopDownMiniMap(GuiGraphics graphics, int x, int y, int width, int height) {
         graphics.fill(x, y, x + width, y + height, 0xFF080808);
@@ -1152,12 +1113,14 @@ public class PersonalSpaceScreen extends Screen {
         }
 
         String[] layers = layersPreset.split(";");
+
         if (layers.length == 0) {
             return "minecraft:grass_block";
         }
 
         String last = layers[layers.length - 1];
         String[] parts = last.split(",");
+
         if (parts.length < 1) {
             return "minecraft:grass_block";
         }

@@ -1,6 +1,7 @@
 package me.eigenraven.personalspace.dimension;
 
 import com.mojang.serialization.Codec;
+import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import me.eigenraven.personalspace.registry.PSChunkGenerators;
 import net.minecraft.core.BlockPos;
@@ -33,8 +34,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 
 public class PersonalSpaceGridChunkGenerator extends ChunkGenerator {
-    public static final Codec<PersonalSpaceGridChunkGenerator> CODEC =
-            RecordCodecBuilder.create(instance -> instance.group(
+    public static final MapCodec<PersonalSpaceGridChunkGenerator> CODEC =
+            RecordCodecBuilder.mapCodec(instance -> instance.group(
                     BiomeSource.CODEC.fieldOf("biome_source").forGetter(generator -> generator.source),
                     Codec.INT.fieldOf("min_y").forGetter(generator -> generator.minY),
                     Codec.INT.fieldOf("height").forGetter(generator -> generator.height),
@@ -159,13 +160,12 @@ public class PersonalSpaceGridChunkGenerator extends ChunkGenerator {
     }
 
     @Override
-    protected Codec<? extends ChunkGenerator> codec() {
+    protected MapCodec<? extends ChunkGenerator> codec() {
         return PSChunkGenerators.PERSONAL_SPACE_GRID.get();
     }
 
     @Override
     public CompletableFuture<ChunkAccess> fillFromNoise(
-            Executor executor,
             Blender blender,
             RandomState randomState,
             StructureManager structureManager,

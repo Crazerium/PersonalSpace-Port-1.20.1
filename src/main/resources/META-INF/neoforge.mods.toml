@@ -1,0 +1,37 @@
+modLoader="javafml"
+loaderVersion="[1,)"
+license="LGPL-3.0"
+issueTrackerURL="https://github.com/Crazerium/PersonalSpace-Port-1.20.1/issues"
+
+[[mods]]
+modId="personalspace"
+version="${file.jarVersion}"
+displayName="Personal Space"
+displayURL="https://github.com/Crazerium/PersonalSpace-Port-1.20.1"
+logoFile="personalspace.png"
+credits="Original Personal Space mod by the original authors/contributors. Unofficial NeoForge 1.21.1 port by Crazerium."
+authors="eigenraven, Crazerium"
+description='''
+Personal Space adds private configurable dimensions for players.
+'''
+
+[[dependencies.personalspace]]
+modId="neoforge"
+type="required"
+versionRange="[21.1,)"
+ordering="NONE"
+side="BOTH"
+
+[[dependencies.personalspace]]
+modId="minecraft"
+type="required"
+versionRange="[1.21.1,1.22)"
+ordering="NONE"
+side="BOTH"
+
+[[dependencies.personalspace]]
+modId="infiniverse"
+type="required"
+versionRange="[1.21-2.0.1.0,)"
+ordering="AFTER"
+side="BOTH"

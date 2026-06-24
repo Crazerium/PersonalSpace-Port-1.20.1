@@ -1,12 +1,15 @@
 package me.eigenraven.personalspace.item;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.Item.TooltipContext;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 
@@ -25,7 +28,7 @@ public final class PortalBlockItem extends BlockItem {
         blockEntityTag.putString("TargetLevel", targetLevel.location().toString());
         blockEntityTag.putLong("TargetPos", targetPos.asLong());
 
-        stack.getOrCreateTag().put("BlockEntityTag", blockEntityTag);
+        stack.set(DataComponents.BLOCK_ENTITY_DATA, CustomData.of(blockEntityTag));
 
         return stack;
     }
@@ -33,21 +36,27 @@ public final class PortalBlockItem extends BlockItem {
     @Override
     public void appendHoverText(
             ItemStack stack,
-            Level level,
+            TooltipContext context,
             List<Component> tooltip,
             TooltipFlag flag
     ) {
-        CompoundTag blockEntityTag = stack.getTagElement("BlockEntityTag");
+        CustomData blockEntityData = stack.get(DataComponents.BLOCK_ENTITY_DATA);
 
-        if (blockEntityTag != null && blockEntityTag.contains("TargetLevel")) {
-            tooltip.add(Component.translatable(
-                    "tooltip.personalspace.target",
-                    blockEntityTag.getString("TargetLevel")
-            ));
-        } else {
-            tooltip.add(Component.translatable("tooltip.personalspace.unlinked"));
+        if (blockEntityData != null) {
+            CompoundTag blockEntityTag = blockEntityData.copyTag();
+
+            if (blockEntityTag.contains("TargetLevel")) {
+                tooltip.add(Component.translatable(
+                        "tooltip.personalspace.target",
+                        blockEntityTag.getString("TargetLevel")
+                ));
+
+                super.appendHoverText(stack, context, tooltip, flag);
+                return;
+            }
         }
 
-        super.appendHoverText(stack, level, tooltip, flag);
+        tooltip.add(Component.translatable("tooltip.personalspace.unlinked"));
+        super.appendHoverText(stack, context, tooltip, flag);
     }
 }

@@ -3,9 +3,6 @@ package me.eigenraven.personalspace.network;
 import me.eigenraven.personalspace.client.ClientPersonalSpaceSettings;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraftforge.network.NetworkEvent;
-
-import java.util.function.Supplier;
 
 public class SyncPersonalSpaceSettingsPacket {
     private final ResourceLocation levelId;
@@ -93,27 +90,68 @@ public class SyncPersonalSpaceSettingsPacket {
         );
     }
 
-    public static void handle(
-            SyncPersonalSpaceSettingsPacket msg,
-            Supplier<NetworkEvent.Context> ctx
-    ) {
-        NetworkEvent.Context context = ctx.get();
+    public void applyClientSide() {
+        ClientPersonalSpaceSettings.set(
+                levelId,
+                timeOfDay,
+                skyRed,
+                skyGreen,
+                skyBlue,
+                starBrightness,
+                biomeName,
+                treesEnabled,
+                foliageEnabled,
+                weatherEnabled,
+                cloudsEnabled,
+                layersPreset
+        );
+    }
 
-        context.enqueueWork(() -> ClientPersonalSpaceSettings.set(
-                msg.levelId,
-                msg.timeOfDay,
-                msg.skyRed,
-                msg.skyGreen,
-                msg.skyBlue,
-                msg.starBrightness,
-                msg.biomeName,
-                msg.treesEnabled,
-                msg.foliageEnabled,
-                msg.weatherEnabled,
-                msg.cloudsEnabled,
-                msg.layersPreset
-        ));
+    public ResourceLocation levelId() {
+        return levelId;
+    }
 
-        context.setPacketHandled(true);
+    public long timeOfDay() {
+        return timeOfDay;
+    }
+
+    public int skyRed() {
+        return skyRed;
+    }
+
+    public int skyGreen() {
+        return skyGreen;
+    }
+
+    public int skyBlue() {
+        return skyBlue;
+    }
+
+    public float starBrightness() {
+        return starBrightness;
+    }
+
+    public String biomeName() {
+        return biomeName;
+    }
+
+    public boolean treesEnabled() {
+        return treesEnabled;
+    }
+
+    public boolean foliageEnabled() {
+        return foliageEnabled;
+    }
+
+    public boolean weatherEnabled() {
+        return weatherEnabled;
+    }
+
+    public boolean cloudsEnabled() {
+        return cloudsEnabled;
+    }
+
+    public String layersPreset() {
+        return layersPreset;
     }
 }
