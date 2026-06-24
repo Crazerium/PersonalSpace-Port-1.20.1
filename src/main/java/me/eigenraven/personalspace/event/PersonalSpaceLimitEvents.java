@@ -14,8 +14,7 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 
 @EventBusSubscriber(
-        modid = PersonalSpace.MODID,
-        bus = EventBusSubscriber.Bus.GAME
+        modid = PersonalSpace.MODID
 )
 public final class PersonalSpaceLimitEvents {
     private PersonalSpaceLimitEvents() {

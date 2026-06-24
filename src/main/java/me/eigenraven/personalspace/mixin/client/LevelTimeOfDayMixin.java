@@ -45,6 +45,7 @@ public abstract class LevelTimeOfDayMixin {
     private static float personalspace$calculateTimeOfDay(long time) {
         double dayProgress = Mth.frac((double) time / 24000.0D - 0.25D);
         double curve = 0.5D - Math.cos(dayProgress * Math.PI) / 2.0D;
+
         return (float) (dayProgress * 2.0D + curve) / 3.0F;
     }
 }

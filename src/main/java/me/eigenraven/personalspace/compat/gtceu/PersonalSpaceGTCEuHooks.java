@@ -3,7 +3,7 @@ package me.eigenraven.personalspace.compat.gtceu;
 import me.eigenraven.personalspace.PersonalSpace;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.fml.ModList;
+import net.neoforged.fml.ModList;
 
 import java.lang.reflect.Method;
 
@@ -26,15 +26,9 @@ public final class PersonalSpaceGTCEuHooks {
                     ResourceKey.class
             );
             addOwnDimensionMethod.invoke(null, levelKey);
-
-            Method patchExistingMethod = veinsClass.getMethod(
-                    "addPersonalSpaceDimensionToExistingGTCEuVeins",
-                    ResourceKey.class
-            );
-            patchExistingMethod.invoke(null, levelKey);
         } catch (ReflectiveOperationException exception) {
             PersonalSpace.LOGGER.warn(
-                    "Failed to add Personal Space dimension '{}' to GTCEu bedrock fluid veins.",
+                    "Failed to add Personal Space dimension '{}' to GTCEu bedrock fluid integration.",
                     levelKey.location(),
                     exception
             );

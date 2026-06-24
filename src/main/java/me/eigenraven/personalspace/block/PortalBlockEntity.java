@@ -1,6 +1,7 @@
 package me.eigenraven.personalspace.block;
 
 import me.eigenraven.personalspace.PersonalSpace;
+import me.eigenraven.personalspace.data.PersonalSpaceData;
 import me.eigenraven.personalspace.registry.PSBlockEntities;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
@@ -84,18 +85,27 @@ public class PortalBlockEntity extends BlockEntity {
             return;
         }
 
-        BlockPos destinationPos = targetPos == null ? BlockPos.ZERO : targetPos;
+        BlockPos destinationPos = getEffectiveTargetPos(destination);
 
         destination.getChunkAt(destinationPos);
 
         player.teleportTo(
                 destination,
                 destinationPos.getX() + 0.5D,
-                destinationPos.getY() + 1.0D,
+                destinationPos.getY(),
                 destinationPos.getZ() + 0.5D,
                 player.getYRot(),
                 player.getXRot()
         );
+    }
+
+    private BlockPos getEffectiveTargetPos(ServerLevel destination) {
+        if (destination.dimension().location().getNamespace().equals(PersonalSpace.MODID)) {
+            PersonalSpaceData data = PersonalSpaceData.load(destination);
+            return data.getRespawnPos();
+        }
+
+        return targetPos == null ? BlockPos.ZERO : targetPos;
     }
 
     public void saveToItem(ItemStack stack) {

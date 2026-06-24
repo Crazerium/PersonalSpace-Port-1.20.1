@@ -10,8 +10,7 @@ import net.neoforged.neoforge.client.event.ClientTickEvent;
 
 @EventBusSubscriber(
         modid = PersonalSpace.MODID,
-        value = net.neoforged.api.distmarker.Dist.CLIENT,
-        bus = EventBusSubscriber.Bus.GAME
+        value = net.neoforged.api.distmarker.Dist.CLIENT
 )
 public final class ClientVisualSettingsEvents {
     private static CloudStatus previousCloudStatus = null;

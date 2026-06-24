@@ -1,62 +1,89 @@
 package me.eigenraven.personalspace.compat.gtceu;
 
-import com.gregtechceu.gtceu.api.data.worldgen.bedrockfluid.BedrockFluidDefinition;
 import com.gregtechceu.gtceu.api.registry.GTRegistries;
+import com.gregtechceu.gtceu.api.worldgen.BiomeWeightModifier;
+import com.gregtechceu.gtceu.api.worldgen.bedrockfluid.BedrockFluidDefinition;
 import me.eigenraven.personalspace.PersonalSpace;
 import me.eigenraven.personalspace.dimension.PSDimensions;
+import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.material.Fluid;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
 public final class PersonalSpaceBedrockFluidVeins {
+    private static final Set<ResourceKey<Level>> PERSONAL_SPACE_DIMENSIONS = new HashSet<>();
     private static final Set<BedrockFluidDefinition> PERSONAL_SPACE_WILDCARD_VEINS = new HashSet<>();
+
     private static boolean initialized = false;
-    private static final ResourceKey<Level> PERSONAL_SPACE_WILDCARD_PLACEHOLDER =
-            ResourceKey.create(
-                    Registries.DIMENSION,
-                    new ResourceLocation(PersonalSpace.MODID, "ps_wildcard_placeholder")
-            );
+
+    private static final List<String> DEFAULT_BEDROCK_FLUID_VEINS = List.of(
+            "personalspace:void_oil_deposit|gtceu:oil|personalspace:ps_*|99|120|720|2|1|50",
+            "personalspace:void_natural_gas_deposit|gtceu:natural_gas|personalspace:ps_*|30|80|400|2|1|30"
+    );
+
     private PersonalSpaceBedrockFluidVeins() {
     }
 
+    public static void init() {
+        if (initialized) {
+            PersonalSpace.LOGGER.debug("GTCEu bedrock fluid veins were already initialized, skipping duplicate init.");
+            return;
+        }
 
-    private static final Set<ResourceLocation> GTO_STANDARD_VOID_FLUIDS = Set.of(
-            new ResourceLocation("gtceu", "oil_heavy"),
-            new ResourceLocation("gtceu", "oil_medium"),
-            new ResourceLocation("gtceu", "oil_light"),
-            new ResourceLocation("gtceu", "oil"),
-            new ResourceLocation("gtceu", "natural_gas"),
-            new ResourceLocation("gtceu", "salt_water")
-    );
+        initialized = true;
 
-    public static void addPersonalSpaceDimensionToExistingGTCEuVeins(ResourceKey<Level> levelKey) {
+        List<String> veins = getConfiguredVeinsSafely();
+
+        if (veins.isEmpty()) {
+            PersonalSpace.LOGGER.info("No Personal Space GTCEu bedrock fluid veins are configured.");
+            return;
+        }
+
+        Registry<BedrockFluidDefinition> registry;
+
+        try {
+            registry = GTRegistries.builtinRegistry().registryOrThrow(GTRegistries.BEDROCK_FLUID_REGISTRY);
+        } catch (Exception exception) {
+            PersonalSpace.LOGGER.warn("Failed to access GTCEu bedrock fluid registry.", exception);
+            return;
+        }
+
+        int registered = 0;
+
+        for (String rawEntry : veins) {
+            if (registerFromConfig(registry, rawEntry)) {
+                registered++;
+            }
+        }
+
+        PersonalSpace.LOGGER.info(
+                "Registered {} Personal Space GTCEu bedrock fluid vein(s).",
+                registered
+        );
+    }
+
+    public static void addPersonalSpaceDimension(ResourceKey<Level> levelKey) {
         if (levelKey == null || !PSDimensions.isPersonalSpaceDimension(levelKey.location())) {
             return;
         }
 
+        if (PERSONAL_SPACE_DIMENSIONS.add(levelKey)) {
+            PersonalSpace.LOGGER.info(
+                    "Tracked Personal Space dimension '{}' for GTCEu bedrock fluid veins.",
+                    levelKey.location()
+            );
+        }
+
         int patched = 0;
 
-        for (BedrockFluidDefinition definition : GTRegistries.BEDROCK_FLUID_DEFINITIONS.values()) {
-            ResourceLocation fluidId;
-
-            try {
-                Fluid fluid = definition.getStoredFluid().get();
-                fluidId = BuiltInRegistries.FLUID.getKey(fluid);
-            } catch (Exception exception) {
-                continue;
-            }
-
-            if (!GTO_STANDARD_VOID_FLUIDS.contains(fluidId)) {
-                continue;
-            }
-
+        for (BedrockFluidDefinition definition : PERSONAL_SPACE_WILDCARD_VEINS) {
             Set<ResourceKey<Level>> dimensionFilter = definition.getDimensionFilter();
 
             if (dimensionFilter == null) {
@@ -72,65 +99,25 @@ public final class PersonalSpaceBedrockFluidVeins {
             definition.setDimensionFilter(dimensionFilter);
         }
 
-        PersonalSpace.LOGGER.info(
-                "Added Personal Space dimension '{}' to {} existing GTCEu/GTO matching bedrock fluid vein(s).",
-                levelKey.location(),
-                patched
-        );
-    }
-
-    public static void init() {
-        if (initialized) {
-            PersonalSpace.LOGGER.debug("GTCEu bedrock fluid veins were already initialized, skipping duplicate init.");
-            return;
-        }
-
-        initialized = true;
-
-        if (!PersonalSpaceGTCEuConfig.ENABLED.get()) {
-            return;
-        }
-
-        List<? extends String> veins = PersonalSpaceGTCEuConfig.BEDROCK_FLUID_VEINS.get();
-
-        for (String rawEntry : veins) {
-            registerFromConfig(rawEntry);
-        }
-    }
-
-    public static void addPersonalSpaceDimension(ResourceKey<Level> levelKey) {
-        if (levelKey == null || !PSDimensions.isPersonalSpaceDimension(levelKey.location())) {
-            return;
-        }
-
-        for (BedrockFluidDefinition definition : PERSONAL_SPACE_WILDCARD_VEINS) {
-            Set<ResourceKey<Level>> dimensionFilter = definition.getDimensionFilter();
-
-            if (dimensionFilter == null) {
-                dimensionFilter = new HashSet<>();
-                definition.setDimensionFilter(dimensionFilter);
-            }
-
-            if (!(dimensionFilter instanceof HashSet)) {
-                dimensionFilter = new HashSet<>(dimensionFilter);
-                definition.setDimensionFilter(dimensionFilter);
-            }
-
-            dimensionFilter.add(levelKey);
-        }
-
-        if (!PERSONAL_SPACE_WILDCARD_VEINS.isEmpty()) {
+        if (patched > 0) {
             PersonalSpace.LOGGER.info(
-                    "Added Personal Space dimension '{}' to {} GTCEu bedrock fluid vein(s).",
+                    "Added Personal Space dimension '{}' to {} Personal Space GTCEu bedrock fluid vein(s).",
                     levelKey.location(),
-                    PERSONAL_SPACE_WILDCARD_VEINS.size()
+                    patched
             );
         }
     }
 
-    private static void registerFromConfig(String rawEntry) {
+    public static void addPersonalSpaceDimensionToExistingGTCEuVeins(ResourceKey<Level> levelKey) {
+        addPersonalSpaceDimension(levelKey);
+    }
+
+    private static boolean registerFromConfig(
+            Registry<BedrockFluidDefinition> registry,
+            String rawEntry
+    ) {
         if (rawEntry == null || rawEntry.isBlank()) {
-            return;
+            return false;
         }
 
         String[] parts = rawEntry.split("\\|");
@@ -140,7 +127,7 @@ public final class PersonalSpaceBedrockFluidVeins {
                     "Invalid GTCEu bedrock fluid vein config entry '{}'. Expected 9 parts.",
                     rawEntry
             );
-            return;
+            return false;
         }
 
         ResourceLocation veinId = ResourceLocation.tryParse(parts[0].trim());
@@ -151,27 +138,33 @@ public final class PersonalSpaceBedrockFluidVeins {
                     "Invalid GTCEu bedrock fluid vein ids in entry '{}'.",
                     rawEntry
             );
-            return;
+            return false;
+        }
+
+        Fluid fluid = BuiltInRegistries.FLUID.get(fluidId);
+
+        if (fluid == null || BuiltInRegistries.FLUID.getKey(fluid).equals(ResourceLocation.fromNamespaceAndPath("minecraft", "empty"))) {
+            PersonalSpace.LOGGER.warn(
+                    "Unknown fluid '{}' for GTCEu bedrock fluid vein '{}'.",
+                    fluidId,
+                    veinId
+            );
+            return false;
         }
 
         boolean personalSpaceWildcard = hasPersonalSpaceWildcard(parts[2]);
         Set<ResourceKey<Level>> dimensions = parseDimensions(parts[2]);
 
         if (personalSpaceWildcard) {
-            dimensions.add(PERSONAL_SPACE_WILDCARD_PLACEHOLDER);
+            dimensions.addAll(PERSONAL_SPACE_DIMENSIONS);
         }
 
-        if (dimensions.isEmpty() && !personalSpaceWildcard) {
+        if (dimensions.isEmpty()) {
             PersonalSpace.LOGGER.warn(
-                    "GTCEu bedrock fluid vein '{}' has no valid dimensions.",
+                    "GTCEu bedrock fluid vein '{}' has no valid dimensions yet. It will be registered and patched when Personal Space dimensions are created.",
                     veinId
             );
-            return;
         }
-
-        Fluid fluid = BuiltInRegistries.FLUID.get(fluidId);
-
-
 
         int weight = parseInt(parts[3], 20);
         int minYield = parseInt(parts[4], 120);
@@ -186,15 +179,32 @@ public final class PersonalSpaceBedrockFluidVeins {
             maxYield = temp;
         }
 
-        BedrockFluidDefinition definition = BedrockFluidDefinition.builder(veinId)
-                .dimensions(new HashSet<>(dimensions))
-                .fluid(() -> BuiltInRegistries.FLUID.get(fluidId))
-                .weight(weight)
-                .yield(minYield, maxYield)
-                .depletionAmount(depletionAmount)
-                .depletionChance(depletionChance)
-                .depletedYield(depletedYield)
-                .register();
+        BedrockFluidDefinition definition = new BedrockFluidDefinition(
+                weight,
+                minYield,
+                maxYield,
+                depletionAmount,
+                depletionChance,
+                depletedYield,
+                fluid,
+                BiomeWeightModifier.EMPTY,
+                new HashSet<>(dimensions)
+        );
+
+        try {
+            GTRegistries.register(
+                    registry,
+                    veinId,
+                    definition
+            );
+        } catch (Exception exception) {
+            PersonalSpace.LOGGER.warn(
+                    "Failed to register GTCEu bedrock fluid vein '{}'.",
+                    veinId,
+                    exception
+            );
+            return false;
+        }
 
         if (personalSpaceWildcard) {
             PERSONAL_SPACE_WILDCARD_VEINS.add(definition);
@@ -207,6 +217,43 @@ public final class PersonalSpaceBedrockFluidVeins {
                 dimensions.size(),
                 personalSpaceWildcard ? " with Personal Space wildcard support" : ""
         );
+
+        return true;
+    }
+
+    private static List<String> getConfiguredVeinsSafely() {
+        try {
+            if (!PersonalSpaceGTCEuConfig.ENABLED.get()) {
+                return List.of();
+            }
+
+            List<? extends String> configured = PersonalSpaceGTCEuConfig.BEDROCK_FLUID_VEINS.get();
+
+            if (configured == null || configured.isEmpty()) {
+                return DEFAULT_BEDROCK_FLUID_VEINS;
+            }
+
+            List<String> result = new ArrayList<>();
+
+            for (String entry : configured) {
+                if (entry != null && !entry.isBlank()) {
+                    result.add(entry);
+                }
+            }
+
+            return result.isEmpty() ? DEFAULT_BEDROCK_FLUID_VEINS : result;
+        } catch (IllegalStateException exception) {
+            PersonalSpace.LOGGER.info(
+                    "Personal Space GTCEu config is not loaded yet, using built-in default bedrock fluid veins."
+            );
+            return DEFAULT_BEDROCK_FLUID_VEINS;
+        } catch (Exception exception) {
+            PersonalSpace.LOGGER.warn(
+                    "Failed to read Personal Space GTCEu config, using built-in default bedrock fluid veins.",
+                    exception
+            );
+            return DEFAULT_BEDROCK_FLUID_VEINS;
+        }
     }
 
     private static boolean hasPersonalSpaceWildcard(String rawDimensions) {
@@ -251,7 +298,10 @@ public final class PersonalSpaceBedrockFluidVeins {
                 continue;
             }
 
-            result.add(ResourceKey.create(Registries.DIMENSION, dimensionId));
+            result.add(ResourceKey.create(
+                    net.minecraft.core.registries.Registries.DIMENSION,
+                    dimensionId
+            ));
         }
 
         return result;

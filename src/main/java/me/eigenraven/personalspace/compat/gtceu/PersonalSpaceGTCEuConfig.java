@@ -1,17 +1,17 @@
 package me.eigenraven.personalspace.compat.gtceu;
 
-import net.minecraftforge.common.ForgeConfigSpec;
+import net.neoforged.neoforge.common.ModConfigSpec;
 
 import java.util.List;
 
 public final class PersonalSpaceGTCEuConfig {
-    public static final ForgeConfigSpec SPEC;
+    public static final ModConfigSpec SPEC;
 
-    public static final ForgeConfigSpec.BooleanValue ENABLED;
-    public static final ForgeConfigSpec.ConfigValue<List<? extends String>> BEDROCK_FLUID_VEINS;
+    public static final ModConfigSpec.BooleanValue ENABLED;
+    public static final ModConfigSpec.ConfigValue<List<? extends String>> BEDROCK_FLUID_VEINS;
 
     static {
-        ForgeConfigSpec.Builder builder = new ForgeConfigSpec.Builder();
+        ModConfigSpec.Builder builder = new ModConfigSpec.Builder();
 
         builder.push("gtceu_bedrock_fluids");
 

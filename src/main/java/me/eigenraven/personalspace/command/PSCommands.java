@@ -3,6 +3,7 @@ package me.eigenraven.personalspace.command;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import me.eigenraven.personalspace.PersonalSpace;
+import me.eigenraven.personalspace.data.PersonalSpaceData;
 import me.eigenraven.personalspace.dimension.PSDimensions;
 import me.eigenraven.personalspace.registry.PSItems;
 import net.minecraft.commands.CommandSourceStack;
@@ -27,8 +28,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 public final class PSCommands {
-    private static final BlockPos DEFAULT_PORTAL_TARGET_POS = new BlockPos(7, 65, 7);
-
     private PSCommands() {
     }
 
@@ -61,6 +60,26 @@ public final class PSCommands {
                                                 ))
                                         )
                                 )
+                                .then(Commands.literal("respawn")
+                                        .then(Commands.literal("get")
+                                                .executes(context -> getRespawn(
+                                                        context.getSource(),
+                                                        StringArgumentType.getString(context, "name")
+                                                ))
+                                        )
+                                        .then(Commands.literal("set")
+                                                .executes(context -> setRespawn(
+                                                        context.getSource(),
+                                                        StringArgumentType.getString(context, "name")
+                                                ))
+                                        )
+                                        .then(Commands.literal("reset")
+                                                .executes(context -> resetRespawn(
+                                                        context.getSource(),
+                                                        StringArgumentType.getString(context, "name")
+                                                ))
+                                        )
+                                )
                         )
                 )
         );
@@ -90,21 +109,27 @@ public final class PSCommands {
             return 0;
         }
 
-        BlockPos targetPos = DEFAULT_PORTAL_TARGET_POS;
+        PersonalSpaceData data = PersonalSpaceData.load(destination);
+        BlockPos targetPos = data.getRespawnPos();
 
         destination.getChunkAt(targetPos);
 
         player.teleportTo(
                 destination,
                 targetPos.getX() + 0.5D,
-                targetPos.getY() + 1.0D,
+                targetPos.getY(),
                 targetPos.getZ() + 0.5D,
                 player.getYRot(),
                 player.getXRot()
         );
 
         source.sendSuccess(
-                () -> Component.literal("Teleported to Personal Space dimension: " + dimensionKey.location()),
+                () -> Component.literal(
+                        "Teleported to Personal Space dimension: "
+                                + dimensionKey.location()
+                                + " at respawn "
+                                + formatPos(targetPos)
+                ),
                 true
         );
 
@@ -116,7 +141,10 @@ public final class PSCommands {
             String dimensionName,
             ServerPlayer targetPlayer
     ) {
+        MinecraftServer server = source.getServer();
         ResourceKey<Level> dimensionKey = getPersonalSpaceDimensionKey(dimensionName);
+
+        BlockPos targetPos = getRespawnPosForDimension(server, dimensionKey);
 
         ItemStack stack = new ItemStack(PSItems.PERSONAL_PORTAL.get());
 
@@ -128,7 +156,7 @@ public final class PSCommands {
         blockEntityTag.putBoolean("Active", true);
         blockEntityTag.putBoolean("ReturnPortal", false);
         blockEntityTag.putString("TargetLevel", dimensionKey.location().toString());
-        blockEntityTag.putLong("TargetPos", DEFAULT_PORTAL_TARGET_POS.asLong());
+        blockEntityTag.putLong("TargetPos", targetPos.asLong());
 
         stack.set(DataComponents.BLOCK_ENTITY_DATA, CustomData.of(blockEntityTag));
         stack.set(
@@ -144,13 +172,136 @@ public final class PSCommands {
 
         source.sendSuccess(
                 () -> Component.literal(
-                        "Gave Personal Portal for " + dimensionKey.location()
-                                + " to " + targetPlayer.getGameProfile().getName()
+                        "Gave Personal Portal for "
+                                + dimensionKey.location()
+                                + " to "
+                                + targetPlayer.getGameProfile().getName()
+                                + " at respawn "
+                                + formatPos(targetPos)
                 ),
                 true
         );
 
         return 1;
+    }
+
+    private static int getRespawn(CommandSourceStack source, String dimensionName) {
+        MinecraftServer server = source.getServer();
+        ResourceKey<Level> dimensionKey = getPersonalSpaceDimensionKey(dimensionName);
+
+        ServerLevel level = server.getLevel(dimensionKey);
+
+        if (level == null) {
+            source.sendFailure(Component.literal("Personal Space dimension is not loaded: " + dimensionKey.location()));
+            return 0;
+        }
+
+        PersonalSpaceData data = PersonalSpaceData.load(level);
+        BlockPos respawnPos = data.getRespawnPos();
+
+        source.sendSuccess(
+                () -> Component.literal(
+                        "Respawn for "
+                                + dimensionKey.location()
+                                + " is "
+                                + formatPos(respawnPos)
+                ),
+                false
+        );
+
+        return 1;
+    }
+
+    private static int setRespawn(CommandSourceStack source, String dimensionName) {
+        ServerPlayer player;
+
+        try {
+            player = source.getPlayerOrException();
+        } catch (Exception exception) {
+            source.sendFailure(Component.literal("This command can only be used by a player."));
+            return 0;
+        }
+
+        MinecraftServer server = source.getServer();
+        ResourceKey<Level> dimensionKey = getPersonalSpaceDimensionKey(dimensionName);
+
+        if (!player.level().dimension().equals(dimensionKey)) {
+            source.sendFailure(Component.literal(
+                    "You must stand inside "
+                            + dimensionKey.location()
+                            + " to set its respawn point."
+            ));
+            return 0;
+        }
+
+        ServerLevel level = server.getLevel(dimensionKey);
+
+        if (level == null) {
+            source.sendFailure(Component.literal("Personal Space dimension is not loaded: " + dimensionKey.location()));
+            return 0;
+        }
+
+        BlockPos respawnPos = player.blockPosition();
+
+        PersonalSpaceData data = PersonalSpaceData.load(level);
+        data.setRespawnPos(respawnPos);
+        PersonalSpaceData.save(level, data);
+
+        source.sendSuccess(
+                () -> Component.literal(
+                        "Set respawn for "
+                                + dimensionKey.location()
+                                + " to "
+                                + formatPos(respawnPos)
+                ),
+                true
+        );
+
+        return 1;
+    }
+
+    private static int resetRespawn(CommandSourceStack source, String dimensionName) {
+        MinecraftServer server = source.getServer();
+        ResourceKey<Level> dimensionKey = getPersonalSpaceDimensionKey(dimensionName);
+
+        ServerLevel level = server.getLevel(dimensionKey);
+
+        if (level == null) {
+            source.sendFailure(Component.literal("Personal Space dimension is not loaded: " + dimensionKey.location()));
+            return 0;
+        }
+
+        PersonalSpaceData data = PersonalSpaceData.load(level);
+        data.resetRespawnPos();
+        PersonalSpaceData.save(level, data);
+
+        BlockPos respawnPos = data.getRespawnPos();
+
+        source.sendSuccess(
+                () -> Component.literal(
+                        "Reset respawn for "
+                                + dimensionKey.location()
+                                + " to "
+                                + formatPos(respawnPos)
+                ),
+                true
+        );
+
+        return 1;
+    }
+
+    private static BlockPos getRespawnPosForDimension(
+            MinecraftServer server,
+            ResourceKey<Level> dimensionKey
+    ) {
+        ServerLevel level = server.getLevel(dimensionKey);
+
+        if (level == null) {
+            return new BlockPos(7, 66, 7);
+        }
+
+        PersonalSpaceData data = PersonalSpaceData.load(level);
+        return data.getRespawnPos();
     }
 
     private static ResourceKey<Level> getPersonalSpaceDimensionKey(String rawName) {
@@ -194,6 +345,10 @@ public final class PSCommands {
         }
 
         return location.toString();
+    }
+
+    private static String formatPos(BlockPos pos) {
+        return pos.getX() + " " + pos.getY() + " " + pos.getZ();
     }
 
     private static List<String> getPersonalSpaceDimensionSuggestions(MinecraftServer server) {

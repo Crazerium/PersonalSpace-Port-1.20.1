@@ -1,31 +1,29 @@
 modLoader="javafml"
-loaderVersion="[1,)"
-license="LGPL-3.0"
-issueTrackerURL="https://github.com/Crazerium/PersonalSpace-Port-1.20.1/issues"
+loaderVersion="${loader_version_range}"
+license="${mod_license}"
+issueTrackerURL="${mod_issue_tracker_url}"
 
 [[mods]]
 modId="personalspace"
-version="${file.jarVersion}"
-displayName="Personal Space"
-displayURL="https://github.com/Crazerium/PersonalSpace-Port-1.20.1"
+version="${mod_version}"
+displayName="${mod_name}"
+displayURL="${mod_display_url}"
 logoFile="personalspace.png"
 credits="Original Personal Space mod by the original authors/contributors. Unofficial NeoForge 1.21.1 port by Crazerium."
-authors="eigenraven, Crazerium"
-description='''
-Personal Space adds private configurable dimensions for players.
-'''
+authors="${mod_authors}"
+description='''${mod_description}'''
 
 [[dependencies.personalspace]]
 modId="neoforge"
 type="required"
-versionRange="[21.1,)"
+versionRange="${neo_version_range}"
 ordering="NONE"
 side="BOTH"
 
 [[dependencies.personalspace]]
 modId="minecraft"
 type="required"
-versionRange="[1.21.1,1.22)"
+versionRange="${minecraft_version_range}"
 ordering="NONE"
 side="BOTH"
 
@@ -35,3 +33,6 @@ type="required"
 versionRange="[1.21-2.0.1.0,)"
 ordering="AFTER"
 side="BOTH"
+
+[[mixins]]
+config = "personalspace.mixins.json"
