@@ -26,6 +26,7 @@ import net.minecraft.world.level.Level;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 public final class PSCommands {
     private PSCommands() {
@@ -91,7 +92,7 @@ public final class PSCommands {
         try {
             player = source.getPlayerOrException();
         } catch (Exception exception) {
-            source.sendFailure(Component.literal("This command can only be used by a player."));
+            source.sendFailure(translatable("player_only"));
             return 0;
         }
 
@@ -105,7 +106,7 @@ public final class PSCommands {
         }
 
         if (destination == null) {
-            source.sendFailure(Component.literal("Personal Space dimension not found: " + dimensionKey.location()));
+            source.sendFailure(translatable("dimension_not_found", dimensionKey.location()));
             return 0;
         }
 
@@ -124,12 +125,7 @@ public final class PSCommands {
         );
 
         source.sendSuccess(
-                () -> Component.literal(
-                        "Teleported to Personal Space dimension: "
-                                + dimensionKey.location()
-                                + " at respawn "
-                                + formatPos(targetPos)
-                ),
+                () -> translatable("teleported", dimensionKey.location(), formatPos(targetPos)),
                 true
         );
 
@@ -171,13 +167,11 @@ public final class PSCommands {
         }
 
         source.sendSuccess(
-                () -> Component.literal(
-                        "Gave Personal Portal for "
-                                + dimensionKey.location()
-                                + " to "
-                                + targetPlayer.getGameProfile().getName()
-                                + " at respawn "
-                                + formatPos(targetPos)
+                () -> translatable(
+                        "gave_portal",
+                        dimensionKey.location(),
+                        targetPlayer.getGameProfile().getName(),
+                        formatPos(targetPos)
                 ),
                 true
         );
@@ -192,7 +186,7 @@ public final class PSCommands {
         ServerLevel level = server.getLevel(dimensionKey);
 
         if (level == null) {
-            source.sendFailure(Component.literal("Personal Space dimension is not loaded: " + dimensionKey.location()));
+            source.sendFailure(translatable("dimension_not_loaded", dimensionKey.location()));
             return 0;
         }
 
@@ -200,12 +194,7 @@ public final class PSCommands {
         BlockPos respawnPos = data.getRespawnPos();
 
         source.sendSuccess(
-                () -> Component.literal(
-                        "Respawn for "
-                                + dimensionKey.location()
-                                + " is "
-                                + formatPos(respawnPos)
-                ),
+                () -> translatable("respawn_get", dimensionKey.location(), formatPos(respawnPos)),
                 false
         );
 
@@ -218,7 +207,7 @@ public final class PSCommands {
         try {
             player = source.getPlayerOrException();
         } catch (Exception exception) {
-            source.sendFailure(Component.literal("This command can only be used by a player."));
+            source.sendFailure(translatable("player_only"));
             return 0;
         }
 
@@ -226,18 +215,14 @@ public final class PSCommands {
         ResourceKey<Level> dimensionKey = getPersonalSpaceDimensionKey(dimensionName);
 
         if (!player.level().dimension().equals(dimensionKey)) {
-            source.sendFailure(Component.literal(
-                    "You must stand inside "
-                            + dimensionKey.location()
-                            + " to set its respawn point."
-            ));
+            source.sendFailure(translatable("respawn_set_wrong_dimension", dimensionKey.location()));
             return 0;
         }
 
         ServerLevel level = server.getLevel(dimensionKey);
 
         if (level == null) {
-            source.sendFailure(Component.literal("Personal Space dimension is not loaded: " + dimensionKey.location()));
+            source.sendFailure(translatable("dimension_not_loaded", dimensionKey.location()));
             return 0;
         }
 
@@ -248,12 +233,7 @@ public final class PSCommands {
         PersonalSpaceData.save(level, data);
 
         source.sendSuccess(
-                () -> Component.literal(
-                        "Set respawn for "
-                                + dimensionKey.location()
-                                + " to "
-                                + formatPos(respawnPos)
-                ),
+                () -> translatable("respawn_set", dimensionKey.location(), formatPos(respawnPos)),
                 true
         );
 
@@ -267,7 +247,7 @@ public final class PSCommands {
         ServerLevel level = server.getLevel(dimensionKey);
 
         if (level == null) {
-            source.sendFailure(Component.literal("Personal Space dimension is not loaded: " + dimensionKey.location()));
+            source.sendFailure(translatable("dimension_not_loaded", dimensionKey.location()));
             return 0;
         }
 
@@ -278,12 +258,7 @@ public final class PSCommands {
         BlockPos respawnPos = data.getRespawnPos();
 
         source.sendSuccess(
-                () -> Component.literal(
-                        "Reset respawn for "
-                                + dimensionKey.location()
-                                + " to "
-                                + formatPos(respawnPos)
-                ),
+                () -> translatable("respawn_reset", dimensionKey.location(), formatPos(respawnPos)),
                 true
         );
 
@@ -314,7 +289,7 @@ public final class PSCommands {
     }
 
     private static ResourceLocation parsePersonalSpaceDimensionId(String rawName) {
-        String value = rawName.trim();
+        String value = rawName.trim().toLowerCase(Locale.ROOT);
 
         if (value.contains(":")) {
             ResourceLocation parsed = ResourceLocation.tryParse(value);
@@ -326,16 +301,27 @@ public final class PSCommands {
 
         String path = value;
 
+        if (path.startsWith(PSDimensions.PERSONAL_SPACE_DIMENSION_FOLDER + "/")) {
+            return ResourceLocation.fromNamespaceAndPath(PersonalSpace.MODID, path);
+        }
+
         if (!path.startsWith("ps_")) {
             path = "ps_" + path;
         }
 
-        return ResourceLocation.fromNamespaceAndPath(PersonalSpace.MODID, path);
+        return ResourceLocation.fromNamespaceAndPath(
+                PersonalSpace.MODID,
+                PSDimensions.PERSONAL_SPACE_DIMENSION_FOLDER + "/" + path
+        );
     }
 
     private static String formatDimensionName(ResourceLocation location) {
         if (location.getNamespace().equals(PersonalSpace.MODID)) {
             String path = location.getPath();
+
+            if (path.startsWith(PSDimensions.PERSONAL_SPACE_DIMENSION_FOLDER + "/")) {
+                path = path.substring((PSDimensions.PERSONAL_SPACE_DIMENSION_FOLDER + "/").length());
+            }
 
             if (path.startsWith("ps_")) {
                 return path.substring(3);
@@ -363,6 +349,10 @@ public final class PSCommands {
 
             String path = location.getPath();
 
+            if (path.startsWith(PSDimensions.PERSONAL_SPACE_DIMENSION_FOLDER + "/")) {
+                path = path.substring((PSDimensions.PERSONAL_SPACE_DIMENSION_FOLDER + "/").length());
+            }
+
             if (path.startsWith("ps_") && path.length() > 3) {
                 addSuggestionIfMissing(suggestions, path.substring(3));
             } else {
@@ -381,5 +371,33 @@ public final class PSCommands {
         if (!suggestions.contains(value)) {
             suggestions.add(value);
         }
+    }
+
+    private static Component translatable(String key, Object... args) {
+        return Component.translatable(
+                "command.personalspace." + key,
+                normalizeTranslationArgs(args)
+        );
+    }
+
+    private static Object[] normalizeTranslationArgs(Object[] args) {
+        Object[] normalized = new Object[args.length];
+
+        for (int i = 0; i < args.length; i++) {
+            Object arg = args[i];
+
+            if (arg instanceof Component
+                    || arg instanceof Number
+                    || arg instanceof Boolean
+                    || arg instanceof String) {
+                normalized[i] = arg;
+            } else if (arg != null) {
+                normalized[i] = arg.toString();
+            } else {
+                normalized[i] = "";
+            }
+        }
+
+        return normalized;
     }
 }

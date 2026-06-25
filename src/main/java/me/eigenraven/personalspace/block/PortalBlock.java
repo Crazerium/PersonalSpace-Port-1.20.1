@@ -3,6 +3,7 @@ package me.eigenraven.personalspace.block;
 import com.mojang.serialization.MapCodec;
 import me.eigenraven.personalspace.PersonalSpace;
 import me.eigenraven.personalspace.data.PersonalSpaceData;
+import me.eigenraven.personalspace.dimension.PSDimensions;
 import me.eigenraven.personalspace.registry.PSItems;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
@@ -220,7 +221,7 @@ public final class PortalBlock extends BaseEntityBlock {
     }
 
     private static boolean isPersonalSpaceDimension(Level level) {
-        return level.dimension().location().getNamespace().equals(PersonalSpace.MODID);
+        return PSDimensions.isPersonalSpaceDimension(level.dimension().location());
     }
 
     @Override
