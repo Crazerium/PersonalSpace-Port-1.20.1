@@ -15,6 +15,7 @@ public final class PSConfig {
 
     public static final class Server {
         public final ForgeConfigSpec.IntValue maxPersonalSpaceSizeBlocks;
+        public final ForgeConfigSpec.IntValue maxPersonalDimensionsPerPlayer;
 
         private Server(ForgeConfigSpec.Builder builder) {
             builder.push("personal_space_limits");
@@ -28,6 +29,15 @@ public final class PSConfig {
                             "Set to 0 to disable the limit."
                     )
                     .defineInRange("maxPersonalSpaceSizeBlocks", 10000, 0, 100000);
+
+            maxPersonalDimensionsPerPlayer = builder
+                    .comment(
+                            "Maximum number of personal dimensions each player may create.",
+                            "This limit applies only to player-owned dimensions: ps_<player>, ps_<player>_2, etc.",
+                            "FTB Teams dimensions are handled separately: one team can have only one team dimension.",
+                            "Set to 0 to disable the personal dimension count limit."
+                    )
+                    .defineInRange("maxPersonalDimensionsPerPlayer", 1, 0, 1000);
 
             builder.pop();
         }

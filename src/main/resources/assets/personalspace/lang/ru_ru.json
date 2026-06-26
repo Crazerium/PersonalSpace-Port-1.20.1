@@ -105,6 +105,7 @@
 
   "message.personalspace.boundary_limit": "Достигнут предел личного измерения.",
   "message.personalspace.portal_not_active": "[PersonalSpace] Портал не активен!",
+  "message.personalspace.player_dimension_limit": "Вы достигли лимита личных измерений: %s.",
   "message.personalspace.team_dimension_exists": "У вашей команды уже есть измерение.",
 
   "screen.personalspace.portal.title": "Персональный портал",

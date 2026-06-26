@@ -3,6 +3,7 @@ package me.eigenraven.personalspace.network;
 import me.eigenraven.personalspace.block.PortalBlock;
 import me.eigenraven.personalspace.block.PortalBlockEntity;
 import me.eigenraven.personalspace.compat.ftbteams.FTBTeamsCompat;
+import me.eigenraven.personalspace.config.PSConfig;
 import me.eigenraven.personalspace.data.PersonalSpaceData;
 import me.eigenraven.personalspace.dimension.PSDimensions;
 import me.eigenraven.personalspace.registry.PSBlocks;
@@ -22,6 +23,8 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.network.NetworkEvent;
 import me.eigenraven.personalspace.PersonalSpace;
 
+import java.util.Locale;
+import java.util.Optional;
 import java.util.function.Supplier;
 
 public class CreateDimensionPacket {
@@ -307,20 +310,52 @@ public class CreateDimensionPacket {
             return;
         }
 
-        ResourceKey<Level> newLevelKey = PSDimensions.personalKeyForPlayer(player);
+        ResourceKey<Level> newLevelKey;
 
-        if (isTeamDimensionKey(newLevelKey) && PSDimensions.levelExists(server, newLevelKey)) {
-            player.sendSystemMessage(Component.translatable(
-                    "message.personalspace.team_dimension_exists"
-            ));
+        Optional<String> teamDimensionName = FTBTeamsCompat.getTeamDimensionName(player);
 
-            PersonalSpace.LOGGER.info(
-                    "Blocked duplicate Personal Space team dimension creation for {}: {}",
-                    player.getGameProfile().getName(),
-                    newLevelKey.location()
+        if (teamDimensionName.isPresent()) {
+            newLevelKey = PSDimensions.key(teamDimensionName.get());
+
+            if (PSDimensions.levelExists(server, newLevelKey)) {
+                player.sendSystemMessage(Component.translatable(
+                        "message.personalspace.team_dimension_exists"
+                ));
+
+                PersonalSpace.LOGGER.info(
+                        "Blocked duplicate Personal Space team dimension creation for {}: {}",
+                        player.getGameProfile().getName(),
+                        newLevelKey.location()
+                );
+
+                return;
+            }
+        } else {
+            int maxPersonalDimensions = PSConfig.SERVER.maxPersonalDimensionsPerPlayer.get();
+            int existingPersonalDimensions = countExistingPersonalDimensions(
+                    server,
+                    player.getGameProfile().getName()
             );
 
-            return;
+            if (maxPersonalDimensions > 0 && existingPersonalDimensions >= maxPersonalDimensions) {
+                player.sendSystemMessage(Component.translatable(
+                        "message.personalspace.player_dimension_limit",
+                        maxPersonalDimensions
+                ));
+
+                PersonalSpace.LOGGER.info(
+                        "Blocked Personal Space dimension creation for {}: limit {} reached",
+                        player.getGameProfile().getName(),
+                        maxPersonalDimensions
+                );
+
+                return;
+            }
+
+            newLevelKey = nextPersonalDimensionKey(
+                    server,
+                    player.getGameProfile().getName()
+            );
         }
 
         PersonalSpaceData data = new PersonalSpaceData();
@@ -837,9 +872,116 @@ public class CreateDimensionPacket {
             return "";
         }
 
-        return rawId.trim().toLowerCase();
+        return rawId.trim().toLowerCase(Locale.ROOT);
     }
 
+
+
+    private static ResourceKey<Level> nextPersonalDimensionKey(
+            MinecraftServer server,
+            String playerName
+    ) {
+        String safeName = sanitizeDimensionName(playerName);
+
+        if (safeName.isBlank()) {
+            return PSDimensions.randomPersonalKey();
+        }
+
+        ResourceKey<Level> baseKey = PSDimensions.key("ps_" + safeName);
+
+        if (!PSDimensions.levelExists(server, baseKey)) {
+            return baseKey;
+        }
+
+        for (int index = 2; index < 10_000; index++) {
+            ResourceKey<Level> candidate = PSDimensions.key("ps_" + safeName + "_" + index);
+
+            if (!PSDimensions.levelExists(server, candidate)) {
+                return candidate;
+            }
+        }
+
+        return PSDimensions.randomPersonalKey();
+    }
+
+    private static int countExistingPersonalDimensions(
+            MinecraftServer server,
+            String playerName
+    ) {
+        String safeName = sanitizeDimensionName(playerName);
+
+        if (safeName.isBlank()) {
+            return 0;
+        }
+
+        int count = 0;
+
+        ResourceKey<Level> baseKey = PSDimensions.key("ps_" + safeName);
+
+        if (PSDimensions.levelExists(server, baseKey)) {
+            count++;
+        }
+
+        for (int index = 2; index < 10_000; index++) {
+            ResourceKey<Level> candidate = PSDimensions.key("ps_" + safeName + "_" + index);
+
+            if (PSDimensions.levelExists(server, candidate)) {
+                count++;
+                continue;
+            }
+
+            break;
+        }
+
+        return count;
+    }
+
+    private static String sanitizeDimensionName(String rawName) {
+        if (rawName == null) {
+            return "";
+        }
+
+        String lowerName = rawName
+                .trim()
+                .toLowerCase(Locale.ROOT);
+
+        StringBuilder result = new StringBuilder();
+
+        for (int i = 0; i < lowerName.length(); i++) {
+            char c = lowerName.charAt(i);
+
+            if ((c >= 'a' && c <= 'z')
+                    || (c >= '0' && c <= '9')
+                    || c == '_'
+                    || c == '-'
+                    || c == '.') {
+                result.append(c);
+            } else {
+                result.append('_');
+            }
+        }
+
+        while (result.toString().contains("__")) {
+            int index = result.indexOf("__");
+            result.replace(index, index + 2, "_");
+        }
+
+        String safe = result.toString();
+
+        while (safe.startsWith("_")) {
+            safe = safe.substring(1);
+        }
+
+        while (safe.endsWith("_")) {
+            safe = safe.substring(0, safe.length() - 1);
+        }
+
+        if (safe.length() > 48) {
+            safe = safe.substring(0, 48);
+        }
+
+        return safe;
+    }
 
     private static boolean isTeamDimensionKey(ResourceKey<Level> levelKey) {
         if (levelKey == null) {
