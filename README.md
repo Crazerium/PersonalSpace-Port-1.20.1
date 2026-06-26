@@ -17,6 +17,15 @@ The mod adds private player-owned dimensions that can be used as personal utilit
 * Use a personal portal block to enter and leave your dimension
 * Optional compatibility with GTCEu / GT Odyssey where supported
 
+
+## Optional Integrations
+
+### FTB Teams
+
+When FTB Teams is installed, Personal Space can create shared team-owned dimensions.
+
+Players in the same FTB team will use the same team Personal Space dimension. Only one Personal Space dimension can be created per FTB team.
+
 ## Modpack Usage
 
 By default, the personal portal has no crafting recipe.
