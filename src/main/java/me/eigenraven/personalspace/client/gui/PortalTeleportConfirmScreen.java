@@ -67,10 +67,19 @@ public final class PortalTeleportConfirmScreen extends Screen {
             ResourceLocation clickedLevelId,
             Component dimensionName
     ) {
+        this(portalPos, clickedLevelId, dimensionName, "");
+    }
+
+    public PortalTeleportConfirmScreen(
+            BlockPos portalPos,
+            ResourceLocation clickedLevelId,
+            Component dimensionName,
+            String targetDisplayName
+    ) {
         super(Component.translatable("screen.personalspace.portal.title"));
         this.portalPos = portalPos;
         this.clickedLevelId = clickedLevelId;
-        this.dimensionName = dimensionName;
+        this.dimensionName = formatDimensionName(clickedLevelId, dimensionName, targetDisplayName);
         this.personalSpaceLevel = clickedLevelId.getNamespace().equals(PersonalSpace.MODID);
 
         if (personalSpaceLevel) {
@@ -103,6 +112,64 @@ public final class PortalTeleportConfirmScreen extends Screen {
 
     private static Component onOff(boolean value) {
         return value ? settingsText("on") : settingsText("off");
+    }
+
+    private static Component formatDimensionName(
+            ResourceLocation levelId,
+            Component fallback,
+            String targetDisplayName
+    ) {
+        if (targetDisplayName != null && targetDisplayName.startsWith("team:")) {
+            String teamName = targetDisplayName.substring("team:".length()).trim();
+
+            if (!teamName.isBlank()) {
+                return Component.translatable(
+                        "screen.personalspace.portal.dimension.team_named",
+                        teamName
+                );
+            }
+        }
+
+        if (targetDisplayName != null && targetDisplayName.startsWith("player:")) {
+            String playerName = targetDisplayName.substring("player:".length()).trim();
+
+            if (!playerName.isBlank()) {
+                return Component.translatable(
+                        "screen.personalspace.portal.dimension.personal_named",
+                        playerName
+                );
+            }
+        }
+
+        if (levelId == null || !levelId.getNamespace().equals(PersonalSpace.MODID)) {
+            return fallback;
+        }
+
+        String path = levelId.getPath();
+        String folder = "personal_space_dimensions/";
+
+        if (path.startsWith(folder)) {
+            path = path.substring(folder.length());
+        }
+
+        if (path.startsWith("team_")) {
+            return Component.translatable("screen.personalspace.portal.dimension.team_unknown");
+        }
+
+        if (path.startsWith("ps_")) {
+            String ownerName = path.substring("ps_".length()).trim();
+
+            if (!ownerName.isBlank()) {
+                return Component.translatable(
+                        "screen.personalspace.portal.dimension.personal_named",
+                        ownerName
+                );
+            }
+
+            return Component.translatable("screen.personalspace.portal.dimension.personal_unknown");
+        }
+
+        return fallback;
     }
 
     @Override

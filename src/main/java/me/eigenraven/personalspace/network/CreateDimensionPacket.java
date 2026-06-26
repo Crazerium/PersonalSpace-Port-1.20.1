@@ -2,6 +2,7 @@ package me.eigenraven.personalspace.network;
 
 import me.eigenraven.personalspace.block.PortalBlock;
 import me.eigenraven.personalspace.block.PortalBlockEntity;
+import me.eigenraven.personalspace.compat.ftbteams.FTBTeamsCompat;
 import me.eigenraven.personalspace.data.PersonalSpaceData;
 import me.eigenraven.personalspace.dimension.PSDimensions;
 import me.eigenraven.personalspace.registry.PSBlocks;
@@ -19,6 +20,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.network.NetworkEvent;
+import me.eigenraven.personalspace.PersonalSpace;
 
 import java.util.function.Supplier;
 
@@ -218,10 +220,6 @@ public class CreateDimensionPacket {
             return;
         }
 
-        if (server == null) {
-            return;
-        }
-
         if (!isValidChunkValue(msg.boundaryChunksX)
                 || !isValidChunkValue(msg.boundaryChunksZ)
                 || !isValidChunkValue(msg.gapChunks)) {
@@ -309,10 +307,21 @@ public class CreateDimensionPacket {
             return;
         }
 
-        ResourceKey<Level> newLevelKey = PSDimensions.personalKeyForPlayer(
-                server,
-                player.getGameProfile().getName()
-        );
+        ResourceKey<Level> newLevelKey = PSDimensions.personalKeyForPlayer(player);
+
+        if (isTeamDimensionKey(newLevelKey) && PSDimensions.levelExists(server, newLevelKey)) {
+            player.sendSystemMessage(Component.translatable(
+                    "message.personalspace.team_dimension_exists"
+            ));
+
+            PersonalSpace.LOGGER.info(
+                    "Blocked duplicate Personal Space team dimension creation for {}: {}",
+                    player.getGameProfile().getName(),
+                    newLevelKey.location()
+            );
+
+            return;
+        }
 
         PersonalSpaceData data = new PersonalSpaceData();
 
@@ -412,11 +421,25 @@ public class CreateDimensionPacket {
                 returnLocation
         );
 
+        String targetDisplayName = FTBTeamsCompat.getTeamDisplayName(player)
+                .map(name -> "team:" + name)
+                .orElse("player:" + player.getGameProfile().getName());
+
+        FTBTeamsCompat.getTeamDisplayName(player).ifPresent(teamName ->
+                PSDimensions.writeTeamInfoFile(server, newLevelKey, teamName)
+        );
+
+        PersonalSpace.LOGGER.info(
+                "Personal Space target display name for {} is '{}'",
+                player.getGameProfile().getName(),
+                targetDisplayName
+        );
+
         innerPortal.setReturnPortal(true);
-        innerPortal.setTarget(returnKey, data.getReturnPos());
+        innerPortal.setTarget(returnKey, data.getReturnPos(), targetDisplayName);
 
         sourcePortal.setReturnPortal(false);
-        sourcePortal.setTarget(newLevelKey, innerPortalPos);
+        sourcePortal.setTarget(newLevelKey, innerPortalPos, targetDisplayName);
 
         player.teleportTo(
                 newLevel,
@@ -815,6 +838,21 @@ public class CreateDimensionPacket {
         }
 
         return rawId.trim().toLowerCase();
+    }
+
+
+    private static boolean isTeamDimensionKey(ResourceKey<Level> levelKey) {
+        if (levelKey == null) {
+            return false;
+        }
+
+        String path = levelKey.location().getPath();
+
+        if (path.startsWith(PSDimensions.PERSONAL_SPACE_DIMENSION_FOLDER + "/")) {
+            path = path.substring((PSDimensions.PERSONAL_SPACE_DIMENSION_FOLDER + "/").length());
+        }
+
+        return path.startsWith("team_");
     }
 
     private static ServerLevel getSourceLevel(

@@ -26,12 +26,14 @@ public class PortalBlockEntity extends BlockEntity {
     private static final String TAG_TARGET_LEVEL = "TargetLevel";
     private static final String TAG_TARGET_POS = "TargetPos";
     private static final String TAG_RETURN_PORTAL = "ReturnPortal";
+    private static final String TAG_TARGET_DISPLAY_NAME = "TargetDisplayName";
 
     private boolean active = false;
     private boolean returnPortal = false;
 
     private ResourceKey<Level> targetLevel = null;
     private BlockPos targetPos = new BlockPos(0, 80, 0);
+    private String targetDisplayName = "";
     private long lastTeleportGameTime = -1000L;
 
     public PortalBlockEntity(BlockPos pos, BlockState state) {
@@ -64,9 +66,18 @@ public class PortalBlockEntity extends BlockEntity {
         return targetPos;
     }
 
+    public String getTargetDisplayName() {
+        return targetDisplayName == null ? "" : targetDisplayName;
+    }
+
     public void setTarget(ResourceKey<Level> targetLevel, BlockPos targetPos) {
+        setTarget(targetLevel, targetPos, "");
+    }
+
+    public void setTarget(ResourceKey<Level> targetLevel, BlockPos targetPos, String targetDisplayName) {
         this.targetLevel = targetLevel;
         this.targetPos = targetPos == null ? new BlockPos(0, 80, 0) : targetPos;
+        this.targetDisplayName = targetDisplayName == null ? "" : targetDisplayName;
         this.active = targetLevel != null;
 
         setChanged();
@@ -159,6 +170,10 @@ public class PortalBlockEntity extends BlockEntity {
             tag.putString(TAG_TARGET_LEVEL, targetLevel.location().toString());
         }
 
+        if (targetDisplayName != null && !targetDisplayName.isBlank()) {
+            tag.putString(TAG_TARGET_DISPLAY_NAME, targetDisplayName);
+        }
+
         if (targetPos != null) {
             tag.putLong(TAG_TARGET_POS, targetPos.asLong());
         }
@@ -173,6 +188,7 @@ public class PortalBlockEntity extends BlockEntity {
 
         targetLevel = null;
         targetPos = new BlockPos(0, 80, 0);
+        targetDisplayName = "";
         returnPortal = savedReturnPortal;
 
         if (tag.contains(TAG_TARGET_LEVEL)) {
@@ -187,6 +203,10 @@ public class PortalBlockEntity extends BlockEntity {
 
         if (tag.contains(TAG_TARGET_POS)) {
             targetPos = BlockPos.of(tag.getLong(TAG_TARGET_POS));
+        }
+
+        if (tag.contains(TAG_TARGET_DISPLAY_NAME)) {
+            targetDisplayName = tag.getString(TAG_TARGET_DISPLAY_NAME);
         }
 
         active = savedActive && targetLevel != null;

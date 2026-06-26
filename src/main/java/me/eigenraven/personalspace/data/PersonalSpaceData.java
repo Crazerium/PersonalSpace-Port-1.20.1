@@ -3,6 +3,7 @@ package me.eigenraven.personalspace.data;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import net.minecraft.core.BlockPos;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.storage.LevelResource;
 
@@ -219,7 +220,18 @@ public class PersonalSpaceData {
 
     private static Path getDimensionPath(ServerLevel level) {
         Path worldRoot = level.getServer().getWorldPath(LevelResource.ROOT);
+        ResourceLocation dimensionId = level.dimension().location();
+
+        return worldRoot
+                .resolve("dimensions")
+                .resolve(dimensionId.getNamespace())
+                .resolve(dimensionId.getPath());
+    }
+
+    private static Path getLegacyDimensionPath(ServerLevel level) {
+        Path worldRoot = level.getServer().getWorldPath(LevelResource.ROOT);
         String dimName = level.dimension().location().getPath();
+
         return worldRoot.resolve(dimName);
     }
 
@@ -233,6 +245,22 @@ public class PersonalSpaceData {
 
                 if (data != null) {
                     data.normalize();
+                    return data;
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+        File legacyConfigFile = getLegacyDimensionPath(level).resolve(FILE_NAME).toFile();
+
+        if (legacyConfigFile.exists()) {
+            try (Reader reader = new FileReader(legacyConfigFile)) {
+                PersonalSpaceData data = GSON.fromJson(reader, PersonalSpaceData.class);
+
+                if (data != null) {
+                    data.normalize();
+                    save(level, data);
                     return data;
                 }
             } catch (IOException e) {

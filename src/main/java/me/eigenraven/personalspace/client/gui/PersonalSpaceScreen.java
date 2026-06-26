@@ -45,17 +45,17 @@ public class PersonalSpaceScreen extends Screen {
     private boolean weatherEnabled = false;
     private boolean cloudsEnabled = true;
 
-    private String layersPreset = "minecraft:bedrock,1;minecraft:dirt,2;minecraft:grass_block,1";
+    private String layersPreset = "minecraft:obsidian,1";
 
-    private int boundaryChunksX = 1;
-    private int boundaryChunksZ = 1;
-    private int gapChunks = 1;
+    private int boundaryChunksX = 0;
+    private int boundaryChunksZ = 0;
+    private int gapChunks = 0;
 
     private String boundaryBlock = "minecraft:barrier";
     private String roadBlock = "minecraft:stone";
     private String centerMarkerBlock = "minecraft:glowstone";
 
-    private boolean centerMarkerEnabled = true;
+    private boolean centerMarkerEnabled = false;
     private boolean advancedVisible = false;
     private boolean repeatingGridEnabled = false;
 
@@ -306,17 +306,17 @@ public class PersonalSpaceScreen extends Screen {
                 weatherEnabled = false;
                 cloudsEnabled = true;
 
-                layersPreset = "minecraft:bedrock,1;minecraft:dirt,2;minecraft:grass_block,1";
+                layersPreset = "minecraft:obsidian,1";
 
-                boundaryChunksX = 1;
-                boundaryChunksZ = 1;
-                gapChunks = 1;
+                boundaryChunksX = 0;
+                boundaryChunksZ = 0;
+                gapChunks = 0;
 
                 boundaryBlock = "minecraft:barrier";
                 roadBlock = "minecraft:stone";
                 centerMarkerBlock = "minecraft:glowstone";
 
-                centerMarkerEnabled = true;
+                centerMarkerEnabled = false;
                 repeatingGridEnabled = false;
             }
 
@@ -340,15 +340,15 @@ public class PersonalSpaceScreen extends Screen {
 
                 layersPreset = "minecraft:bedrock,1;minecraft:dirt,2;minecraft:grass_block,1";
 
-                boundaryChunksX = 1;
-                boundaryChunksZ = 1;
-                gapChunks = 1;
+                boundaryChunksX = 0;
+                boundaryChunksZ = 0;
+                gapChunks = 0;
 
                 boundaryBlock = "minecraft:barrier";
                 roadBlock = "minecraft:stone_bricks";
                 centerMarkerBlock = "minecraft:glowstone";
 
-                centerMarkerEnabled = true;
+                centerMarkerEnabled = false;
                 repeatingGridEnabled = false;
             }
 
@@ -372,15 +372,15 @@ public class PersonalSpaceScreen extends Screen {
 
                 layersPreset = "minecraft:bedrock,1;minecraft:smooth_stone,3";
 
-                boundaryChunksX = 1;
-                boundaryChunksZ = 1;
-                gapChunks = 1;
+                boundaryChunksX = 0;
+                boundaryChunksZ = 0;
+                gapChunks = 0;
 
                 boundaryBlock = "minecraft:barrier";
                 roadBlock = "minecraft:light_gray_concrete";
                 centerMarkerBlock = "minecraft:white_concrete";
 
-                centerMarkerEnabled = true;
+                centerMarkerEnabled = false;
                 repeatingGridEnabled = false;
             }
 
@@ -402,19 +402,20 @@ public class PersonalSpaceScreen extends Screen {
                 weatherEnabled = false;
                 cloudsEnabled = false;
 
-                layersPreset = "minecraft:bedrock,1;minecraft:dirt,2;minecraft:grass_block,1";
+                layersPreset = "minecraft:obsidian,1";
 
-                boundaryChunksX = 1;
-                boundaryChunksZ = 1;
-                gapChunks = 1;
+                boundaryChunksX = 0;
+                boundaryChunksZ = 0;
+                gapChunks = 0;
 
                 boundaryBlock = "minecraft:barrier";
                 roadBlock = "minecraft:deepslate_tiles";
                 centerMarkerBlock = "minecraft:end_rod";
 
-                centerMarkerEnabled = true;
+                centerMarkerEnabled = false;
                 repeatingGridEnabled = false;
             }
+
             case ROAD_GRID -> {
                 selectedType = PersonalSpaceData.WorldType.FLAT;
                 selectedHeight = 64;
@@ -446,6 +447,7 @@ public class PersonalSpaceScreen extends Screen {
                 centerMarkerEnabled = true;
                 repeatingGridEnabled = true;
             }
+
         }
     }
 
@@ -1017,8 +1019,46 @@ public class PersonalSpaceScreen extends Screen {
     }
 
 
+    private void renderSimplePresetPreview(GuiGraphics graphics, int x, int y, int width, int height) {
+        int cellSize = Math.max(4, Math.min(width, height) / 9);
+        int drawWidth = cellSize * 7;
+        int drawHeight = cellSize * 7;
+        int startX = x + (width - drawWidth) / 2;
+        int startY = y + (height - drawHeight) / 2;
+
+        int platformColor = getPlatformPreviewColor();
+        int markerColor = getBlockPreviewColor(centerMarkerBlock, 0xFFFFFF55);
+
+        for (int gridZ = 0; gridZ < 7; gridZ++) {
+            for (int gridX = 0; gridX < 7; gridX++) {
+                drawMiniMapCell(
+                        graphics,
+                        startX + gridX * cellSize,
+                        startY + gridZ * cellSize,
+                        cellSize,
+                        platformColor
+                );
+            }
+        }
+
+        if (centerMarkerEnabled) {
+            drawMiniMapCell(
+                    graphics,
+                    startX + 3 * cellSize,
+                    startY + 3 * cellSize,
+                    cellSize,
+                    markerColor
+            );
+        }
+    }
+
     private void renderTopDownMiniMap(GuiGraphics graphics, int x, int y, int width, int height) {
         graphics.fill(x, y, x + width, y + height, 0xFF080808);
+
+        if (!repeatingGridEnabled) {
+            renderSimplePresetPreview(graphics, x, y, width, height);
+            return;
+        }
 
         int safeBoundaryX = Math.max(1, boundaryChunksX);
         int safeBoundaryZ = Math.max(1, boundaryChunksZ);

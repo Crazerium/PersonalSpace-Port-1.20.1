@@ -2,6 +2,7 @@ package me.eigenraven.personalspace.dimension;
 
 import commoble.infiniverse.api.InfiniverseAPI;
 import me.eigenraven.personalspace.PersonalSpace;
+import me.eigenraven.personalspace.compat.ftbteams.FTBTeamsCompat;
 import me.eigenraven.personalspace.compat.gtceu.PersonalSpaceGTCEuHooks;
 import me.eigenraven.personalspace.data.PersonalSpaceData;
 import net.minecraft.core.BlockPos;
@@ -13,6 +14,7 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.biome.Biome;
@@ -347,8 +349,6 @@ public final class PSDimensions {
                 }
             }
 
-            applyBoundaryRoadsAndMarker(level, portalPos, data);
-
             return;
         }
 
@@ -360,7 +360,6 @@ public final class PSDimensions {
                         presetLayers
                 );
 
-                applyBoundaryRoadsAndMarker(level, portalPos, data);
                 applyVegetation(level, portalPos, data);
             }
 
@@ -824,7 +823,7 @@ public final class PSDimensions {
             path = path.substring((PERSONAL_SPACE_DIMENSION_FOLDER + "/").length());
         }
 
-        return path.startsWith("ps_");
+        return path.startsWith("ps_") || path.startsWith("team_");
     }
 
 
@@ -839,6 +838,95 @@ public final class PSDimensions {
 
         if (!data.isWeatherEnabled()) {
             level.setWeatherParameters(6000, 0, false, false);
+        }
+    }
+
+    public static ResourceKey<Level> personalKeyForPlayer(ServerPlayer player) {
+        if (player == null) {
+            return randomPersonalKey();
+        }
+
+        Optional<String> teamDimensionName = FTBTeamsCompat.getTeamDimensionName(player);
+
+        if (teamDimensionName.isPresent()) {
+            return key(teamDimensionName.get());
+        }
+
+        return personalKeyForPlayer(
+                player.server,
+                player.getGameProfile().getName()
+        );
+    }
+
+    public static boolean levelExists(MinecraftServer server, ResourceKey<Level> levelKey) {
+        if (server == null || levelKey == null) {
+            return false;
+        }
+
+        if (server.getLevel(levelKey) != null) {
+            return true;
+        }
+
+        return java.nio.file.Files.exists(getPersonalSpaceDimensionFolder(server, levelKey));
+    }
+
+    public static java.nio.file.Path getPersonalSpaceDimensionFolder(
+            MinecraftServer server,
+            ResourceKey<Level> levelKey
+    ) {
+        ResourceLocation id = levelKey.location();
+
+        String path = id.getPath();
+
+        if (path.startsWith(PERSONAL_SPACE_DIMENSION_FOLDER + "/")) {
+            path = path.substring((PERSONAL_SPACE_DIMENSION_FOLDER + "/").length());
+        }
+
+        return server.getWorldPath(
+                        net.minecraft.world.level.storage.LevelResource.ROOT
+                )
+                .resolve(PERSONAL_SPACE_DIMENSION_FOLDER)
+                .resolve(path);
+    }
+
+    public static void writeTeamInfoFile(
+            MinecraftServer server,
+            ResourceKey<Level> levelKey,
+            String teamName
+    ) {
+        if (server == null || levelKey == null || teamName == null || teamName.isBlank()) {
+            return;
+        }
+
+        ResourceLocation id = levelKey.location();
+
+        java.nio.file.Path dimensionPath = server.getWorldPath(
+                        net.minecraft.world.level.storage.LevelResource.ROOT
+                )
+                .resolve("dimensions")
+                .resolve(id.getNamespace())
+                .resolve(id.getPath());
+
+        java.nio.file.Path infoFile = dimensionPath.resolve("team_info.txt");
+
+        String content = "Team name: " + teamName + System.lineSeparator()
+                + "Dimension: " + id + System.lineSeparator();
+
+        try {
+            java.nio.file.Files.createDirectories(dimensionPath);
+            java.nio.file.Files.writeString(
+                    infoFile,
+                    content,
+                    java.nio.charset.StandardCharsets.UTF_8,
+                    java.nio.file.StandardOpenOption.CREATE,
+                    java.nio.file.StandardOpenOption.TRUNCATE_EXISTING
+            );
+        } catch (java.io.IOException exception) {
+            PersonalSpace.LOGGER.warn(
+                    "Failed to write Personal Space team info file for {}",
+                    id,
+                    exception
+            );
         }
     }
 }

@@ -12,6 +12,7 @@
   "gui.personalspace.preset.flat": "Плоский мир",
   "gui.personalspace.preset.tech": "Тех. платформа",
   "gui.personalspace.preset.night_void": "Ночная пустота",
+  "gui.personalspace.preset.road_grid": "Сетка дорог",
   "gui.personalspace.preset.tooltip": "Быстро применяет тип мира, время, небо, биом и базовые настройки.",
 
   "gui.personalspace.ground_height": "Высота земли",
@@ -59,6 +60,7 @@
   "block.personalspace.personal_portal": "Персональный портал",
   "item.personalspace.personal_portal": "Персональный портал",
   "tooltip.personalspace.unlinked": "Не привязан",
+  "tooltip.personalspace.target": "Связан",
 
   "gui.personalspace.preview.title": "Будет создано",
   "gui.personalspace.preview.map": "Миникарта",
@@ -92,6 +94,7 @@
 
   "gui.personalspace.on": "ВКЛ",
   "gui.personalspace.off": "ВЫКЛ",
+
   "gui.personalspace.block_picker.search": "Поиск блока...",
   "gui.personalspace.block_picker.no_results": "Нет доступных блоков",
   "gui.personalspace.block_picker.current": "Текущий блок: %s",
@@ -99,13 +102,23 @@
   "gui.personalspace.block_picker.next": "Дальше",
   "gui.personalspace.block_picker.page": "Страница %s / %s",
   "gui.personalspace.block_picker.button": "%s: %s",
-  "gui.personalspace.preset.road_grid": "Сетка дорог",
+
   "message.personalspace.boundary_limit": "Достигнут предел личного измерения.",
-  "tooltip.personalspace.target": "Связан",
+  "message.personalspace.portal_not_active": "[PersonalSpace] Портал не активен!",
+  "message.personalspace.team_dimension_exists": "У вашей команды уже есть измерение.",
+
   "screen.personalspace.portal.title": "Персональный портал",
   "screen.personalspace.portal.enter": "Телепортироваться",
-  "screen.personalspace.portal.enter_dimension": "Измерение: %s",
+  "screen.personalspace.portal.enter_dimension": "%s",
   "screen.personalspace.portal.return_to": "Вернуться в: %s",
+
+  "screen.personalspace.portal.dimension.team_named": "Измерение команды \"%s\"",
+  "screen.personalspace.portal.dimension.team_unknown": "Измерение команды",
+  "screen.personalspace.portal.dimension.personal_named": "Измерение игрока \"%s\"",
+  "screen.personalspace.portal.dimension.personal_unknown": "Личное измерение",
+  "screen.personalspace.portal.dimension.overworld": "Обычный мир",
+  "screen.personalspace.portal.dimension.unknown": "Неизвестное измерение",
+
   "command.personalspace.player_only": "Эту команду может использовать только игрок.",
   "command.personalspace.dimension_not_found": "Измерение Personal Space не найдено: %s",
   "command.personalspace.dimension_not_loaded": "Измерение Personal Space не загружено: %s",
@@ -114,7 +127,5 @@
   "command.personalspace.respawn_get": "Точка респавна для %s: %s",
   "command.personalspace.respawn_set": "Точка респавна для %s установлена на %s",
   "command.personalspace.respawn_reset": "Точка респавна для %s сброшена на %s",
-  "command.personalspace.respawn_set_wrong_dimension": "Вы должны находиться внутри %s, чтобы установить его точку респавна.",
-  "message.personalspace.portal_not_active": "[PersonalSpace] Портал не активен!",
-  "message.personalspace.target_dimension_not_found": "[PersonalSpace] Целевое измерение не найдено: %s"
+  "command.personalspace.respawn_set_wrong_dimension": "Вы должны находиться внутри %s, чтобы установить его точку респавна."
 }

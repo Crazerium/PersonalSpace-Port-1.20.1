@@ -12,6 +12,7 @@
   "gui.personalspace.preset.flat": "Flat World",
   "gui.personalspace.preset.tech": "Tech Platform",
   "gui.personalspace.preset.night_void": "Night Void",
+  "gui.personalspace.preset.road_grid": "Road Grid",
   "gui.personalspace.preset.tooltip": "Quickly applies world type, time, sky, biome, and basic settings.",
 
   "gui.personalspace.ground_height": "Ground Height",
@@ -59,6 +60,7 @@
   "block.personalspace.personal_portal": "Personal Portal",
   "item.personalspace.personal_portal": "Personal Portal",
   "tooltip.personalspace.unlinked": "Unlinked",
+  "tooltip.personalspace.target": "Connected",
 
   "gui.personalspace.preview.title": "Will be created",
   "gui.personalspace.preview.map": "Mini-map",
@@ -92,6 +94,7 @@
 
   "gui.personalspace.on": "ON",
   "gui.personalspace.off": "OFF",
+
   "gui.personalspace.block_picker.search": "Search block...",
   "gui.personalspace.block_picker.no_results": "No available blocks",
   "gui.personalspace.block_picker.current": "Current block: %s",
@@ -99,13 +102,23 @@
   "gui.personalspace.block_picker.next": "Next",
   "gui.personalspace.block_picker.page": "Page %s / %s",
   "gui.personalspace.block_picker.button": "%s: %s",
-  "gui.personalspace.preset.road_grid": "Road Grid",
+
   "message.personalspace.boundary_limit": "Personal Space boundary reached.",
-  "tooltip.personalspace.target": "Connected",
+  "message.personalspace.portal_not_active": "[PersonalSpace] Portal is not active!",
+  "message.personalspace.team_dimension_exists": "Your team already has a dimension.",
+
   "screen.personalspace.portal.title": "Personal Portal",
   "screen.personalspace.portal.enter": "Teleport",
-  "screen.personalspace.portal.enter_dimension": "Dimension: %s",
+  "screen.personalspace.portal.enter_dimension": "%s",
   "screen.personalspace.portal.return_to": "Return to: %s",
+
+  "screen.personalspace.portal.dimension.team_named": "Team \"%s\" Dimension",
+  "screen.personalspace.portal.dimension.team_unknown": "Team Dimension",
+  "screen.personalspace.portal.dimension.personal_named": "%s's Dimension",
+  "screen.personalspace.portal.dimension.personal_unknown": "Personal Dimension",
+  "screen.personalspace.portal.dimension.overworld": "Overworld",
+  "screen.personalspace.portal.dimension.unknown": "Unknown Dimension",
+
   "command.personalspace.player_only": "This command can only be used by a player.",
   "command.personalspace.dimension_not_found": "Personal Space dimension not found: %s",
   "command.personalspace.dimension_not_loaded": "Personal Space dimension not loaded: %s",
@@ -114,7 +127,5 @@
   "command.personalspace.respawn_get": "Respawn for %s is %s",
   "command.personalspace.respawn_set": "Set respawn for %s to %s",
   "command.personalspace.respawn_reset": "Reset respawn for %s to %s",
-  "command.personalspace.respawn_set_wrong_dimension": "You must stand inside %s to set its respawn point.",
-  "message.personalspace.portal_not_active": "[PersonalSpace] Portal is not active!",
-  "message.personalspace.target_dimension_not_found": "[PersonalSpace] Target dimension not found: %s"
+  "command.personalspace.respawn_set_wrong_dimension": "You must stand inside %s to set its respawn point."
 }

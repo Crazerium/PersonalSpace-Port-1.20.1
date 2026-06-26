@@ -255,9 +255,14 @@ public final class PortalBlock extends BaseEntityBlock {
         BlockEntity blockEntity = level.getBlockEntity(pos);
 
         ResourceLocation targetLevelId = null;
+        String targetDisplayName = "";
 
-        if (blockEntity instanceof PortalBlockEntity portal && portal.getTargetLevel() != null) {
-            targetLevelId = portal.getTargetLevel().location();
+        if (blockEntity instanceof PortalBlockEntity portal) {
+            if (portal.getTargetLevel() != null) {
+                targetLevelId = portal.getTargetLevel().location();
+            }
+
+            targetDisplayName = portal.getTargetDisplayName();
         }
 
         Component dimensionName;
@@ -268,10 +273,7 @@ public final class PortalBlock extends BaseEntityBlock {
                     formatDimensionName(targetLevelId)
             );
         } else {
-            dimensionName = Component.translatable(
-                    "screen.personalspace.portal.enter_dimension",
-                    formatDimensionName(targetLevelId)
-            );
+            dimensionName = formatTargetDisplayName(targetLevelId, targetDisplayName);
         }
 
         Minecraft.getInstance().setScreen(new PortalTeleportConfirmScreen(
@@ -282,13 +284,44 @@ public final class PortalBlock extends BaseEntityBlock {
     }
 
     @OnlyIn(Dist.CLIENT)
-    private static String formatDimensionName(ResourceLocation levelId) {
+    private static Component formatTargetDisplayName(ResourceLocation levelId, String targetDisplayName) {
+        if (targetDisplayName != null && targetDisplayName.startsWith("team:")) {
+            String teamName = targetDisplayName.substring("team:".length()).trim();
+
+            if (!teamName.isBlank()) {
+                return Component.translatable(
+                        "screen.personalspace.portal.dimension.team_named",
+                        teamName
+                );
+            }
+
+            return Component.translatable("screen.personalspace.portal.dimension.team_unknown");
+        }
+
+        if (targetDisplayName != null && targetDisplayName.startsWith("player:")) {
+            String playerName = targetDisplayName.substring("player:".length()).trim();
+
+            if (!playerName.isBlank()) {
+                return Component.translatable(
+                        "screen.personalspace.portal.dimension.personal_named",
+                        playerName
+                );
+            }
+
+            return Component.translatable("screen.personalspace.portal.dimension.personal_unknown");
+        }
+
+        return formatDimensionName(levelId);
+    }
+
+    @OnlyIn(Dist.CLIENT)
+    private static Component formatDimensionName(ResourceLocation levelId) {
         if (levelId == null) {
-            return "Unknown";
+            return Component.translatable("screen.personalspace.portal.dimension.unknown");
         }
 
         if (levelId.getNamespace().equals("minecraft") && levelId.getPath().equals("overworld")) {
-            return "Overworld";
+            return Component.translatable("screen.personalspace.portal.dimension.overworld");
         }
 
         if (levelId.getNamespace().equals(PersonalSpace.MODID)) {
@@ -298,14 +331,27 @@ public final class PortalBlock extends BaseEntityBlock {
                 path = path.substring((PSDimensions.PERSONAL_SPACE_DIMENSION_FOLDER + "/").length());
             }
 
-            if (path.startsWith("ps_")) {
-                path = path.substring(3);
+            if (path.startsWith("team_")) {
+                return Component.translatable("screen.personalspace.portal.dimension.team_unknown");
             }
 
-            return path;
+            if (path.startsWith("ps_")) {
+                String playerName = path.substring("ps_".length());
+
+                if (!playerName.isBlank()) {
+                    return Component.translatable(
+                            "screen.personalspace.portal.dimension.personal_named",
+                            playerName
+                    );
+                }
+
+                return Component.translatable("screen.personalspace.portal.dimension.personal_unknown");
+            }
+
+            return Component.literal(path);
         }
 
-        return levelId.toString();
+        return Component.literal(levelId.toString());
     }
 
     @Override
