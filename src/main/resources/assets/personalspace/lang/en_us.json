@@ -107,6 +107,8 @@
   "message.personalspace.portal_not_active": "[PersonalSpace] Portal is not active!",
   "message.personalspace.player_dimension_limit": "You have reached the personal dimension limit: %s.",
   "message.personalspace.team_dimension_exists": "Your team already has a dimension.",
+  "message.personalspace.rtp_redirect_to_overworld": "RTP cannot be used directly in a Personal Space dimension. Moving you to the Overworld...",
+  "message.personalspace.rtp_overworld_failed": "Could not run RTP: Overworld was not found.",
 
   "screen.personalspace.portal.title": "Personal Portal",
   "screen.personalspace.portal.enter": "Teleport",

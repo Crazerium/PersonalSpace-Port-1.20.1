@@ -2,8 +2,9 @@ package me.eigenraven.personalspace;
 
 import com.mojang.logging.LogUtils;
 import me.eigenraven.personalspace.command.PSCommands;
+import me.eigenraven.personalspace.command.PersonalSpaceCommandBlocker;
 import me.eigenraven.personalspace.compat.gtceu.PersonalSpaceGTCEuConfig;
-import me.eigenraven.personalspace.compat.gtceu.PersonalSpaceGTCEuHooks;
+import me.eigenraven.personalspace.compat.gtocore.GTOCoreAirCompat;
 import me.eigenraven.personalspace.config.PSConfig;
 import me.eigenraven.personalspace.event.PSWorldRules;
 import me.eigenraven.personalspace.network.CreateDimensionPacket;
@@ -99,6 +100,8 @@ public final class PersonalSpace {
         MinecraftForge.EVENT_BUS.addListener(PSWorldRules::onPlayerChangedDimension);
         MinecraftForge.EVENT_BUS.addListener(PSWorldRules::onServerTick);
         MinecraftForge.EVENT_BUS.addListener(this::registerCommands);
+        MinecraftForge.EVENT_BUS.register(new GTOCoreAirCompat());
+        MinecraftForge.EVENT_BUS.register(new PersonalSpaceCommandBlocker());
     }
 
     private void registerCommands(RegisterCommandsEvent event) {

@@ -107,6 +107,8 @@
   "message.personalspace.portal_not_active": "[PersonalSpace] Портал не активен!",
   "message.personalspace.player_dimension_limit": "Вы достигли лимита личных измерений: %s.",
   "message.personalspace.team_dimension_exists": "У вашей команды уже есть измерение.",
+  "message.personalspace.rtp_redirect_to_overworld": "RTP нельзя использовать напрямую в личном измерении. Переносим вас в обычный мир...",
+  "message.personalspace.rtp_overworld_failed": "Не удалось выполнить RTP: обычный мир не найден.",
 
   "screen.personalspace.portal.title": "Персональный портал",
   "screen.personalspace.portal.enter": "Телепортироваться",
