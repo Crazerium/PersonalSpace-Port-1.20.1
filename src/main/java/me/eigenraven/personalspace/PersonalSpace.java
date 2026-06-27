@@ -100,6 +100,8 @@ public final class PersonalSpace {
         MinecraftForge.EVENT_BUS.addListener(PSWorldRules::onPlayerChangedDimension);
         MinecraftForge.EVENT_BUS.addListener(PSWorldRules::onServerTick);
         MinecraftForge.EVENT_BUS.addListener(this::registerCommands);
+        MinecraftForge.EVENT_BUS.addListener(PSWorldRules::onLevelLoad);
+        MinecraftForge.EVENT_BUS.addListener(PSWorldRules::onLevelUnload);
         MinecraftForge.EVENT_BUS.register(new GTOCoreAirCompat());
         MinecraftForge.EVENT_BUS.register(new PersonalSpaceCommandBlocker());
     }

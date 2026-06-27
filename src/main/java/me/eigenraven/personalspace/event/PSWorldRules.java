@@ -1,6 +1,7 @@
 package me.eigenraven.personalspace.event;
 
 import me.eigenraven.personalspace.PersonalSpace;
+import me.eigenraven.personalspace.data.PersonalSpaceRuntimeSettings;
 import me.eigenraven.personalspace.network.PersonalSpaceSettingsSync;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -39,9 +40,9 @@ public final class PSWorldRules {
         }
 
         // All mobs are banned in PD
-//        if (event.getEntity() instanceof Mob) {
-//            event.setCanceled(true);
-//        }
+        // if (event.getEntity() instanceof Mob) {
+        //     event.setCanceled(true);
+        // }
     }
 
     public static void onPlayerLoggedIn(PlayerEvent.PlayerLoggedInEvent event) {
@@ -64,25 +65,55 @@ public final class PSWorldRules {
         }
     }
 
-    private static boolean isPersonalSpace(LevelAccessor level) {
-        if (level instanceof Level realLevel) {
-            return realLevel.dimension().location().getNamespace().equals(PersonalSpace.MODID);
+    public static void onLevelLoad(LevelEvent.Load event) {
+        if (!(event.getLevel() instanceof ServerLevel level)) {
+            return;
         }
 
-        return false;
+        if (!isPersonalSpace(level)) {
+            return;
+        }
+
+        long fixedTime = PersonalSpaceRuntimeSettings.getTimeOfDay(level);
+        level.setDayTime(fixedTime);
     }
+
+    public static void onLevelUnload(LevelEvent.Unload event) {
+        if (!(event.getLevel() instanceof ServerLevel level)) {
+            return;
+        }
+
+        if (!isPersonalSpace(level)) {
+            return;
+        }
+
+        PersonalSpaceRuntimeSettings.forget(level);
+    }
+
     public static void onServerTick(TickEvent.ServerTickEvent event) {
         if (event.phase != TickEvent.Phase.END) {
             return;
         }
 
+        // Раз в секунду. Не каждый тик.
         if (event.getServer().getTickCount() % 20 != 0) {
             return;
         }
 
         for (ServerLevel level : event.getServer().getAllLevels()) {
-            if (!level.dimension().location().getNamespace().equals(PersonalSpace.MODID)) {
+            if (!isPersonalSpace(level)) {
                 continue;
+            }
+
+            long fixedTime = PersonalSpaceRuntimeSettings.getTimeOfDay(level);
+            long currentTime = level.getDayTime() % 24000L;
+
+            if (currentTime < 0L) {
+                currentTime += 24000L;
+            }
+
+            if (currentTime != fixedTime) {
+                level.setDayTime(fixedTime);
             }
 
             level.setWeatherParameters(
@@ -92,5 +123,13 @@ public final class PSWorldRules {
                     false
             );
         }
+    }
+
+    private static boolean isPersonalSpace(LevelAccessor level) {
+        if (level instanceof Level realLevel) {
+            return realLevel.dimension().location().getNamespace().equals(PersonalSpace.MODID);
+        }
+
+        return false;
     }
 }
