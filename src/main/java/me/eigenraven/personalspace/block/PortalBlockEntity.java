@@ -1,6 +1,7 @@
 package me.eigenraven.personalspace.block;
 
 import me.eigenraven.personalspace.PersonalSpace;
+import me.eigenraven.personalspace.compat.gtceu.PersonalSpaceGTCEuHooks;
 import me.eigenraven.personalspace.data.PersonalSpaceData;
 import me.eigenraven.personalspace.dimension.PSDimensions;
 import me.eigenraven.personalspace.network.PersonalSpaceSettingsSync;
@@ -138,13 +139,17 @@ public class PortalBlockEntity extends BlockEntity {
             return;
         }
 
+        if (targetLevel.location().getNamespace().equals(PersonalSpace.MODID)) {
+            PersonalSpaceGTCEuHooks.onPersonalDimensionCreated(targetLevel);
+        }
+
         BlockPos teleportPos = getActualTeleportPos(destination);
 
         destination.getChunkAt(teleportPos);
 
         player.teleportTo(
                 destination,
-                teleportPos.getX() + 0.5D,
+              teleportPos.getX() + 0.5D,
                 teleportPos.getY(),
                 teleportPos.getZ() + 0.5D,
                 player.getYRot(),

@@ -3,6 +3,7 @@ package me.eigenraven.personalspace.command;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import me.eigenraven.personalspace.PersonalSpace;
+import me.eigenraven.personalspace.compat.gtceu.PersonalSpaceGTCEuMaintenance;
 import me.eigenraven.personalspace.data.PersonalSpaceData;
 import me.eigenraven.personalspace.dimension.PSDimensions;
 import me.eigenraven.personalspace.dimension.PersonalSpaceDeletionManager;
@@ -109,6 +110,19 @@ public final class PSCommands {
                                 )
                         )
                 )
+                .then(Commands.literal("gtceu")
+                        .requires(source -> source.hasPermission(3))
+                        .then(Commands.literal("rebuild_fluids")
+                                .then(Commands.literal("all")
+                                        .then(Commands.literal("confirm")
+                                                .executes(context -> PersonalSpaceGTCEuMaintenance.rebuildAllPersonalSpaceFluids(
+                                                        context.getSource()
+                                                ))))
+                                .then(Commands.argument("name", StringArgumentType.word())
+                                        .executes(context -> PersonalSpaceGTCEuMaintenance.rebuildOnePersonalSpaceFluids(
+                                                context.getSource(),
+                                                StringArgumentType.getString(context, "name")
+                                        )))))
         );
     }
 
