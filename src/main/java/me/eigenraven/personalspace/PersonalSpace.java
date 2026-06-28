@@ -4,6 +4,7 @@ import com.mojang.logging.LogUtils;
 import me.eigenraven.personalspace.command.PSCommands;
 import me.eigenraven.personalspace.command.PersonalSpaceCommandBlocker;
 import me.eigenraven.personalspace.compat.gtceu.PersonalSpaceGTCEuConfig;
+import me.eigenraven.personalspace.compat.gtceu.PersonalSpaceGTCEuDelayedPatcher;
 import me.eigenraven.personalspace.compat.gtocore.GTOCoreAirCompat;
 import me.eigenraven.personalspace.config.PSConfig;
 import me.eigenraven.personalspace.dimension.PersonalSpaceDeletionManager;
@@ -114,6 +115,7 @@ public final class PersonalSpace {
         MinecraftForge.EVENT_BUS.addListener(PSWorldRules::onLevelLoad);
         MinecraftForge.EVENT_BUS.addListener(PSWorldRules::onLevelUnload);
         MinecraftForge.EVENT_BUS.addListener(PersonalSpaceDeletionManager::onServerTick);
+        MinecraftForge.EVENT_BUS.addListener(PersonalSpaceGTCEuDelayedPatcher::onServerTick);
         MinecraftForge.EVENT_BUS.register(new GTOCoreAirCompat());
         MinecraftForge.EVENT_BUS.register(new PersonalSpaceCommandBlocker());
     }
