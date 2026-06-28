@@ -151,5 +151,6 @@
   "command.personalspace.delete_approved": "§eTeam personal space deletion approved: §f%s/%s",
   "command.personalspace.delete_cancelled": "§cTeam personal space deletion was cancelled by %s.",
   "command.personalspace.delete_done": "§cPersonal space deleted.",
-  "command.personalspace.delete_team_done": "§cTeam personal space deleted after all required players approved."
+  "command.personalspace.delete_team_done": "§cTeam personal space deleted after all required players approved.",
+  "command.personalspace.delete_not_owner": "§cYou cannot delete this Personal Space. Only the owner or a team member can delete it."
 }

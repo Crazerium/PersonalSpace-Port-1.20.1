@@ -157,10 +157,65 @@ public class PortalBlockEntity extends BlockEntity {
     private BlockPos getActualTeleportPos(ServerLevel destination) {
         if (!returnPortal && isPersonalSpaceDimension(destination)) {
             PersonalSpaceData data = PersonalSpaceData.load(destination);
-            return data.getRespawnPos();
+            BlockPos respawnPos = data.getRespawnPos();
+
+            return findTeleportPosForPersonalSpace(destination, respawnPos);
         }
 
-        return targetPos;
+        return findTeleportPosAbovePortal(destination, targetPos);
+    }
+
+    private static BlockPos findTeleportPosForPersonalSpace(ServerLevel level, BlockPos respawnPos) {
+        BlockPos aboveRespawn = respawnPos.above();
+
+        if (hasFreePlayerSpace(level, aboveRespawn)) {
+            return aboveRespawn;
+        }
+
+        for (int offsetY = 1; offsetY <= 8; offsetY++) {
+            BlockPos pos = aboveRespawn.above(offsetY);
+
+            if (hasFreePlayerSpace(level, pos)) {
+                return pos;
+            }
+        }
+
+        for (int offsetY = 1; offsetY <= 8; offsetY++) {
+            BlockPos pos = aboveRespawn.below(offsetY);
+
+            if (hasFreePlayerSpace(level, pos)) {
+                return pos;
+            }
+        }
+
+        return aboveRespawn;
+    }
+
+    private static BlockPos findTeleportPosAbovePortal(ServerLevel level, BlockPos portalPos) {
+        BlockPos basePos = portalPos.above();
+
+        for (int offsetY = 0; offsetY <= 6; offsetY++) {
+            BlockPos pos = basePos.above(offsetY);
+
+            if (hasFreePlayerSpace(level, pos)) {
+                return pos;
+            }
+        }
+
+        for (int offsetY = 1; offsetY <= 3; offsetY++) {
+            BlockPos pos = basePos.below(offsetY);
+
+            if (hasFreePlayerSpace(level, pos)) {
+                return pos;
+            }
+        }
+
+        return basePos;
+    }
+
+    private static boolean hasFreePlayerSpace(ServerLevel level, BlockPos pos) {
+        return level.getBlockState(pos).getCollisionShape(level, pos).isEmpty()
+                && level.getBlockState(pos.above()).getCollisionShape(level, pos.above()).isEmpty();
     }
 
     private static boolean isPersonalSpaceDimension(Level level) {

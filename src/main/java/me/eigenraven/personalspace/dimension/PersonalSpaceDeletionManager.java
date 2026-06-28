@@ -3,6 +3,7 @@ package me.eigenraven.personalspace.dimension;
 import commoble.infiniverse.api.InfiniverseAPI;
 import me.eigenraven.personalspace.PersonalSpace;
 import me.eigenraven.personalspace.block.PortalBlockEntity;
+import me.eigenraven.personalspace.compat.ftbteams.FTBTeamsCompat;
 import me.eigenraven.personalspace.data.PersonalSpaceData;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.core.BlockPos;
@@ -54,6 +55,11 @@ public final class PersonalSpaceDeletionManager {
 
         if (!PSDimensions.levelExists(server, levelKey)) {
             player.sendSystemMessage(translatable("delete_not_found", levelKey.location()));
+            return;
+        }
+
+        if (!canPlayerStartDelete(player, levelKey)) {
+            player.sendSystemMessage(translatable("delete_not_owner"));
             return;
         }
 
@@ -168,6 +174,11 @@ public final class PersonalSpaceDeletionManager {
             return;
         }
 
+        if (!canPlayerStartDelete(requester, levelKey)) {
+            requester.sendSystemMessage(translatable("delete_not_team_member"));
+            return;
+        }
+
         Set<UUID> required = getOnlineTeamMembersForDimension(server, levelKey);
 
         if (required.isEmpty()) {
@@ -197,9 +208,7 @@ public final class PersonalSpaceDeletionManager {
         Set<UUID> result = new HashSet<>();
 
         for (ServerPlayer player : server.getPlayerList().getPlayers()) {
-            ResourceKey<Level> playerKey = PSDimensions.personalKeyForPlayer(player);
-
-            if (playerKey.location().equals(levelKey.location())) {
+            if (canPlayerStartDelete(player, levelKey)) {
                 result.add(player.getUUID());
             }
         }
@@ -463,6 +472,96 @@ public final class PersonalSpaceDeletionManager {
         } catch (IOException exception) {
             PersonalSpace.LOGGER.warn("Failed to walk directory {}", path, exception);
         }
+    }
+
+    private static boolean canPlayerStartDelete(ServerPlayer player, ResourceKey<Level> levelKey) {
+        if (player == null || levelKey == null) {
+            return false;
+        }
+
+        if (isTeamDimension(levelKey.location())) {
+            return isPlayersCurrentTeamDimension(player, levelKey);
+        }
+
+        return isPlayersOwnPersonalDimension(player, levelKey);
+    }
+
+    private static boolean isPlayersOwnPersonalDimension(ServerPlayer player, ResourceKey<Level> levelKey) {
+        String targetPath = normalizePersonalSpacePath(levelKey.location());
+        String playerName = sanitizeDimensionName(player.getGameProfile().getName());
+
+        if (playerName.isBlank()) {
+            return false;
+        }
+
+        if (targetPath.equals("ps_" + playerName)) {
+            return true;
+        }
+
+        return targetPath.startsWith("ps_" + playerName + "_");
+    }
+
+    private static boolean isPlayersCurrentTeamDimension(ServerPlayer player, ResourceKey<Level> levelKey) {
+        return FTBTeamsCompat.getTeamDimensionName(player)
+                .map(teamDimensionName -> PSDimensions.key(teamDimensionName).location().equals(levelKey.location()))
+                .orElse(false);
+    }
+
+    private static String normalizePersonalSpacePath(ResourceLocation levelId) {
+        String path = levelId.getPath();
+
+        if (path.startsWith(PSDimensions.PERSONAL_SPACE_DIMENSION_FOLDER + "/")) {
+            path = path.substring((PSDimensions.PERSONAL_SPACE_DIMENSION_FOLDER + "/").length());
+        }
+
+        return path;
+    }
+
+    private static String sanitizeDimensionName(String rawName) {
+        if (rawName == null) {
+            return "";
+        }
+
+        String lowerName = rawName
+                .trim()
+                .toLowerCase(java.util.Locale.ROOT);
+
+        StringBuilder result = new StringBuilder();
+
+        for (int i = 0; i < lowerName.length(); i++) {
+            char c = lowerName.charAt(i);
+
+            if ((c >= 'a' && c <= 'z')
+                    || (c >= '0' && c <= '9')
+                    || c == '_'
+                    || c == '-'
+                    || c == '.') {
+                result.append(c);
+            } else {
+                result.append('_');
+            }
+        }
+
+        while (result.toString().contains("__")) {
+            int index = result.indexOf("__");
+            result.replace(index, index + 2, "_");
+        }
+
+        String safe = result.toString();
+
+        while (safe.startsWith("_")) {
+            safe = safe.substring(1);
+        }
+
+        while (safe.endsWith("_")) {
+            safe = safe.substring(0, safe.length() - 1);
+        }
+
+        if (safe.length() > 48) {
+            safe = safe.substring(0, 48);
+        }
+
+        return safe;
     }
 
     private static boolean isTeamDimension(ResourceLocation levelId) {

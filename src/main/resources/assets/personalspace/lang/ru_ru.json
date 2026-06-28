@@ -151,5 +151,6 @@
   "command.personalspace.delete_approved": "§eУдаление командной персоналки подтверждено: §f%s/%s",
   "command.personalspace.delete_cancelled": "§cУдаление командной персоналки отменено игроком %s.",
   "command.personalspace.delete_done": "§cПерсоналка удалена.",
-  "command.personalspace.delete_team_done": "§cКомандная персоналка удалена после подтверждения всех участников."
+  "command.personalspace.delete_team_done": "§cКомандная персоналка удалена после подтверждения всех участников.",
+  "command.personalspace.delete_not_owner": "§cВы не можете удалить эту персоналку. Удалять может только владелец или участник команды."
 }
