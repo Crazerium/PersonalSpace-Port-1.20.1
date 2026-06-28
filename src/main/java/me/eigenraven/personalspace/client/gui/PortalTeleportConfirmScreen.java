@@ -177,7 +177,7 @@ public final class PortalTeleportConfirmScreen extends Screen {
         super.init();
 
         int centerX = width / 2;
-        int startY = personalSpaceLevel ? height / 2 - 145 : height / 2 - 45;
+        int startY = personalSpaceLevel ? height / 2 - 165 : height / 2 - 45;
 
         addRenderableWidget(Button.builder(
                 Component.translatable("screen.personalspace.portal.enter"),
@@ -314,6 +314,13 @@ public final class PortalTeleportConfirmScreen extends Screen {
                 button -> Minecraft.getInstance().setScreen(null)
         ).bounds(centerX + 5, startY + 280, 115, 20).build());
 
+        addRenderableWidget(Button.builder(
+                Component.translatable("screen.personalspace.delete.button"),
+                button -> Minecraft.getInstance().setScreen(
+                        new DeletePersonalSpaceConfirmScreen(this, clickedLevelId)
+                )
+        ).bounds(centerX - 120, startY + 310, 240, 20).build());
+
         preview();
     }
 
@@ -380,8 +387,8 @@ public final class PortalTeleportConfirmScreen extends Screen {
         renderBackground(graphics);
 
         int centerX = width / 2;
-        int startY = personalSpaceLevel ? height / 2 - 145 : height / 2 - 45;
-        int boxHeight = personalSpaceLevel ? 330 : 120;
+        int startY = personalSpaceLevel ? height / 2 - 165 : height / 2 - 45;
+        int boxHeight = personalSpaceLevel ? 370 : 120;
 
         graphics.fill(centerX - 145, startY - 10, centerX + 145, startY + boxHeight, 0xCC101010);
         graphics.fill(centerX - 143, startY - 8, centerX + 143, startY + boxHeight - 2, 0xCC303030);
@@ -415,7 +422,7 @@ public final class PortalTeleportConfirmScreen extends Screen {
                     font,
                     settingsText("settings.worldgen_locked"),
                     centerX - 120,
-                    startY + 307,
+                    startY + 337,
                     0x777777,
                     false
             );
@@ -424,7 +431,7 @@ public final class PortalTeleportConfirmScreen extends Screen {
                     font,
                     settingsText("settings.locked_biome", lockedBiomeName),
                     centerX - 120,
-                    startY + 319,
+                    startY + 349,
                     0x777777,
                     false
             );

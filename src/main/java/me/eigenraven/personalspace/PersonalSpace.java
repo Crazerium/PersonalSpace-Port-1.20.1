@@ -6,8 +6,10 @@ import me.eigenraven.personalspace.command.PersonalSpaceCommandBlocker;
 import me.eigenraven.personalspace.compat.gtceu.PersonalSpaceGTCEuConfig;
 import me.eigenraven.personalspace.compat.gtocore.GTOCoreAirCompat;
 import me.eigenraven.personalspace.config.PSConfig;
+import me.eigenraven.personalspace.dimension.PersonalSpaceDeletionManager;
 import me.eigenraven.personalspace.event.PSWorldRules;
 import me.eigenraven.personalspace.network.CreateDimensionPacket;
+import me.eigenraven.personalspace.network.DeletePersonalSpacePacket;
 import me.eigenraven.personalspace.network.SyncPersonalSpaceSettingsPacket;
 import me.eigenraven.personalspace.network.UpdatePersonalSpaceSettingsPacket;
 import me.eigenraven.personalspace.network.UsePortalPacket;
@@ -93,6 +95,15 @@ public final class PersonalSpace {
                 SyncPersonalSpaceSettingsPacket::decode,
                 SyncPersonalSpaceSettingsPacket::handle
         );
+
+        CHANNEL.registerMessage(
+                4,
+                DeletePersonalSpacePacket.class,
+                DeletePersonalSpacePacket::encode,
+                DeletePersonalSpacePacket::decode,
+                DeletePersonalSpacePacket::handle
+        );
+
         MinecraftForge.EVENT_BUS.addListener(PSWorldRules::onPotentialSpawns);
         MinecraftForge.EVENT_BUS.addListener(PSWorldRules::onMobSpawnPositionCheck);
         MinecraftForge.EVENT_BUS.addListener(PSWorldRules::onEntityJoinLevel);
@@ -102,6 +113,7 @@ public final class PersonalSpace {
         MinecraftForge.EVENT_BUS.addListener(this::registerCommands);
         MinecraftForge.EVENT_BUS.addListener(PSWorldRules::onLevelLoad);
         MinecraftForge.EVENT_BUS.addListener(PSWorldRules::onLevelUnload);
+        MinecraftForge.EVENT_BUS.addListener(PersonalSpaceDeletionManager::onServerTick);
         MinecraftForge.EVENT_BUS.register(new GTOCoreAirCompat());
         MinecraftForge.EVENT_BUS.register(new PersonalSpaceCommandBlocker());
     }

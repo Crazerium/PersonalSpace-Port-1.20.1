@@ -2,7 +2,6 @@ package me.eigenraven.personalspace.block;
 
 import me.eigenraven.personalspace.PersonalSpace;
 import me.eigenraven.personalspace.client.gui.PersonalSpaceScreen;
-import me.eigenraven.personalspace.client.gui.PersonalSpaceSettingsScreen;
 import me.eigenraven.personalspace.client.gui.PortalTeleportConfirmScreen;
 import me.eigenraven.personalspace.data.PersonalSpaceData;
 import me.eigenraven.personalspace.dimension.PSDimensions;
@@ -79,10 +78,8 @@ public final class PortalBlock extends BaseEntityBlock {
             handleClientClick(level, pos, player, state);
             return InteractionResult.SUCCESS;
         }
-        if (player instanceof ServerPlayer serverPlayer && level instanceof ServerLevel serverLevel) {
-            if (serverPlayer.isShiftKeyDown() && isPersonalSpaceDimension(serverLevel)) {
-                return InteractionResult.CONSUME;
-            }
+
+        if (player instanceof ServerPlayer && level instanceof ServerLevel) {
             return InteractionResult.CONSUME;
         }
 
@@ -95,11 +92,6 @@ public final class PortalBlock extends BaseEntityBlock {
             Player player,
             BlockState state
     ) {
-        if (player.isShiftKeyDown() && isPersonalSpaceDimension(level)) {
-            openSettingsGui(level.dimension().location());
-            return;
-        }
-
         BlockEntity blockEntity = level.getBlockEntity(pos);
 
         boolean returnPortal = isClientReturnPortal(level, pos, state, blockEntity);
@@ -241,11 +233,6 @@ public final class PortalBlock extends BaseEntityBlock {
     @OnlyIn(Dist.CLIENT)
     private static void openCreateGui(Player player, BlockPos pos) {
         Minecraft.getInstance().setScreen(new PersonalSpaceScreen(player.level(), pos));
-    }
-
-    @OnlyIn(Dist.CLIENT)
-    private static void openSettingsGui(ResourceLocation levelId) {
-        Minecraft.getInstance().setScreen(new PersonalSpaceSettingsScreen(levelId));
     }
 
     @OnlyIn(Dist.CLIENT)

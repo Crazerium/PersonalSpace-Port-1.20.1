@@ -74,6 +74,20 @@ public class PortalBlockEntity extends BlockEntity {
         setTarget(targetLevel, targetPos, "");
     }
 
+    public void clearTarget() {
+        this.active = false;
+        this.returnPortal = false;
+        this.targetLevel = null;
+        this.targetPos = new BlockPos(0, 80, 0);
+        this.targetDisplayName = "";
+
+        setChanged();
+
+        if (level != null) {
+            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
+        }
+    }
+
     public void setTarget(ResourceKey<Level> targetLevel, BlockPos targetPos, String targetDisplayName) {
         this.targetLevel = targetLevel;
         this.targetPos = targetPos == null ? new BlockPos(0, 80, 0) : targetPos;

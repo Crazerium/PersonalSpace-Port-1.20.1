@@ -5,6 +5,7 @@ import com.mojang.brigadier.arguments.StringArgumentType;
 import me.eigenraven.personalspace.PersonalSpace;
 import me.eigenraven.personalspace.data.PersonalSpaceData;
 import me.eigenraven.personalspace.dimension.PSDimensions;
+import me.eigenraven.personalspace.dimension.PersonalSpaceDeletionManager;
 import me.eigenraven.personalspace.registry.PSItems;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
@@ -33,8 +34,21 @@ public final class PSCommands {
 
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
         dispatcher.register(Commands.literal("personalspace")
-                .requires(source -> source.hasPermission(2))
+
+                // Игроки подтверждают / отменяют удаление командной персоналки.
+                // Тут НЕ нужен OP, иначе обычные участники команды не смогут подтвердить.
+                .then(Commands.literal("delete")
+                        .then(Commands.literal("approve")
+                                .executes(context -> PersonalSpaceDeletionManager.approveDelete(context.getSource()))
+                        )
+                        .then(Commands.literal("cancel")
+                                .executes(context -> PersonalSpaceDeletionManager.cancelDelete(context.getSource()))
+                        )
+                )
+
+                // Админские команды.
                 .then(Commands.literal("dimension")
+                        .requires(source -> source.hasPermission(2))
                         .then(Commands.argument("name", StringArgumentType.word())
                                 .suggests((context, builder) -> SharedSuggestionProvider.suggest(
                                         getPersonalSpaceDimensionSuggestions(context.getSource().getServer()),
@@ -75,6 +89,19 @@ public final class PSCommands {
                                         )
                                         .then(Commands.literal("reset")
                                                 .executes(context -> resetRespawn(
+                                                        context.getSource(),
+                                                        StringArgumentType.getString(context, "name")
+                                                ))
+                                        )
+                                )
+
+                                // Админское принудительное удаление персоналки.
+                                // Команда:
+                                // /personalspace dimension <name> delete confirm
+                                .then(Commands.literal("delete")
+                                        .requires(source -> source.hasPermission(3))
+                                        .then(Commands.literal("confirm")
+                                                .executes(context -> deleteDimension(
                                                         context.getSource(),
                                                         StringArgumentType.getString(context, "name")
                                                 ))
@@ -255,6 +282,11 @@ public final class PSCommands {
         return 1;
     }
 
+    private static int deleteDimension(CommandSourceStack source, String dimensionName) {
+        ResourceKey<Level> dimensionKey = getPersonalSpaceDimensionKey(dimensionName);
+        return PersonalSpaceDeletionManager.adminDelete(source, dimensionKey);
+    }
+
     private static ServerLevel getOrCreatePersonalSpaceLevel(
             MinecraftServer server,
             ResourceKey<Level> dimensionKey
@@ -312,7 +344,7 @@ public final class PSCommands {
             return new ResourceLocation(PersonalSpace.MODID, path);
         }
 
-        if (!path.startsWith("ps_")) {
+        if (!path.startsWith("ps_") && !path.startsWith("team_")) {
             path = "ps_" + path;
         }
 
