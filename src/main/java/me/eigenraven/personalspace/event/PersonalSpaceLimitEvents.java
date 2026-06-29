@@ -9,24 +9,30 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.border.WorldBorder;
+import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.event.TickEvent;
+import net.minecraftforge.event.entity.living.LivingFallEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Mod.EventBusSubscriber(
         modid = PersonalSpace.MODID,
         bus = Mod.EventBusSubscriber.Bus.FORGE
 )
 public final class PersonalSpaceLimitEvents {
+    private static final double VOID_RESCUE_Y = 255.0D;
+    private static final int VOID_PROTECTION_TICKS = 20 * 30;
+    private static final Map<UUID, Integer> VOID_FALL_PROTECTION = new ConcurrentHashMap<>();
+
     private PersonalSpaceLimitEvents() {
     }
 
     @SubscribeEvent
     public static void onPlayerTick(TickEvent.PlayerTickEvent event) {
-        if (event.phase != TickEvent.Phase.END) {
-            return;
-        }
-
         if (!(event.player instanceof ServerPlayer player)) {
             return;
         }
@@ -35,11 +41,24 @@ public final class PersonalSpaceLimitEvents {
             return;
         }
 
-        if (!level.dimension().location().getNamespace().equals(PersonalSpace.MODID)) {
+        if (!isPersonalSpace(level)) {
+            VOID_FALL_PROTECTION.remove(player.getUUID());
             return;
         }
 
-        // Проверяем раз в секунду, не каждый тик.
+        if (event.phase == TickEvent.Phase.START) {
+            rescueFromVoidIfNeeded(player, level);
+            tickVoidFallProtection(player);
+            return;
+        }
+
+        if (event.phase != TickEvent.Phase.END) {
+            return;
+        }
+
+        tickVoidFallProtection(player);
+
+        // Проверяем границу раз в секунду, не каждый тик.
         if (player.tickCount % 20 != 0) {
             return;
         }
@@ -73,6 +92,78 @@ public final class PersonalSpaceLimitEvents {
         keepPlayerInsideBorder(player, level, centerX, centerZ, maxSizeBlocks, data);
     }
 
+    @SubscribeEvent
+    public static void onLivingFall(LivingFallEvent event) {
+        if (!(event.getEntity() instanceof ServerPlayer player)) {
+            return;
+        }
+
+        if (!(player.level() instanceof ServerLevel level)) {
+            return;
+        }
+
+        if (!isPersonalSpace(level)) {
+            VOID_FALL_PROTECTION.remove(player.getUUID());
+            return;
+        }
+
+        if (!VOID_FALL_PROTECTION.containsKey(player.getUUID())) {
+            return;
+        }
+
+        event.setCanceled(true);
+        player.fallDistance = 0.0F;
+        VOID_FALL_PROTECTION.remove(player.getUUID());
+    }
+
+    private static void rescueFromVoidIfNeeded(ServerPlayer player, ServerLevel level) {
+        double rescueTriggerY = level.getMinBuildHeight() - 4.0D;
+
+        if (player.getY() >= rescueTriggerY) {
+            return;
+        }
+
+        double safeX = player.getX();
+        double safeZ = player.getZ();
+
+        player.teleportTo(
+                level,
+                safeX,
+                VOID_RESCUE_Y,
+                safeZ,
+                player.getYRot(),
+                player.getXRot()
+        );
+
+        player.setDeltaMovement(Vec3.ZERO);
+        player.fallDistance = 0.0F;
+        player.hurtMarked = true;
+        VOID_FALL_PROTECTION.put(player.getUUID(), VOID_PROTECTION_TICKS);
+    }
+
+    private static void tickVoidFallProtection(ServerPlayer player) {
+        UUID uuid = player.getUUID();
+        Integer ticksLeft = VOID_FALL_PROTECTION.get(uuid);
+
+        if (ticksLeft == null) {
+            return;
+        }
+
+        player.fallDistance = 0.0F;
+
+        if (player.onGround()) {
+            VOID_FALL_PROTECTION.remove(uuid);
+            return;
+        }
+
+        if (ticksLeft <= 1) {
+            VOID_FALL_PROTECTION.remove(uuid);
+            return;
+        }
+
+        VOID_FALL_PROTECTION.put(uuid, ticksLeft - 1);
+    }
+
     private static void applyPersonalSpaceWorldBorder(
             ServerLevel level,
             int centerX,
@@ -96,7 +187,6 @@ public final class PersonalSpaceLimitEvents {
         // При маленьком размере, например 100, стенка будет видна рядом.
         // При 10000 она появится только около края.
         int warningBlocks = Math.min(maxSizeBlocks / 2, 256);
-
         border.setWarningBlocks(warningBlocks);
         border.setWarningTime(15);
         border.setDamageSafeZone(0.0D);
@@ -127,11 +217,10 @@ public final class PersonalSpaceLimitEvents {
         double minZ = centerZ + 0.5D - halfSize + 1.0D;
         double maxZ = centerZ + 0.5D + halfSize - 1.0D;
 
-        boolean outside =
-                player.getX() < minX ||
-                        player.getX() > maxX ||
-                        player.getZ() < minZ ||
-                        player.getZ() > maxZ;
+        boolean outside = player.getX() < minX
+                || player.getX() > maxX
+                || player.getZ() < minZ
+                || player.getZ() > maxZ;
 
         if (!outside) {
             return;
@@ -164,5 +253,9 @@ public final class PersonalSpaceLimitEvents {
         border.setWarningTime(15);
         border.setDamageSafeZone(5.0D);
         border.setDamagePerBlock(0.2D);
+    }
+
+    private static boolean isPersonalSpace(ServerLevel level) {
+        return level.dimension().location().getNamespace().equals(PersonalSpace.MODID);
     }
 }
