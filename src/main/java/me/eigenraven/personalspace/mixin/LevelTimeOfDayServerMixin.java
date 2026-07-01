@@ -10,10 +10,10 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(Level.class)
-public abstract class LevelIsDayMixin {
+public abstract class LevelTimeOfDayServerMixin {
 
-    @Inject(method = "isDay", at = @At("HEAD"), cancellable = true)
-    private void personalspace$isDay(CallbackInfoReturnable<Boolean> cir) {
+    @Inject(method = "getDayTime", at = @At("HEAD"), cancellable = true)
+    private void personalspace$getDayTime(CallbackInfoReturnable<Long> cir) {
         Level level = (Level) (Object) this;
 
         if (!level.dimension().location().getNamespace().equals(PersonalSpace.MODID)) {
@@ -24,12 +24,12 @@ public abstract class LevelIsDayMixin {
             return;
         }
 
-        long dayTime = PersonalSpaceRuntimeSettings.getTimeOfDay(serverLevel) % 24000L;
+        long fixedTime = PersonalSpaceRuntimeSettings.getTimeOfDay(serverLevel) % 24000L;
 
-        if (dayTime < 0L) {
-            dayTime += 24000L;
+        if (fixedTime < 0L) {
+            fixedTime += 24000L;
         }
 
-        cir.setReturnValue(dayTime < 12000L);
+        cir.setReturnValue(fixedTime);
     }
 }

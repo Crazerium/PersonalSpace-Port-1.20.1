@@ -14,8 +14,6 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(DimensionType.class)
 public abstract class LevelTimeOfDayMixin {
-    @Unique
-    private static boolean personalspace$loggedOnce = false;
 
     @Inject(method = "timeOfDay", at = @At("HEAD"), cancellable = true)
     private void personalspace$fixedVisualTime(long dayTime, CallbackInfoReturnable<Float> cir) {
@@ -29,11 +27,6 @@ public abstract class LevelTimeOfDayMixin {
 
         if (!levelId.getNamespace().equals(PersonalSpace.MODID)) {
             return;
-        }
-
-        if (!personalspace$loggedOnce) {
-            PersonalSpace.LOGGER.info("PersonalSpace DimensionType time mixin is active for {}", levelId);
-            personalspace$loggedOnce = true;
         }
 
         long fixedTime = ClientPersonalSpaceSettings.get(levelId).timeOfDay();

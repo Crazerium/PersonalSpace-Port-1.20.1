@@ -126,8 +126,17 @@ public class UpdatePersonalSpaceSettingsPacket {
 
             PersonalSpaceData.save(level, data);
 
-            PersonalSpaceRuntimeSettings.setTimeOfDay(level, data.getTimeOfDay());
-            level.setDayTime(data.getTimeOfDay());
+            level.getGameRules()
+                    .getRule(net.minecraft.world.level.GameRules.RULE_DAYLIGHT)
+                    .set(false, level.getServer());
+
+            long wantedTime = data.getTimeOfDay() % 24000L;
+
+            if (wantedTime < 0L) {
+                wantedTime += 24000L;
+            }
+
+            PersonalSpaceRuntimeSettings.setTimeOfDay(level, wantedTime);
 
             if (!data.isWeatherEnabled()) {
                 level.setRainLevel(0.0F);

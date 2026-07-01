@@ -14,9 +14,6 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 @Mixin(Level.class)
 public abstract class LevelWeatherMixin {
 
-    @Unique
-    private static boolean personalspace$loggedWeatherOnce = false;
-
     @Inject(method = "getRainLevel", at = @At("HEAD"), cancellable = true)
     private void personalspace$disableVisualRain(float partialTick, CallbackInfoReturnable<Float> cir) {
         if (personalspace$shouldDisableWeather()) {
@@ -63,11 +60,6 @@ public abstract class LevelWeatherMixin {
 
         if (weatherEnabled) {
             return false;
-        }
-
-        if (!personalspace$loggedWeatherOnce) {
-            PersonalSpace.LOGGER.info("PersonalSpace visual weather mixin is active for {}", levelId);
-            personalspace$loggedWeatherOnce = true;
         }
 
         return true;

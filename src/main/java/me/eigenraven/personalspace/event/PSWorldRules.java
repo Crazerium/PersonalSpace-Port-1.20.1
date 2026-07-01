@@ -5,6 +5,7 @@ import me.eigenraven.personalspace.data.PersonalSpaceRuntimeSettings;
 import me.eigenraven.personalspace.network.PersonalSpaceSettingsSync;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraftforge.event.TickEvent;
@@ -39,7 +40,7 @@ public final class PSWorldRules {
             return;
         }
 
-        // All mobs are banned in PD
+        // All mobs are banned in Personal Space.
         // if (event.getEntity() instanceof Mob) {
         //     event.setCanceled(true);
         // }
@@ -74,8 +75,10 @@ public final class PSWorldRules {
             return;
         }
 
-        long fixedTime = PersonalSpaceRuntimeSettings.getTimeOfDay(level);
-        level.setDayTime(fixedTime);
+        PersonalSpaceRuntimeSettings.setTimeOfDay(
+                level,
+                PersonalSpaceRuntimeSettings.getTimeOfDay(level)
+        );
     }
 
     public static void onLevelUnload(LevelEvent.Unload event) {
@@ -95,33 +98,18 @@ public final class PSWorldRules {
             return;
         }
 
-        // Раз в секунду. Не каждый тик.
-        if (event.getServer().getTickCount() % 20 != 0) {
-            return;
-        }
-
         for (ServerLevel level : event.getServer().getAllLevels()) {
             if (!isPersonalSpace(level)) {
                 continue;
             }
 
-            long fixedTime = PersonalSpaceRuntimeSettings.getTimeOfDay(level);
-            long currentTime = level.getDayTime() % 24000L;
+            level.getGameRules()
+                    .getRule(GameRules.RULE_DAYLIGHT)
+                    .set(false, level.getServer());
 
-            if (currentTime < 0L) {
-                currentTime += 24000L;
-            }
-
-            if (currentTime != fixedTime) {
-                level.setDayTime(fixedTime);
-            }
-
-            level.setWeatherParameters(
-                    6000,
-                    0,
-                    false,
-                    false
-            );
+            level.setWeatherParameters(6000, 0, false, false);
+            level.setRainLevel(0.0F);
+            level.setThunderLevel(0.0F);
         }
     }
 

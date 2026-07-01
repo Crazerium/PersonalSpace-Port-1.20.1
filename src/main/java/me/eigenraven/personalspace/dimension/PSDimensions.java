@@ -17,6 +17,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.biome.Biomes;
 import net.minecraft.world.level.biome.FixedBiomeSource;
@@ -834,9 +835,19 @@ public final class PSDimensions {
         }
 
         PersonalSpaceData data = PersonalSpaceData.load(level);
-        level.setDayTime(data.getTimeOfDay());
+        level.getGameRules().getRule(GameRules.RULE_DAYLIGHT).set(false, level.getServer());
+        long wantedTime = data.getTimeOfDay() % 24000L;
+
+        if (wantedTime < 0L) {
+            wantedTime += 24000L;
+        }
+
+        long currentDay = level.getDayTime() / 24000L;
+        level.setDayTime(currentDay * 24000L + wantedTime);
 
         if (!data.isWeatherEnabled()) {
+            level.setRainLevel(0.0F);
+            level.setThunderLevel(0.0F);
             level.setWeatherParameters(6000, 0, false, false);
         }
     }

@@ -85,7 +85,7 @@ public final class PortalTeleportConfirmScreen extends Screen {
         if (personalSpaceLevel) {
             ClientPersonalSpaceSettings.Settings settings = ClientPersonalSpaceSettings.get(clickedLevelId);
 
-            this.selectedTime = (int) settings.timeOfDay();
+            this.selectedTime = snapTimeToPreset(settings.timeOfDay());
             this.selectedRed = settings.skyRed();
             this.selectedGreen = settings.skyGreen();
             this.selectedBlue = settings.skyBlue();
@@ -291,6 +291,9 @@ public final class PortalTeleportConfirmScreen extends Screen {
         addRenderableWidget(Button.builder(
                 settingsText("settings.save"),
                 button -> {
+                    selectedTime = snapTimeToPreset(selectedTime);
+                    preview();
+
                     PersonalSpace.CHANNEL.sendToServer(new UpdatePersonalSpaceSettingsPacket(
                             selectedTime,
                             selectedRed,
@@ -343,6 +346,29 @@ public final class PortalTeleportConfirmScreen extends Screen {
                 selectedCloudsEnabled,
                 lockedLayersPreset
         );
+    }
+
+
+    private static int snapTimeToPreset(long rawTime) {
+        long normalized = rawTime % 24000L;
+
+        if (normalized < 0L) {
+            normalized += 24000L;
+        }
+
+        int bestIndex = 0;
+        long bestDistance = Long.MAX_VALUE;
+
+        for (int i = 0; i < TIME_VALUES.length; i++) {
+            long distance = Math.abs(TIME_VALUES[i] - normalized);
+
+            if (distance < bestDistance) {
+                bestDistance = distance;
+                bestIndex = i;
+            }
+        }
+
+        return (int) TIME_VALUES[bestIndex];
     }
 
     private int getTimeIndex() {
