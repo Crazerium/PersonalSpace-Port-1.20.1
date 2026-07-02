@@ -7,8 +7,7 @@
   "mixins": [
     "LevelIsDayMixin",
     "LevelWeatherServerMixin",
-    "LevelTimeOfDayServerMixin",
-    "LevelDimensionForGTConditionMixin"
+    "LevelTimeOfDayServerMixin"
   ],
   "client": [
     "client.LevelTimeOfDayMixin",

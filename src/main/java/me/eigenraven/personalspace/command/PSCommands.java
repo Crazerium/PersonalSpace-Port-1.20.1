@@ -25,6 +25,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 public final class PSCommands {
@@ -108,6 +109,12 @@ public final class PSCommands {
                                                 ))
                                         )
                                 )
+                        )
+                )
+                .then(Commands.literal("debug")
+                        .requires(source -> source.hasPermission(3))
+                        .then(Commands.literal("chunks")
+                                .executes(context -> debugChunks(context.getSource()))
                         )
                 )
                 .then(Commands.literal("gtceu")
@@ -423,6 +430,110 @@ public final class PSCommands {
 
         if (!suggestions.contains(value)) {
             suggestions.add(value);
+        }
+    }
+
+
+    private static int debugChunks(CommandSourceStack source) {
+        MinecraftServer server = source.getServer();
+
+        List<DimensionChunkInfo> infos = new ArrayList<>();
+        int totalChunks = 0;
+        int personalSpaceChunks = 0;
+        int personalSpaceDimensions = 0;
+
+        for (ServerLevel level : server.getAllLevels()) {
+            ResourceLocation id = level.dimension().location();
+            int loadedChunks = getLoadedChunkCount(level);
+            int players = level.players().size();
+            boolean personalSpace = id.getNamespace().equals(PersonalSpace.MODID);
+
+            if (loadedChunks > 0) {
+                totalChunks += loadedChunks;
+            }
+
+            if (personalSpace) {
+                personalSpaceDimensions++;
+
+                if (loadedChunks > 0) {
+                    personalSpaceChunks += loadedChunks;
+                }
+            }
+
+            infos.add(new DimensionChunkInfo(
+                    id.toString(),
+                    personalSpace,
+                    loadedChunks,
+                    players
+            ));
+        }
+
+        infos.sort(Comparator.comparingInt(DimensionChunkInfo::loadedChunks).reversed());
+
+        final int finalTotalChunks = totalChunks;
+        final int finalPersonalSpaceChunks = personalSpaceChunks;
+        final int finalPersonalSpaceDimensions = personalSpaceDimensions;
+
+        source.sendSuccess(
+                () -> Component.literal(
+                        "Loaded chunks: all=" + finalTotalChunks
+                                + ", personalspace=" + finalPersonalSpaceChunks
+                                + ", personalspace_dims=" + finalPersonalSpaceDimensions
+                ),
+                false
+        );
+
+        source.sendSuccess(
+                () -> Component.literal("Top dimensions by loaded chunks:"),
+                false
+        );
+
+        int limit = Math.min(40, infos.size());
+
+        for (int index = 0; index < limit; index++) {
+            DimensionChunkInfo info = infos.get(index);
+
+            source.sendSuccess(
+                    () -> Component.literal(
+                            info.loadedChunks + " chunks | "
+                                    + info.players + " players | "
+                                    + info.name
+                    ),
+                    false
+            );
+        }
+
+        return 1;
+    }
+
+    private static int getLoadedChunkCount(ServerLevel level) {
+        try {
+            return level.getChunkSource().chunkMap.size();
+        } catch (Throwable throwable) {
+            return -1;
+        }
+    }
+
+    private static final class DimensionChunkInfo {
+        private final String name;
+        private final boolean personalSpace;
+        private final int loadedChunks;
+        private final int players;
+
+        private DimensionChunkInfo(
+                String name,
+                boolean personalSpace,
+                int loadedChunks,
+                int players
+        ) {
+            this.name = name;
+            this.personalSpace = personalSpace;
+            this.loadedChunks = loadedChunks;
+            this.players = players;
+        }
+
+        private int loadedChunks() {
+            return loadedChunks;
         }
     }
 

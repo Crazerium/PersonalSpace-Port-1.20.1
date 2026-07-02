@@ -39,6 +39,18 @@ public final class PersonalSpaceGTCEuDelayedPatcher {
             return;
         }
 
+        if (!PersonalSpaceGTCEuConfig.ENABLED.get()) {
+            patched = true;
+            PersonalSpace.LOGGER.info("GTCEu delayed patch skipped because GTCEu Personal Space compatibility is disabled in config.");
+            return;
+        }
+
+        if (!PersonalSpaceGTCEuConfig.PATCH_EXISTING_PERSONAL_SPACES_ON_STARTUP.get()) {
+            patched = true;
+            PersonalSpace.LOGGER.info("GTCEu delayed patch for existing Personal Space dimensions skipped by config. Set patchExistingPersonalSpacesOnStartup=true to run it once.");
+            return;
+        }
+
         ticksUntilPatch--;
 
         if (ticksUntilPatch > 0) {

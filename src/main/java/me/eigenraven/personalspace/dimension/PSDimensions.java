@@ -835,7 +835,19 @@ public final class PSDimensions {
         }
 
         PersonalSpaceData data = PersonalSpaceData.load(level);
-        level.getGameRules().getRule(GameRules.RULE_DAYLIGHT).set(false, level.getServer());
+
+        level.getGameRules()
+                .getRule(GameRules.RULE_DAYLIGHT)
+                .set(false, level.getServer());
+
+        level.getGameRules()
+                .getRule(GameRules.RULE_SPAWN_RADIUS)
+                .set(0, level.getServer());
+
+        level.getGameRules()
+                .getRule(GameRules.RULE_DOMOBSPAWNING)
+                .set(false, level.getServer());
+
         long wantedTime = data.getTimeOfDay() % 24000L;
 
         if (wantedTime < 0L) {
