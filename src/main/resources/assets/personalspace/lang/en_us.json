@@ -58,9 +58,20 @@
   "gui.personalspace.int.tooltip": "%s: %s–%s",
 
   "block.personalspace.personal_portal": "Personal Portal",
+  "block.personalspace.personal_air_intake": "Personal Air Intake",
   "item.personalspace.personal_portal": "Personal Portal",
   "tooltip.personalspace.unlinked": "Unlinked",
   "tooltip.personalspace.target": "Connected",
+  "block.personalspace.personal_air_intake": "Personal Air Intake",
+
+  "tooltip.personalspace.air_intake.infinite_hatch_1": "Can be converted into a Personal Air Intake.",
+  "tooltip.personalspace.air_intake.infinite_hatch_2": "Shift + Right Click in air to convert.",
+
+  "tooltip.personalspace.air_intake.personal_1": "Generates GTCEu Air inside PersonalSpace.",
+  "tooltip.personalspace.air_intake.personal_2": "Shift + Right Click in air to convert back.",
+
+  "message.personalspace.air_intake.converted_to_personal": "Converted to Personal Air Intake",
+  "message.personalspace.air_intake.converted_to_infinite": "Converted back to Infinite Intake Hatch",
 
   "gui.personalspace.preview.title": "Will be created",
   "gui.personalspace.preview.map": "Mini-map",

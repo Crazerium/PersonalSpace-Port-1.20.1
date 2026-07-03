@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "return_portal=false": {
+      "model": "personalspace:block/personal_portal"
+    },
+    "return_portal=true": {
+      "model": "personalspace:block/personal_portal"
+    }
+  }
+}

@@ -18,8 +18,10 @@ public final class PSCreativeTabs {
                     .icon(() -> new ItemStack(PSItems.PERSONAL_PORTAL.get()))
                     .displayItems((parameters, output) -> {
                         output.accept(PSItems.PERSONAL_PORTAL.get());
+                        output.accept(PSItems.PERSONAL_AIR_INTAKE.get());
                     })
-                    .build());
+                    .build()
+            );
 
     private PSCreativeTabs() {
     }

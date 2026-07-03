@@ -1,7 +1,7 @@
 package me.eigenraven.personalspace.registry;
 
-
 import me.eigenraven.personalspace.PersonalSpace;
+import me.eigenraven.personalspace.block.PersonalAirIntakeBlockEntity;
 import me.eigenraven.personalspace.block.PortalBlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraftforge.registries.DeferredRegister;
@@ -13,10 +13,20 @@ public final class PSBlockEntities {
             DeferredRegister.create(ForgeRegistries.BLOCK_ENTITY_TYPES, PersonalSpace.MODID);
 
     public static final RegistryObject<BlockEntityType<PortalBlockEntity>> PERSONAL_PORTAL =
-            BLOCK_ENTITIES.register("personal_portal",
-                    () -> BlockEntityType.Builder
-                            .of(PortalBlockEntity::new, PSBlocks.PERSONAL_PORTAL.get())
-                            .build(null));
+            BLOCK_ENTITIES.register("personal_portal", () ->
+                    BlockEntityType.Builder.of(
+                            PortalBlockEntity::new,
+                            PSBlocks.PERSONAL_PORTAL.get()
+                    ).build(null)
+            );
+
+    public static final RegistryObject<BlockEntityType<PersonalAirIntakeBlockEntity>> PERSONAL_AIR_INTAKE =
+            BLOCK_ENTITIES.register("personal_air_intake", () ->
+                    BlockEntityType.Builder.of(
+                            PersonalAirIntakeBlockEntity::new,
+                            PSBlocks.PERSONAL_AIR_INTAKE.get()
+                    ).build(null)
+            );
 
     private PSBlockEntities() {
     }
