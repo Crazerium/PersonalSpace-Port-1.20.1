@@ -3,17 +3,23 @@ package me.eigenraven.personalspace.event;
 import me.eigenraven.personalspace.PersonalSpace;
 import me.eigenraven.personalspace.registry.PSItems;
 import net.minecraft.ChatFormatting;
+import net.minecraft.client.Minecraft;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.event.entity.player.ItemTooltipEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.loading.FMLEnvironment;
+
+import java.util.Locale;
 
 @Mod.EventBusSubscriber(modid = PersonalSpace.MODID)
 public final class PersonalAirIntakeCraftingEvent {
@@ -53,7 +59,10 @@ public final class PersonalAirIntakeCraftingEvent {
                     player,
                     event,
                     new ItemStack(PSItems.PERSONAL_AIR_INTAKE.get(), count),
-                    Component.translatable("message.personalspace.air_intake.converted_to_personal", count)
+                    literal(
+                            "Преобразовано в персональный воздухозаборный люк: " + count + " шт.",
+                            "Converted to Personal Air Intake: " + count
+                    )
             );
             return;
         }
@@ -68,7 +77,10 @@ public final class PersonalAirIntakeCraftingEvent {
                         player,
                         event,
                         new ItemStack(infiniteIntakeHatch, count),
-                        Component.translatable("message.personalspace.air_intake.converted_to_infinite", count)
+                        literal(
+                                "Преобразовано обратно в Infinite Intake Hatch: " + count + " шт.",
+                                "Converted back to Infinite Intake Hatch: " + count
+                        )
                 );
             }
         }
@@ -105,24 +117,32 @@ public final class PersonalAirIntakeCraftingEvent {
         ResourceLocation itemId = BuiltInRegistries.ITEM.getKey(stack.getItem());
 
         if (INFINITE_INTAKE_HATCH_ID.equals(itemId)) {
-            event.getToolTip().add(Component.translatable(
-                    "tooltip.personalspace.air_intake.infinite_hatch_1"
+            event.getToolTip().add(literal(
+                    "Можно превратить в персональный воздухозаборный люк.",
+                    "Can be converted into a Personal Air Intake."
             ).withStyle(ChatFormatting.GRAY));
 
-            event.getToolTip().add(Component.translatable(
-                    "tooltip.personalspace.air_intake.infinite_hatch_2"
-            ).withStyle(ChatFormatting.AQUA));
-            return;
-        }
-
-        if (PERSONAL_AIR_INTAKE_ID.equals(itemId)) {
-            event.getToolTip().add(Component.translatable(
-                    "tooltip.personalspace.air_intake.personal_1"
-            ).withStyle(ChatFormatting.GRAY));
-
-            event.getToolTip().add(Component.translatable(
-                    "tooltip.personalspace.air_intake.personal_2"
+            event.getToolTip().add(literal(
+                    "Shift + ПКМ в воздухе для конвертации.",
+                    "Shift + Right Click in air to convert."
             ).withStyle(ChatFormatting.AQUA));
         }
+    }
+
+    private static MutableComponent literal(String ru, String en) {
+        if (isRussian()) {
+            return Component.literal(ru);
+        }
+
+        return Component.literal(en);
+    }
+
+    private static boolean isRussian() {
+        if (FMLEnvironment.dist == Dist.CLIENT) {
+            String selected = Minecraft.getInstance().getLanguageManager().getSelected();
+            return selected != null && selected.toLowerCase(Locale.ROOT).startsWith("ru");
+        }
+
+        return Locale.getDefault().getLanguage().equalsIgnoreCase("ru");
     }
 }

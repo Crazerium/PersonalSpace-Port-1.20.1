@@ -1,8 +1,8 @@
 package me.eigenraven.personalspace.registry;
 
 import me.eigenraven.personalspace.PersonalSpace;
+import me.eigenraven.personalspace.item.PersonalAirIntakeBlockItem;
 import me.eigenraven.personalspace.item.PortalBlockItem;
-import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
@@ -18,8 +18,8 @@ public final class PSItems {
                     new Item.Properties()
             ));
 
-    public static final RegistryObject<BlockItem> PERSONAL_AIR_INTAKE =
-            ITEMS.register("personal_air_intake", () -> new BlockItem(
+    public static final RegistryObject<PersonalAirIntakeBlockItem> PERSONAL_AIR_INTAKE =
+            ITEMS.register("personal_air_intake", () -> new PersonalAirIntakeBlockItem(
                     PSBlocks.PERSONAL_AIR_INTAKE.get(),
                     new Item.Properties()
             ));
