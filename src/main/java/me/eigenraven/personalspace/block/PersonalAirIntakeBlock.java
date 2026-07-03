@@ -1,7 +1,13 @@
 package me.eigenraven.personalspace.block;
 
 import me.eigenraven.personalspace.registry.PSBlockEntities;
+import me.eigenraven.personalspace.registry.PSItems;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.BaseEntityBlock;
 import net.minecraft.world.level.block.RenderShape;
@@ -11,8 +17,11 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
+import net.minecraft.world.level.storage.loot.LootParams;
 
 import javax.annotation.Nullable;
+import java.util.Collections;
+import java.util.List;
 
 public final class PersonalAirIntakeBlock extends BaseEntityBlock {
     public static final BooleanProperty RETURN_PORTAL = BooleanProperty.create("return_portal");
@@ -32,6 +41,39 @@ public final class PersonalAirIntakeBlock extends BaseEntityBlock {
     @Override
     public RenderShape getRenderShape(BlockState state) {
         return RenderShape.MODEL;
+    }
+
+    @Override
+    public float getDestroyProgress(
+            BlockState state,
+            Player player,
+            BlockGetter level,
+            BlockPos pos
+    ) {
+        if (isGTCEuWrench(player.getMainHandItem())) {
+            return 0.12F;
+        }
+
+        return super.getDestroyProgress(state, player, level, pos);
+    }
+
+    @Override
+    public List<ItemStack> getDrops(BlockState state, LootParams.Builder builder) {
+        return Collections.singletonList(new ItemStack(PSItems.PERSONAL_AIR_INTAKE.get()));
+    }
+
+    private static boolean isGTCEuWrench(ItemStack stack) {
+        if (stack.isEmpty()) {
+            return false;
+        }
+
+        ResourceLocation itemId = BuiltInRegistries.ITEM.getKey(stack.getItem());
+
+        if (!"gtceu".equals(itemId.getNamespace())) {
+            return false;
+        }
+
+        return itemId.getPath().contains("wrench");
     }
 
     @Nullable

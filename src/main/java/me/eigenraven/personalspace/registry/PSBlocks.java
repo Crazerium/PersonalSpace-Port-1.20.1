@@ -22,9 +22,8 @@ public final class PSBlocks {
             BLOCKS.register("personal_air_intake", () -> new PersonalAirIntakeBlock(
                     BlockBehaviour.Properties.of()
                             .mapColor(MapColor.METAL)
-                            .strength(3.0F, 6.0F)
+                            .strength(1.5F, 6.0F)
                             .sound(SoundType.METAL)
-                            .requiresCorrectToolForDrops()
             ));
 
     private PSBlocks() {
