@@ -6,8 +6,12 @@ import com.gregtechceu.gtceu.api.registry.registrate.GTRegistrate;
 import me.eigenraven.personalspace.PersonalSpace;
 
 @GTAddon
-public final class PersonalSpaceGTAddon implements IGTAddon {
+public class PersonalSpaceGTAddon implements IGTAddon {
     public static final GTRegistrate REGISTRATE = GTRegistrate.create(PersonalSpace.MODID);
+
+    public PersonalSpaceGTAddon() {
+        PersonalSpace.LOGGER.warn("PersonalSpaceGTAddon CONSTRUCTOR called.");
+    }
 
     @Override
     public String addonModId() {
@@ -21,11 +25,12 @@ public final class PersonalSpaceGTAddon implements IGTAddon {
 
     @Override
     public void initializeAddon() {
+        PersonalSpace.LOGGER.warn("PersonalSpaceGTAddon.initializeAddon() called.");
     }
 
     @Override
     public void registerFluidVeins() {
-        PersonalSpace.LOGGER.info("GTCEu addon registerFluidVeins() called.");
+        PersonalSpace.LOGGER.warn("PersonalSpaceGTAddon.registerFluidVeins() called.");
         PersonalSpaceBedrockFluidVeins.init();
     }
 }

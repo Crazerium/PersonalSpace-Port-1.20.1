@@ -12,10 +12,26 @@ public final class PersonalSpaceGTCEuHooks {
     }
 
     public static void onPersonalDimensionCreated(ResourceKey<Level> levelKey) {
+        if (levelKey == null) {
+            return;
+        }
+
         if (!ModList.get().isLoaded("gtceu")) {
             return;
         }
 
+        if (!PersonalSpaceGTCEuConfig.ENABLED.get()) {
+            return;
+        }
+
+        /*
+         * ВАЖНО:
+         * Добавляем Personal Space dimension только в НАШИ собственные
+         * personalspace:void_* bedrock fluid definitions.
+         *
+         * Не патчим существующие GTCEu/GTO жилы, иначе туда может попасть
+         * мусорная/служебная жила вроде "Воздух".
+         */
         try {
             Class<?> veinsClass = Class.forName(
                     "me.eigenraven.personalspace.compat.gtceu.PersonalSpaceBedrockFluidVeins"
@@ -25,18 +41,18 @@ public final class PersonalSpaceGTCEuHooks {
                     "addPersonalSpaceDimension",
                     ResourceKey.class
             );
+
             addOwnDimensionMethod.invoke(null, levelKey);
 
-            Method patchExistingMethod = veinsClass.getMethod(
-                    "addPersonalSpaceDimensionToExistingGTCEuVeins",
-                    ResourceKey.class
+            PersonalSpace.LOGGER.info(
+                    "Added Personal Space dimension '{}' to own GTCEu bedrock fluid vein definition(s).",
+                    levelKey.location()
             );
-            patchExistingMethod.invoke(null, levelKey);
-        } catch (ReflectiveOperationException exception) {
+        } catch (Throwable throwable) {
             PersonalSpace.LOGGER.warn(
-                    "Failed to add Personal Space dimension '{}' to GTCEu bedrock fluid veins.",
+                    "Failed to add Personal Space dimension '{}' to own GTCEu bedrock fluid vein definition(s).",
                     levelKey.location(),
-                    exception
+                    throwable
             );
         }
     }

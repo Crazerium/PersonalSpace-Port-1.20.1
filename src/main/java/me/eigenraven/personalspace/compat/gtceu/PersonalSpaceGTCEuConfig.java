@@ -20,16 +20,6 @@ public final class PersonalSpaceGTCEuConfig {
                 .comment("Enable GTCEu bedrock fluid veins in Personal Space dimensions.")
                 .define("enabled", true);
 
-        PATCH_EXISTING_PERSONAL_SPACES_ON_STARTUP = builder
-                .comment(
-                        "Patch all already existing Personal Space dimensions on server startup.",
-                        "This scans all old ps_ and team_ dimension folders and adds them to GTCEu bedrock fluid vein data.",
-                        "On servers with many Personal Space dimensions this can be very expensive and may cause a lot of dimensions/chunks to become active.",
-                        "Recommended for normal servers: false.",
-                        "Use true only once when you intentionally want to migrate/patch old Personal Space dimensions, then set it back to false and restart."
-                )
-                .define("patchExistingPersonalSpacesOnStartup", false);
-
         BEDROCK_FLUID_VEINS = builder
                 .comment(
                         "GTCEu bedrock fluid veins for Personal Space dimensions.",
@@ -39,6 +29,7 @@ public final class PersonalSpaceGTCEuConfig {
                         "",
                         "Dimensions can be:",
                         "- personalspace:ps_* = all Personal Space player dimensions",
+                        "- personalspace:team_* = all Personal Space team dimensions",
                         "- personalspace:* = all Personal Space dimensions",
                         "- personalspace:ps_name = one exact dimension",
                         "",
@@ -54,11 +45,25 @@ public final class PersonalSpaceGTCEuConfig {
                 .defineListAllowEmpty(
                         List.of("veins"),
                         () -> List.of(
-                                "personalspace:void_oil_deposit|gtceu:oil|personalspace:ps_*|99|120|720|2|1|50",
-                                "personalspace:void_natural_gas_deposit|gtceu:natural_gas|personalspace:ps_*|30|80|400|2|1|30"
+                                "personalspace:void_heavy_oil_deposit|gtceu:oil_heavy|personalspace:*|15|100|200|1|100|20",
+                                "personalspace:void_medium_oil_deposit|gtceu:oil_medium|personalspace:*|20|175|300|1|100|25",
+                                "personalspace:void_light_oil_deposit|gtceu:oil_light|personalspace:*|25|175|300|1|100|25",
+                                "personalspace:void_oil_deposit|gtceu:oil|personalspace:*|20|175|300|1|100|25",
+                                "personalspace:void_natural_gas_deposit|gtceu:natural_gas|personalspace:*|15|100|175|1|100|20",
+                                "personalspace:void_salt_water_deposit|gtceu:salt_water|personalspace:*|10|50|100|1|100|15"
                         ),
                         value -> value instanceof String
                 );
+
+        PATCH_EXISTING_PERSONAL_SPACES_ON_STARTUP = builder
+                .comment(
+                        "Patch all already existing Personal Space dimensions on server startup.",
+                        "This scans all old ps_ and team_ dimension folders and adds them to GTCEu bedrock fluid vein data.",
+                        "On servers with many Personal Space dimensions this can be very expensive and may cause a lot of dimensions/chunks to become active.",
+                        "Recommended for normal servers: false.",
+                        "Use true only once when you intentionally want to migrate/patch old Personal Space dimensions, then set it back to false and restart."
+                )
+                .define("patchExistingPersonalSpacesOnStartup", false);
 
         builder.pop();
 

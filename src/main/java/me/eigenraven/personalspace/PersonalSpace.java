@@ -3,8 +3,9 @@ package me.eigenraven.personalspace;
 import com.mojang.logging.LogUtils;
 import me.eigenraven.personalspace.command.PSCommands;
 import me.eigenraven.personalspace.command.PersonalSpaceCommandBlocker;
+import me.eigenraven.personalspace.compat.gtceu.PersonalSpaceBedrockFluidVeins;
 import me.eigenraven.personalspace.compat.gtceu.PersonalSpaceGTCEuConfig;
-import me.eigenraven.personalspace.compat.gtceu.PersonalSpaceGTCEuDelayedPatcher;
+import me.eigenraven.personalspace.compat.gtceu.PersonalSpaceGTCEuDebugCommands;
 import me.eigenraven.personalspace.compat.gtocore.GTOCoreAirCompat;
 import me.eigenraven.personalspace.config.PSConfig;
 import me.eigenraven.personalspace.dimension.PersonalSpaceDeletionManager;
@@ -26,6 +27,7 @@ import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.config.ModConfig;
+import net.minecraftforge.fml.event.config.ModConfigEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.network.NetworkRegistry;
 import net.minecraftforge.network.simple.SimpleChannel;
@@ -47,6 +49,7 @@ public final class PersonalSpace {
 
     public PersonalSpace() {
         IEventBus modBus = FMLJavaModLoadingContext.get().getModEventBus();
+
         ModLoadingContext.get().registerConfig(
                 ModConfig.Type.SERVER,
                 PSConfig.SERVER_SPEC,
@@ -58,6 +61,16 @@ public final class PersonalSpace {
                 PersonalSpaceGTCEuConfig.SPEC,
                 "personalspace-gtceu.toml"
         );
+
+        /*
+         * ВАЖНО:
+         * GTCEu bedrock fluids нельзя инициализировать прямо здесь.
+         * В конструкторе мода Forge ещё не загрузил значения из TOML,
+         * поэтому .get() возвращает дефолты из кода.
+         *
+         * Запускаем init после загрузки personalspace-gtceu.toml.
+         */
+        modBus.addListener(this::onModConfigLoaded);
 
         PSBlocks.BLOCKS.register(modBus);
         PSItems.ITEMS.register(modBus);
@@ -110,17 +123,41 @@ public final class PersonalSpace {
         MinecraftForge.EVENT_BUS.addListener(PSWorldRules::onEntityJoinLevel);
         MinecraftForge.EVENT_BUS.addListener(PSWorldRules::onPlayerLoggedIn);
         MinecraftForge.EVENT_BUS.addListener(PSWorldRules::onPlayerChangedDimension);
-        MinecraftForge.EVENT_BUS.addListener(PSWorldRules::onServerTick);
         MinecraftForge.EVENT_BUS.addListener(this::registerCommands);
         MinecraftForge.EVENT_BUS.addListener(PSWorldRules::onLevelLoad);
         MinecraftForge.EVENT_BUS.addListener(PSWorldRules::onLevelUnload);
         MinecraftForge.EVENT_BUS.addListener(PersonalSpaceDeletionManager::onServerTick);
-        MinecraftForge.EVENT_BUS.addListener(PersonalSpaceGTCEuDelayedPatcher::onServerTick);
+
+        /*
+         * НЕ возвращать:
+         * MinecraftForge.EVENT_BUS.addListener(PersonalSpaceGTCEuDelayedPatcher::onServerTick);
+         */
+
         MinecraftForge.EVENT_BUS.register(new GTOCoreAirCompat());
         MinecraftForge.EVENT_BUS.register(new PersonalSpaceCommandBlocker());
     }
 
+    private void onModConfigLoaded(ModConfigEvent.Loading event) {
+        if (event == null || event.getConfig() == null) {
+            return;
+        }
+
+        if (event.getConfig().getSpec() != PersonalSpaceGTCEuConfig.SPEC) {
+            return;
+        }
+
+        LOGGER.warn("PERSONALSPACE GTCEU CONFIG LOADED, INITIALIZING BEDROCK FLUID VEINS");
+
+        try {
+            PersonalSpaceBedrockFluidVeins.init();
+            LOGGER.warn("PERSONALSPACE GTCEU BEDROCK FLUID VEINS INIT AFTER CONFIG LOAD FINISHED");
+        } catch (Throwable throwable) {
+            LOGGER.warn("PERSONALSPACE GTCEU BEDROCK FLUID VEINS INIT AFTER CONFIG LOAD FAILED", throwable);
+        }
+    }
+
     private void registerCommands(RegisterCommandsEvent event) {
         PSCommands.register(event.getDispatcher());
+        PersonalSpaceGTCEuDebugCommands.register(event.getDispatcher());
     }
 }
