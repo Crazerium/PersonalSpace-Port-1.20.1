@@ -6,6 +6,7 @@ import me.eigenraven.personalspace.command.PersonalSpaceCommandBlocker;
 import me.eigenraven.personalspace.compat.gtceu.PersonalSpaceBedrockFluidVeins;
 import me.eigenraven.personalspace.compat.gtceu.PersonalSpaceGTCEuConfig;
 import me.eigenraven.personalspace.compat.gtceu.PersonalSpaceGTCEuDebugCommands;
+import me.eigenraven.personalspace.compat.gtceu.PersonalSpaceGTCEuMaintenanceCommands;
 import me.eigenraven.personalspace.compat.gtocore.GTOCoreAirCompat;
 import me.eigenraven.personalspace.config.PSConfig;
 import me.eigenraven.personalspace.dimension.PersonalSpaceDeletionManager;
@@ -159,5 +160,6 @@ public final class PersonalSpace {
     private void registerCommands(RegisterCommandsEvent event) {
         PSCommands.register(event.getDispatcher());
         PersonalSpaceGTCEuDebugCommands.register(event.getDispatcher());
+        PersonalSpaceGTCEuMaintenanceCommands.register(event.getDispatcher());
     }
 }
