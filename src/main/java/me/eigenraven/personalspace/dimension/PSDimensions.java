@@ -145,10 +145,12 @@ public final class PSDimensions {
     }
 
     public static ServerLevel getOrCreate(MinecraftServer server, ResourceKey<Level> levelKey) {
+        PersonalSpaceData storedData = PersonalSpaceData.load(server, levelKey);
+
         ServerLevel level = InfiniverseAPI.get().getOrCreateLevel(
                 server,
                 levelKey,
-                () -> createStem(server, PersonalSpaceData.WorldType.VOID, DEFAULT_GROUND_LEVEL, "minecraft:plains")
+                () -> createStem(server, storedData)
         );
 
         applyStoredSettings(level);

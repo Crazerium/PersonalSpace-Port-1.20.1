@@ -4,7 +4,10 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.storage.LevelResource;
 
 import java.io.File;
@@ -219,8 +222,15 @@ public class PersonalSpaceData {
     private static final String FILE_NAME = "personalspace_config.json";
 
     private static Path getDimensionPath(ServerLevel level) {
-        Path worldRoot = level.getServer().getWorldPath(LevelResource.ROOT);
-        ResourceLocation dimensionId = level.dimension().location();
+        return getDimensionPath(level.getServer(), level.dimension());
+    }
+
+    private static Path getDimensionPath(
+            MinecraftServer server,
+            ResourceKey<Level> dimensionKey
+    ) {
+        Path worldRoot = server.getWorldPath(LevelResource.ROOT);
+        ResourceLocation dimensionId = dimensionKey.location();
 
         return worldRoot
                 .resolve("dimensions")
@@ -233,6 +243,28 @@ public class PersonalSpaceData {
         String dimName = level.dimension().location().getPath();
 
         return worldRoot.resolve(dimName);
+    }
+
+    public static PersonalSpaceData load(
+            MinecraftServer server,
+            ResourceKey<Level> dimensionKey
+    ) {
+        Path dimPath = getDimensionPath(server, dimensionKey);
+        File configFile = dimPath.resolve(FILE_NAME).toFile();
+
+        if (configFile.exists()) {
+            try (Reader reader = new FileReader(configFile)) {
+                PersonalSpaceData data = GSON.fromJson(reader, PersonalSpaceData.class);
+                if (data != null) {
+                    data.normalize();
+                    return data;
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+        return new PersonalSpaceData();
     }
 
     public static PersonalSpaceData load(ServerLevel level) {

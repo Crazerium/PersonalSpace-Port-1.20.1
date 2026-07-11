@@ -10,6 +10,8 @@ import me.eigenraven.personalspace.compat.gtceu.PersonalSpaceGTCEuMaintenanceCom
 import me.eigenraven.personalspace.compat.gtocore.GTOCoreAirCompat;
 import me.eigenraven.personalspace.config.PSConfig;
 import me.eigenraven.personalspace.dimension.PersonalSpaceDeletionManager;
+import me.eigenraven.personalspace.dimension.PersonalSpaceAutoUnloadManager;
+import me.eigenraven.personalspace.dimension.PersonalSpaceLazyMigrationManager;
 import me.eigenraven.personalspace.event.PSWorldRules;
 import me.eigenraven.personalspace.network.CreateDimensionPacket;
 import me.eigenraven.personalspace.network.DeletePersonalSpacePacket;
@@ -62,15 +64,6 @@ public final class PersonalSpace {
                 PersonalSpaceGTCEuConfig.SPEC,
                 "personalspace-gtceu.toml"
         );
-
-        /*
-         * ВАЖНО:
-         * GTCEu bedrock fluids нельзя инициализировать прямо здесь.
-         * В конструкторе мода Forge ещё не загрузил значения из TOML,
-         * поэтому .get() возвращает дефолты из кода.
-         *
-         * Запускаем init после загрузки personalspace-gtceu.toml.
-         */
         modBus.addListener(this::onModConfigLoaded);
 
         PSBlocks.BLOCKS.register(modBus);
@@ -128,12 +121,10 @@ public final class PersonalSpace {
         MinecraftForge.EVENT_BUS.addListener(PSWorldRules::onLevelLoad);
         MinecraftForge.EVENT_BUS.addListener(PSWorldRules::onLevelUnload);
         MinecraftForge.EVENT_BUS.addListener(PersonalSpaceDeletionManager::onServerTick);
-
-        /*
-         * НЕ возвращать:
-         * MinecraftForge.EVENT_BUS.addListener(PersonalSpaceGTCEuDelayedPatcher::onServerTick);
-         */
-
+        MinecraftForge.EVENT_BUS.addListener(PersonalSpaceLazyMigrationManager::onServerTick);
+        MinecraftForge.EVENT_BUS.addListener(PersonalSpaceAutoUnloadManager::onServerTick);
+        MinecraftForge.EVENT_BUS.addListener(PersonalSpaceAutoUnloadManager::onPlayerLoggedIn);
+        MinecraftForge.EVENT_BUS.addListener(PersonalSpaceAutoUnloadManager::onPlayerLoggedOut);
         MinecraftForge.EVENT_BUS.register(new GTOCoreAirCompat());
         MinecraftForge.EVENT_BUS.register(new PersonalSpaceCommandBlocker());
     }

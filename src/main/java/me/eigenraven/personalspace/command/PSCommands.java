@@ -7,6 +7,9 @@ import me.eigenraven.personalspace.compat.gtceu.PersonalSpaceGTCEuMaintenance;
 import me.eigenraven.personalspace.data.PersonalSpaceData;
 import me.eigenraven.personalspace.dimension.PSDimensions;
 import me.eigenraven.personalspace.dimension.PersonalSpaceDeletionManager;
+import me.eigenraven.personalspace.dimension.PersonalSpaceAutoUnloadManager;
+import me.eigenraven.personalspace.dimension.PersonalSpaceDimensionCatalog;
+import me.eigenraven.personalspace.dimension.PersonalSpaceLazyMigrationManager;
 import me.eigenraven.personalspace.registry.PSItems;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
@@ -36,9 +39,6 @@ public final class PSCommands {
 
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
         dispatcher.register(Commands.literal("personalspace")
-
-                // Игроки подтверждают / отменяют удаление командной персоналки.
-                // Тут НЕ нужен OP, иначе обычные участники команды не смогут подтвердить.
                 .then(Commands.literal("delete")
                         .then(Commands.literal("approve")
                                 .executes(context -> PersonalSpaceDeletionManager.approveDelete(context.getSource()))
@@ -47,8 +47,6 @@ public final class PSCommands {
                                 .executes(context -> PersonalSpaceDeletionManager.cancelDelete(context.getSource()))
                         )
                 )
-
-                // Админские команды.
                 .then(Commands.literal("dimension")
                         .requires(source -> source.hasPermission(2))
                         .then(Commands.argument("name", StringArgumentType.word())
@@ -96,10 +94,6 @@ public final class PSCommands {
                                                 ))
                                         )
                                 )
-
-                                // Админское принудительное удаление персоналки.
-                                // Команда:
-                                // /personalspace dimension <name> delete confirm
                                 .then(Commands.literal("delete")
                                         .requires(source -> source.hasPermission(3))
                                         .then(Commands.literal("confirm")
@@ -110,6 +104,40 @@ public final class PSCommands {
                                         )
                                 )
                         )
+                )
+                .then(Commands.literal("lazy_migrate")
+                        .requires(source -> source.hasPermission(3))
+                        .then(Commands.literal("start")
+                                .then(Commands.literal("confirm")
+                                        .executes(context -> PersonalSpaceLazyMigrationManager.start(
+                                                context.getSource()
+                                        ))
+                                )
+                        )
+                        .then(Commands.literal("status")
+                                .executes(context -> PersonalSpaceLazyMigrationManager.status(
+                                        context.getSource()
+                                ))
+                        )
+                        .then(Commands.literal("cancel")
+                                .executes(context -> PersonalSpaceLazyMigrationManager.cancel(
+                                        context.getSource()
+                                ))
+                        )
+                )
+                .then(Commands.literal("lazy_status")
+                        .requires(source -> source.hasPermission(3))
+                        .executes(context -> {
+                            context.getSource().sendSuccess(
+                                    () -> Component.literal(
+                                            PersonalSpaceAutoUnloadManager.status(
+                                                    context.getSource().getServer()
+                                            )
+                                    ),
+                                    false
+                            );
+                            return 1;
+                        })
                 )
                 .then(Commands.literal("debug")
                         .requires(source -> source.hasPermission(3))
@@ -327,16 +355,15 @@ public final class PSCommands {
     ) {
         ServerLevel level = server.getLevel(dimensionKey);
 
-        if (level == null) {
-            level = PSDimensions.getOrCreate(server, dimensionKey);
+        if (level != null) {
+            return PersonalSpaceData.load(level).getRespawnPos();
         }
 
-        if (level == null) {
-            return FALLBACK_PORTAL_TARGET_POS;
+        if (PersonalSpaceDimensionCatalog.existsOnDisk(server, dimensionKey)) {
+            return PersonalSpaceData.load(server, dimensionKey).getRespawnPos();
         }
 
-        PersonalSpaceData data = PersonalSpaceData.load(level);
-        return data.getRespawnPos();
+        return FALLBACK_PORTAL_TARGET_POS;
     }
 
     private static ResourceKey<Level> getPersonalSpaceDimensionKey(String rawName) {
@@ -398,29 +425,7 @@ public final class PSCommands {
     }
 
     private static List<String> getPersonalSpaceDimensionSuggestions(MinecraftServer server) {
-        List<String> suggestions = new ArrayList<>();
-
-        for (ServerLevel level : server.getAllLevels()) {
-            ResourceLocation location = level.dimension().location();
-
-            if (!location.getNamespace().equals(PersonalSpace.MODID)) {
-                continue;
-            }
-
-            String path = location.getPath();
-
-            if (path.startsWith(PSDimensions.PERSONAL_SPACE_DIMENSION_FOLDER + "/")) {
-                path = path.substring((PSDimensions.PERSONAL_SPACE_DIMENSION_FOLDER + "/").length());
-            }
-
-            if (path.startsWith("ps_") && path.length() > 3) {
-                addSuggestionIfMissing(suggestions, path.substring(3));
-            } else {
-                addSuggestionIfMissing(suggestions, path);
-            }
-        }
-
-        return suggestions;
+        return new ArrayList<>(PersonalSpaceDimensionCatalog.listCommandNames(server));
     }
 
     private static void addSuggestionIfMissing(List<String> suggestions, String value) {

@@ -16,6 +16,8 @@ public final class PSConfig {
     public static final class Server {
         public final ForgeConfigSpec.IntValue maxPersonalSpaceSizeBlocks;
         public final ForgeConfigSpec.IntValue maxPersonalDimensionsPerPlayer;
+        public final ForgeConfigSpec.BooleanValue autoUnloadPersonalSpaces;
+        public final ForgeConfigSpec.IntValue autoUnloadDelaySeconds;
 
         private Server(ForgeConfigSpec.Builder builder) {
             builder.push("personal_space_limits");
@@ -38,6 +40,25 @@ public final class PSConfig {
                             "Set to 0 to disable the personal dimension count limit."
                     )
                     .defineInRange("maxPersonalDimensionsPerPlayer", 1, 0, 1000);
+
+            builder.pop();
+
+            builder.push("lazy_loading");
+
+            autoUnloadPersonalSpaces = builder
+                    .comment(
+                            "Automatically unload idle Personal Space dimensions.",
+                            "A dimension is kept loaded while it has online players, Forge/FTB forced chunks,",
+                            "or an offline player who logged out inside it."
+                    )
+                    .define("autoUnloadPersonalSpaces", true);
+
+            autoUnloadDelaySeconds = builder
+                    .comment(
+                            "How long a Personal Space must stay idle before it is unloaded.",
+                            "The unload is performed one dimension at a time."
+                    )
+                    .defineInRange("autoUnloadDelaySeconds", 300, 30, 86400);
 
             builder.pop();
         }
