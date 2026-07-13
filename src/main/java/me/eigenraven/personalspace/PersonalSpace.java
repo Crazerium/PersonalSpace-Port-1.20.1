@@ -12,6 +12,7 @@ import me.eigenraven.personalspace.config.PSConfig;
 import me.eigenraven.personalspace.dimension.PersonalSpaceDeletionManager;
 import me.eigenraven.personalspace.dimension.PersonalSpaceAutoUnloadManager;
 import me.eigenraven.personalspace.dimension.PersonalSpaceLazyMigrationManager;
+import me.eigenraven.personalspace.dimension.PersonalSpaceProtectionManager;
 import me.eigenraven.personalspace.event.PSWorldRules;
 import me.eigenraven.personalspace.network.CreateDimensionPacket;
 import me.eigenraven.personalspace.network.DeletePersonalSpacePacket;
@@ -125,6 +126,7 @@ public final class PersonalSpace {
         MinecraftForge.EVENT_BUS.addListener(PersonalSpaceAutoUnloadManager::onServerTick);
         MinecraftForge.EVENT_BUS.addListener(PersonalSpaceAutoUnloadManager::onPlayerLoggedIn);
         MinecraftForge.EVENT_BUS.addListener(PersonalSpaceAutoUnloadManager::onPlayerLoggedOut);
+        MinecraftForge.EVENT_BUS.addListener(PersonalSpaceProtectionManager::onServerStarted);
         MinecraftForge.EVENT_BUS.register(new GTOCoreAirCompat());
         MinecraftForge.EVENT_BUS.register(new PersonalSpaceCommandBlocker());
     }

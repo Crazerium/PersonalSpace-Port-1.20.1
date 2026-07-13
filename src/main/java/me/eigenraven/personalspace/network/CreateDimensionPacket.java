@@ -390,6 +390,17 @@ public class CreateDimensionPacket {
         data.setCenterMarkerEnabled(msg.centerMarkerEnabled);
         data.setRepeatingGridEnabled(msg.repeatingGridEnabled);
 
+        if (teamDimensionName.isPresent()) {
+            String compactTeamId = teamDimensionName.get().substring("team_".length());
+            data.setProtectionOwnerTeam(compactTeamId);
+        } else {
+            data.setProtectionOwnerPlayer(
+                    player.getUUID(),
+                    player.getGameProfile().getName(),
+                    FTBTeamsCompat.getTeamId(player).orElse(null)
+            );
+        }
+
         BlockPos innerPortalPos = new BlockPos(
                 7,
                 data.getGroundLevel() + 1,

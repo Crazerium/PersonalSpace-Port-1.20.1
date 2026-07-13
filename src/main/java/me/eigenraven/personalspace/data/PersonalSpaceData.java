@@ -57,6 +57,12 @@ public class PersonalSpaceData {
     private boolean repeatingGridEnabled = false;
     private int repeatingGridOriginX = 0;
     private int repeatingGridOriginZ = 0;
+
+    // Whole-dimension privacy metadata. Empty values are migrated from the dimension id.
+    private String protectionOwnerType = ""; // player or team
+    private String protectionOwnerId = "";   // player UUID or compact team UUID
+    private String protectionOwnerName = "";
+    private String protectionTeamId = "";    // compact FTB team UUID for player-owned spaces
     public float getStarBrightness() {
         return starBrightness;
     }
@@ -304,7 +310,15 @@ public class PersonalSpaceData {
     }
 
     public static void save(ServerLevel level, PersonalSpaceData data) {
-        Path dimPath = getDimensionPath(level);
+        save(level.getServer(), level.dimension(), data);
+    }
+
+    public static void save(
+            MinecraftServer server,
+            ResourceKey<Level> dimensionKey,
+            PersonalSpaceData data
+    ) {
+        Path dimPath = getDimensionPath(server, dimensionKey);
         File configFile = dimPath.resolve(FILE_NAME).toFile();
         configFile.getParentFile().mkdirs();
         data.normalize();
@@ -353,6 +367,15 @@ public class PersonalSpaceData {
         if (respawnPosY <= -64 || respawnPosY >= 320) {
             resetRespawnPos();
         }
+
+        protectionOwnerType = normalizeMetadata(protectionOwnerType);
+        protectionOwnerId = normalizeMetadata(protectionOwnerId);
+        protectionOwnerName = normalizeMetadata(protectionOwnerName);
+        protectionTeamId = normalizeMetadata(protectionTeamId).replace("-", "").toLowerCase(java.util.Locale.ROOT);
+    }
+
+    private static String normalizeMetadata(String value) {
+        return value == null ? "" : value.trim();
     }
 
     private static long normalizeTime(long value) {
@@ -450,4 +473,28 @@ public class PersonalSpaceData {
         this.skyGreen = clampColor(green);
         this.skyBlue = clampColor(blue);
     }
+
+    public String getProtectionOwnerType() { return protectionOwnerType == null ? "" : protectionOwnerType; }
+    public String getProtectionOwnerId() { return protectionOwnerId == null ? "" : protectionOwnerId; }
+    public String getProtectionOwnerName() { return protectionOwnerName == null ? "" : protectionOwnerName; }
+    public String getProtectionTeamId() { return protectionTeamId == null ? "" : protectionTeamId; }
+
+    public void setProtectionOwnerPlayer(java.util.UUID playerId, String playerName, java.util.UUID teamId) {
+        this.protectionOwnerType = "player";
+        this.protectionOwnerId = playerId == null ? "" : playerId.toString();
+        this.protectionOwnerName = playerName == null ? "" : playerName.trim();
+        this.protectionTeamId = teamId == null ? "" : teamId.toString().replace("-", "").toLowerCase(java.util.Locale.ROOT);
+    }
+
+    public void setProtectionOwnerTeam(String compactTeamId) {
+        this.protectionOwnerType = "team";
+        this.protectionOwnerId = compactTeamId == null ? "" : compactTeamId.replace("-", "").toLowerCase(java.util.Locale.ROOT);
+        this.protectionOwnerName = "";
+        this.protectionTeamId = this.protectionOwnerId;
+    }
+
+    public boolean hasProtectionOwner() {
+        return !getProtectionOwnerType().isBlank() && (!getProtectionOwnerId().isBlank() || !getProtectionOwnerName().isBlank());
+    }
+
 }
