@@ -94,6 +94,7 @@ dependencies {
     compileOnly fg.deobf("curse.maven:ftb-library-forge-404465:4596511")
     runtimeOnly fg.deobf("curse.maven:ftb-library-forge-404465:4596511")
     annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
+    compileOnly fg.deobf(files("libs/appliedenergistics2-forge-15.5.0.jar"))
 }
 
 mixin {

@@ -5,6 +5,7 @@ import me.eigenraven.personalspace.config.PSConfig;
 import me.eigenraven.personalspace.dimension.PersonalSpaceProtectionManager;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.Entity;
 import net.minecraftforge.event.entity.player.AttackEntityEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.event.level.BlockEvent;
@@ -13,7 +14,9 @@ import net.minecraftforge.event.entity.player.FillBucketEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
+import java.lang.reflect.Method;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -69,8 +72,13 @@ public final class PersonalSpaceProtectionEvents {
         if (!PSConfig.SERVER.privacyProtectEntities.get()) {
             return;
         }
-        if (event.getEntity() instanceof ServerPlayer player && deny(player)) {
-            event.setCanceled(true);
+        if (event.getEntity() instanceof ServerPlayer player) {
+            if (isOwnCorpse(player, event.getTarget())) {
+                return;
+            }
+            if (deny(player)) {
+                event.setCanceled(true);
+            }
         }
     }
 
@@ -79,8 +87,13 @@ public final class PersonalSpaceProtectionEvents {
         if (!PSConfig.SERVER.privacyProtectEntities.get()) {
             return;
         }
-        if (event.getEntity() instanceof ServerPlayer player && deny(player)) {
-            event.setCanceled(true);
+        if (event.getEntity() instanceof ServerPlayer player) {
+            if (isOwnCorpse(player, event.getTarget())) {
+                return;
+            }
+            if (deny(player)) {
+                event.setCanceled(true);
+            }
         }
     }
 
@@ -115,6 +128,25 @@ public final class PersonalSpaceProtectionEvents {
             event.getAffectedBlocks().clear();
             event.getAffectedEntities().clear();
         }
+    }
+    private static boolean isOwnCorpse(ServerPlayer player, Entity target) {
+        if (!"de.maxhenkel.corpse.entities.CorpseEntity".equals(target.getClass().getName())) {
+            return false;
+        }
+
+        try {
+            Method method = target.getClass().getMethod("getCorpseUUID");
+            Object value = method.invoke(target);
+            if (value instanceof Optional<?> optional) {
+                return optional.filter(UUID.class::isInstance)
+                        .map(UUID.class::cast)
+                        .map(player.getUUID()::equals)
+                        .orElse(false);
+            }
+        } catch (ReflectiveOperationException ignored) {
+        }
+
+        return false;
     }
 
     private static boolean deny(ServerPlayer player) {

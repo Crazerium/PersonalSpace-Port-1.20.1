@@ -8,7 +8,9 @@
     "LevelIsDayMixin",
     "LevelWeatherServerMixin",
     "LevelTimeOfDayServerMixin",
-    "compat.FtbEssentialsTeleportPosMixin"
+    "compat.FtbEssentialsTeleportPosMixin",
+    "compat.ae2.Ae2TickHandlerUnloadMixin",
+    "compat.ae2.Ae2BaseBlockEntityUnloadMixin"
   ],
   "client": [
     "client.LevelTimeOfDayMixin",

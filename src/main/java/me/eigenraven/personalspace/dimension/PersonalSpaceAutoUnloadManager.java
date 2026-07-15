@@ -6,6 +6,7 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 import me.eigenraven.personalspace.PersonalSpace;
 import me.eigenraven.personalspace.config.PSConfig;
+import me.eigenraven.personalspace.compat.ftbchunks.FTBChunksForceLoadCompat;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
@@ -43,6 +44,7 @@ public final class PersonalSpaceAutoUnloadManager {
     private static int removalWaitTicks;
     private static long completedUnloads;
     private static long skippedForced;
+    private static long skippedFtbForced;
     private static long skippedOfflinePlayers;
     private static String lastError = "";
 
@@ -136,6 +138,12 @@ public final class PersonalSpaceAutoUnloadManager {
                 continue;
             }
 
+            if (FTBChunksForceLoadCompat.hasForceLoadedChunks(key)) {
+                skippedFtbForced++;
+                IDLE_TICKS.remove(key);
+                continue;
+            }
+
             if (isOfflinePlayerProtected(key)) {
                 skippedOfflinePlayers++;
                 IDLE_TICKS.remove(key);
@@ -163,12 +171,35 @@ public final class PersonalSpaceAutoUnloadManager {
                 + ", current=" + (waitingForRemoval == null ? "none" : waitingForRemoval.location())
                 + ", completed=" + completedUnloads
                 + ", skippedForced=" + skippedForced
+                + ", skippedFtbForced=" + skippedFtbForced
                 + ", skippedOffline=" + skippedOfflinePlayers
                 + (lastError.isBlank() ? "" : ", lastError=" + lastError);
     }
 
     private static void beginUnload(MinecraftServer server, ServerLevel level) {
         ResourceKey<Level> key = level.dimension();
+        if (!level.players().isEmpty()) {
+            IDLE_TICKS.remove(key);
+            return;
+        }
+
+        if (!level.getForcedChunks().isEmpty()) {
+            skippedForced++;
+            IDLE_TICKS.remove(key);
+            return;
+        }
+
+        if (FTBChunksForceLoadCompat.hasForceLoadedChunks(key)) {
+            skippedFtbForced++;
+            IDLE_TICKS.remove(key);
+            return;
+        }
+
+        if (isOfflinePlayerProtected(key)) {
+            skippedOfflinePlayers++;
+            IDLE_TICKS.remove(key);
+            return;
+        }
 
         try {
             level.save(null, true, false);
@@ -242,7 +273,6 @@ public final class PersonalSpaceAutoUnloadManager {
                         );
                     }
                 } catch (IllegalArgumentException ignored) {
-                    // Ignore malformed old entries.
                 }
             }
         } catch (Exception exception) {
