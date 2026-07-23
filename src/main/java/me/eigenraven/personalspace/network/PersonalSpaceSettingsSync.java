@@ -16,9 +16,10 @@ public final class PersonalSpaceSettingsSync {
             return;
         }
         PersonalSpaceData data = PersonalSpaceData.load(level);
-
-        PersonalSpaceRuntimeSettings.setTimeOfDay(level, data.getTimeOfDay());
-        level.setDayTime(data.getTimeOfDay());
+        PersonalSpaceRuntimeSettings.setTimeOfDay(
+                level,
+                data.getTimeOfDay()
+        );
         if (!data.isWeatherEnabled()) {
             level.setWeatherParameters(6000, 0, false, false);
         }

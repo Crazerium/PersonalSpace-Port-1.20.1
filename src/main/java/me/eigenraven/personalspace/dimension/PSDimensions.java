@@ -5,6 +5,7 @@ import me.eigenraven.personalspace.PersonalSpace;
 import me.eigenraven.personalspace.compat.ftbteams.FTBTeamsCompat;
 import me.eigenraven.personalspace.compat.gtceu.PersonalSpaceGTCEuHooks;
 import me.eigenraven.personalspace.data.PersonalSpaceData;
+import me.eigenraven.personalspace.data.PersonalSpaceRuntimeSettings;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.HolderSet;
@@ -17,7 +18,6 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.biome.Biomes;
 import net.minecraft.world.level.biome.FixedBiomeSource;
@@ -819,26 +819,12 @@ public final class PSDimensions {
 
         PersonalSpaceData data = PersonalSpaceData.load(level);
 
-        level.getGameRules()
-                .getRule(GameRules.RULE_DAYLIGHT)
-                .set(false, level.getServer());
-
-        level.getGameRules()
-                .getRule(GameRules.RULE_SPAWN_RADIUS)
-                .set(0, level.getServer());
-
-        level.getGameRules()
-                .getRule(GameRules.RULE_DOMOBSPAWNING)
-                .set(false, level.getServer());
-
         long wantedTime = data.getTimeOfDay() % 24000L;
-
         if (wantedTime < 0L) {
             wantedTime += 24000L;
         }
 
-        long currentDay = level.getDayTime() / 24000L;
-        level.setDayTime(currentDay * 24000L + wantedTime);
+        PersonalSpaceRuntimeSettings.setTimeOfDay(level, wantedTime);
 
         if (!data.isWeatherEnabled()) {
             level.setRainLevel(0.0F);
