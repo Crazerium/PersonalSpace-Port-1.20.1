@@ -62,7 +62,6 @@
   "item.personalspace.personal_portal": "Personal Portal",
   "tooltip.personalspace.unlinked": "Unlinked",
   "tooltip.personalspace.target": "Connected",
-  "block.personalspace.personal_air_intake": "Personal Air Intake",
 
   "tooltip.personalspace.air_intake.infinite_hatch_1": "Can be converted into a Personal Air Intake.",
   "tooltip.personalspace.air_intake.infinite_hatch_2": "Shift + Right Click in air to convert.",
@@ -163,5 +162,6 @@
   "command.personalspace.delete_cancelled": "§cTeam personal space deletion was cancelled by %s.",
   "command.personalspace.delete_done": "§cPersonal space deleted.",
   "command.personalspace.delete_team_done": "§cTeam personal space deleted after all required players approved.",
-  "command.personalspace.delete_not_owner": "§cYou cannot delete this Personal Space. Only the owner or a team member can delete it."
+  "command.personalspace.delete_not_owner": "§cYou cannot delete this Personal Space. Only the owner or a team member can delete it.",
+  "command.personalspace.no_personal_space_access": "You do not have access to this personal space."
 }

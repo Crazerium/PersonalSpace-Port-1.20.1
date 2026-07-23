@@ -3,13 +3,11 @@ package me.eigenraven.personalspace.command;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import me.eigenraven.personalspace.PersonalSpace;
+import me.eigenraven.personalspace.compat.ftbteams.FTBTeamsCompat;
 import me.eigenraven.personalspace.compat.gtceu.PersonalSpaceGTCEuMaintenance;
 import me.eigenraven.personalspace.data.PersonalSpaceData;
 import me.eigenraven.personalspace.dimension.PSDimensions;
 import me.eigenraven.personalspace.dimension.PersonalSpaceDeletionManager;
-import me.eigenraven.personalspace.dimension.PersonalSpaceAutoUnloadManager;
-import me.eigenraven.personalspace.dimension.PersonalSpaceDimensionCatalog;
-import me.eigenraven.personalspace.dimension.PersonalSpaceLazyMigrationManager;
 import me.eigenraven.personalspace.registry.PSItems;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
@@ -30,6 +28,7 @@ import net.minecraft.world.level.Level;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
 
 public final class PSCommands {
     private static final BlockPos FALLBACK_PORTAL_TARGET_POS = new BlockPos(7, 66, 7);
@@ -47,20 +46,22 @@ public final class PSCommands {
                                 .executes(context -> PersonalSpaceDeletionManager.cancelDelete(context.getSource()))
                         )
                 )
+
                 .then(Commands.literal("dimension")
-                        .requires(source -> source.hasPermission(2))
                         .then(Commands.argument("name", StringArgumentType.word())
                                 .suggests((context, builder) -> SharedSuggestionProvider.suggest(
-                                        getPersonalSpaceDimensionSuggestions(context.getSource().getServer()),
+                                        getPersonalSpaceDimensionSuggestions(context.getSource()),
                                         builder
                                 ))
                                 .then(Commands.literal("tp")
+                                        .requires(source -> source.hasPermission(2))
                                         .executes(context -> teleportToDimension(
                                                 context.getSource(),
                                                 StringArgumentType.getString(context, "name")
                                         ))
                                 )
                                 .then(Commands.literal("giveportal")
+                                        .requires(source -> source.hasPermission(2))
                                         .executes(context -> givePortal(
                                                 context.getSource(),
                                                 StringArgumentType.getString(context, "name"),
@@ -74,8 +75,10 @@ public final class PSCommands {
                                                 ))
                                         )
                                 )
+
                                 .then(Commands.literal("respawn")
                                         .then(Commands.literal("get")
+                                                .requires(source -> source.hasPermission(2))
                                                 .executes(context -> getRespawn(
                                                         context.getSource(),
                                                         StringArgumentType.getString(context, "name")
@@ -88,6 +91,7 @@ public final class PSCommands {
                                                 ))
                                         )
                                         .then(Commands.literal("reset")
+                                                .requires(source -> source.hasPermission(2))
                                                 .executes(context -> resetRespawn(
                                                         context.getSource(),
                                                         StringArgumentType.getString(context, "name")
@@ -105,46 +109,14 @@ public final class PSCommands {
                                 )
                         )
                 )
-                .then(Commands.literal("lazy_migrate")
-                        .requires(source -> source.hasPermission(3))
-                        .then(Commands.literal("start")
-                                .then(Commands.literal("confirm")
-                                        .executes(context -> PersonalSpaceLazyMigrationManager.start(
-                                                context.getSource()
-                                        ))
-                                )
-                        )
-                        .then(Commands.literal("status")
-                                .executes(context -> PersonalSpaceLazyMigrationManager.status(
-                                        context.getSource()
-                                ))
-                        )
-                        .then(Commands.literal("cancel")
-                                .executes(context -> PersonalSpaceLazyMigrationManager.cancel(
-                                        context.getSource()
-                                ))
-                        )
-                )
-                .then(Commands.literal("lazy_status")
-                        .requires(source -> source.hasPermission(3))
-                        .executes(context -> {
-                            context.getSource().sendSuccess(
-                                    () -> Component.literal(
-                                            PersonalSpaceAutoUnloadManager.status(
-                                                    context.getSource().getServer()
-                                            )
-                                    ),
-                                    false
-                            );
-                            return 1;
-                        })
-                )
+
                 .then(Commands.literal("debug")
                         .requires(source -> source.hasPermission(3))
                         .then(Commands.literal("chunks")
                                 .executes(context -> debugChunks(context.getSource()))
                         )
                 )
+
                 .then(Commands.literal("gtceu")
                         .requires(source -> source.hasPermission(3))
                         .then(Commands.literal("rebuild_fluids")
@@ -152,12 +124,17 @@ public final class PSCommands {
                                         .then(Commands.literal("confirm")
                                                 .executes(context -> PersonalSpaceGTCEuMaintenance.rebuildAllPersonalSpaceFluids(
                                                         context.getSource()
-                                                ))))
+                                                ))
+                                        )
+                                )
                                 .then(Commands.argument("name", StringArgumentType.word())
                                         .executes(context -> PersonalSpaceGTCEuMaintenance.rebuildOnePersonalSpaceFluids(
                                                 context.getSource(),
                                                 StringArgumentType.getString(context, "name")
-                                        )))))
+                                        ))
+                                )
+                        )
+                )
         );
     }
 
@@ -280,6 +257,11 @@ public final class PSCommands {
         MinecraftServer server = source.getServer();
         ResourceKey<Level> dimensionKey = getPersonalSpaceDimensionKey(dimensionName);
 
+        if (!source.hasPermission(2) && !canPlayerUsePersonalSpace(player, dimensionKey)) {
+            source.sendFailure(translatable("no_personal_space_access"));
+            return 0;
+        }
+
         if (!player.level().dimension().equals(dimensionKey)) {
             source.sendFailure(translatable("respawn_set_wrong_dimension", dimensionKey.location()));
             return 0;
@@ -355,15 +337,14 @@ public final class PSCommands {
     ) {
         ServerLevel level = server.getLevel(dimensionKey);
 
-        if (level != null) {
-            return PersonalSpaceData.load(level).getRespawnPos();
+        if (level == null) {
+            level = PSDimensions.getOrCreate(server, dimensionKey);
         }
-
-        if (PersonalSpaceDimensionCatalog.existsOnDisk(server, dimensionKey)) {
-            return PersonalSpaceData.load(server, dimensionKey).getRespawnPos();
+        if (level == null) {
+            return FALLBACK_PORTAL_TARGET_POS;
         }
-
-        return FALLBACK_PORTAL_TARGET_POS;
+        PersonalSpaceData data = PersonalSpaceData.load(level);
+        return data.getRespawnPos();
     }
 
     private static ResourceKey<Level> getPersonalSpaceDimensionKey(String rawName) {
@@ -376,7 +357,7 @@ public final class PSCommands {
     }
 
     private static ResourceLocation parsePersonalSpaceDimensionId(String rawName) {
-        String value = rawName.trim().toLowerCase();
+        String value = rawName.trim().toLowerCase(Locale.ROOT);
 
         if (value.contains(":")) {
             ResourceLocation parsed = ResourceLocation.tryParse(value);
@@ -424,8 +405,77 @@ public final class PSCommands {
         return pos.getX() + " " + pos.getY() + " " + pos.getZ();
     }
 
-    private static List<String> getPersonalSpaceDimensionSuggestions(MinecraftServer server) {
-        return new ArrayList<>(PersonalSpaceDimensionCatalog.listCommandNames(server));
+    private static List<String> getPersonalSpaceDimensionSuggestions(CommandSourceStack source) {
+        List<String> suggestions = new ArrayList<>();
+
+        MinecraftServer server = source.getServer();
+
+        ServerPlayer player = null;
+
+        try {
+            player = source.getPlayerOrException();
+        } catch (Exception ignored) {
+        }
+
+        boolean isOp = source.hasPermission(2);
+
+        for (ServerLevel level : server.getAllLevels()) {
+            ResourceKey<Level> dimensionKey = level.dimension();
+            ResourceLocation location = dimensionKey.location();
+
+            if (!location.getNamespace().equals(PersonalSpace.MODID)) {
+                continue;
+            }
+
+            if (!isOp && !canPlayerUsePersonalSpace(player, dimensionKey)) {
+                continue;
+            }
+
+            String path = location.getPath();
+
+            if (path.startsWith(PSDimensions.PERSONAL_SPACE_DIMENSION_FOLDER + "/")) {
+                path = path.substring((PSDimensions.PERSONAL_SPACE_DIMENSION_FOLDER + "/").length());
+            }
+
+            if (path.startsWith("ps_") && path.length() > 3) {
+                addSuggestionIfMissing(suggestions, path.substring(3));
+            } else {
+                addSuggestionIfMissing(suggestions, path);
+            }
+        }
+
+        return suggestions;
+    }
+
+    private static boolean canPlayerUsePersonalSpace(ServerPlayer player, ResourceKey<Level> dimensionKey) {
+        if (player == null || dimensionKey == null) {
+            return false;
+        }
+
+        ResourceLocation location = dimensionKey.location();
+
+        if (!location.getNamespace().equals(PersonalSpace.MODID)) {
+            return false;
+        }
+
+        String path = location.getPath();
+
+        if (path.startsWith(PSDimensions.PERSONAL_SPACE_DIMENSION_FOLDER + "/")) {
+            path = path.substring((PSDimensions.PERSONAL_SPACE_DIMENSION_FOLDER + "/").length());
+        }
+
+        String playerName = player.getGameProfile().getName().toLowerCase(Locale.ROOT);
+
+        if (path.startsWith("ps_") && path.length() > 3) {
+            String ownerName = path.substring(3).toLowerCase(Locale.ROOT);
+            return ownerName.equals(playerName);
+        }
+        if (path.startsWith("team_") && path.length() > 5) {
+            String compactTeamId = path.substring(5);
+            return FTBTeamsCompat.isPlayerInTeam(player, compactTeamId);
+        }
+
+        return false;
     }
 
     private static void addSuggestionIfMissing(List<String> suggestions, String value) {
@@ -437,7 +487,6 @@ public final class PSCommands {
             suggestions.add(value);
         }
     }
-
 
     private static int debugChunks(CommandSourceStack source) {
         MinecraftServer server = source.getServer();

@@ -75,14 +75,6 @@ public final class PSWorldRules {
             return;
         }
 
-        level.getGameRules()
-                .getRule(GameRules.RULE_DAYLIGHT)
-                .set(false, level.getServer());
-
-        level.getGameRules()
-                .getRule(GameRules.RULE_SPAWN_RADIUS)
-                .set(0, level.getServer());
-
         PersonalSpaceRuntimeSettings.setTimeOfDay(
                 level,
                 PersonalSpaceRuntimeSettings.getTimeOfDay(level)
@@ -114,18 +106,6 @@ public final class PSWorldRules {
             if (level.players().isEmpty()) {
                 continue;
             }
-
-            level.getGameRules()
-                    .getRule(GameRules.RULE_DAYLIGHT)
-                    .set(false, level.getServer());
-
-            level.getGameRules()
-                    .getRule(GameRules.RULE_SPAWN_RADIUS)
-                    .set(0, level.getServer());
-
-            level.getGameRules()
-                    .getRule(GameRules.RULE_DOMOBSPAWNING)
-                    .set(false, level.getServer());
 
             level.setWeatherParameters(6000, 0, false, false);
             level.setRainLevel(0.0F);

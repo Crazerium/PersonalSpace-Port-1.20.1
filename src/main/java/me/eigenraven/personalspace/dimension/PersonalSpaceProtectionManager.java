@@ -111,56 +111,164 @@ public final class PersonalSpaceProtectionManager {
     ) {
         String path = key.location().getPath();
         String prefix = PSDimensions.PERSONAL_SPACE_DIMENSION_FOLDER + "/";
+
         if (path.startsWith(prefix)) {
             path = path.substring(prefix.length());
         }
 
         if (path.startsWith("team_")) {
-            String teamId = path.substring("team_".length()).replace("-", "").toLowerCase(Locale.ROOT);
-            if (!"team".equals(data.getProtectionOwnerType()) || !teamId.equals(data.getProtectionOwnerId())) {
+            String teamId = path
+                    .substring("team_".length())
+                    .replace("-", "")
+                    .toLowerCase(Locale.ROOT);
+
+            if (!"team".equals(data.getProtectionOwnerType())
+                    || !teamId.equals(data.getProtectionOwnerId())) {
+
                 data.setProtectionOwnerTeam(teamId);
                 return true;
             }
+
             return false;
         }
 
         if (!path.startsWith("ps_")) {
             return false;
         }
+        if ("player".equals(data.getProtectionOwnerType())
+                && !data.getProtectionOwnerId().isBlank()) {
 
-        String inferredName = inferPlayerName(path.substring("ps_".length()));
-        UUID ownerId = null;
-        UUID teamId = null;
+            try {
+                UUID storedOwnerId = UUID.fromString(
+                        data.getProtectionOwnerId()
+                );
+                if (actor != null && actor.getUUID().equals(storedOwnerId)) {
+                    String currentName = actor.getGameProfile().getName();
 
-        if (actor != null && actor.getGameProfile().getName().equalsIgnoreCase(inferredName)) {
-            ownerId = actor.getUUID();
-            teamId = FTBTeamsCompat.getTeamId(actor).orElse(null);
-        } else {
-            Optional<UUID> resolvedOwner = FTBTeamsCompat.findPlayerUuid(server, inferredName);
-            if (resolvedOwner.isPresent()) {
-                ownerId = resolvedOwner.get();
-                teamId = FTBTeamsCompat.findTeamIdForPlayer(server, ownerId).orElse(null);
+                    UUID currentTeamId = FTBTeamsCompat
+                            .getTeamId(actor)
+                            .orElse(null);
+
+                    String compactCurrentTeamId = currentTeamId == null
+                            ? ""
+                            : currentTeamId.toString()
+                            .replace("-", "")
+                            .toLowerCase(Locale.ROOT);
+
+                    boolean nameChanged =
+                            !currentName.equals(data.getProtectionOwnerName());
+
+                    boolean teamChanged =
+                            !compactCurrentTeamId.equals(
+                                    data.getProtectionTeamId()
+                            );
+
+                    if (nameChanged || teamChanged) {
+                        data.setProtectionOwnerPlayer(
+                                actor.getUUID(),
+                                currentName,
+                                currentTeamId
+                        );
+
+                        return true;
+                    }
+                }
+
+                return false;
+            } catch (IllegalArgumentException ignored) {
             }
         }
 
-        String oldType = data.getProtectionOwnerType();
-        String oldId = data.getProtectionOwnerId();
-        String oldName = data.getProtectionOwnerName();
-        String oldTeam = data.getProtectionTeamId();
-
-        if (ownerId != null) {
-            data.setProtectionOwnerPlayer(ownerId, inferredName, teamId);
-        } else if (!"player".equals(oldType) || oldName.isBlank()) {
-            data.setProtectionOwnerPlayer(null, inferredName, teamId);
+        if (actor == null) {
+            return false;
         }
 
-        return !oldType.equals(data.getProtectionOwnerType())
-                || !oldId.equals(data.getProtectionOwnerId())
-                || !oldName.equals(data.getProtectionOwnerName())
-                || !oldTeam.equals(data.getProtectionTeamId());
+        String dimensionName = path.substring("ps_".length());
+        String playerName = actor.getGameProfile().getName();
+
+        String currentSafeName =
+                PSDimensions.sanitizeDimensionName(playerName);
+
+        String legacySafeName =
+                legacySanitizeDimensionName(playerName);
+
+        boolean matchesCurrentName =
+                matchesDimensionName(dimensionName, currentSafeName);
+
+        boolean matchesLegacyName =
+                matchesDimensionName(dimensionName, legacySafeName);
+
+        if (!matchesCurrentName && !matchesLegacyName) {
+            return false;
+        }
+
+        data.setProtectionOwnerPlayer(
+                actor.getUUID(),
+                playerName,
+                FTBTeamsCompat.getTeamId(actor).orElse(null)
+        );
+
+        return true;
     }
 
-    private static String inferPlayerName(String raw) {
-        return raw.replaceFirst("_[0-9]+$", "");
+    private static boolean matchesDimensionName(
+            String dimensionName,
+            String playerName
+    ) {
+        if (dimensionName == null
+                || playerName == null
+                || playerName.isBlank()) {
+            return false;
+        }
+
+        if (dimensionName.equalsIgnoreCase(playerName)) {
+            return true;
+        }
+
+        if (dimensionName.length() <= playerName.length()) {
+            return false;
+        }
+
+        if (!dimensionName.regionMatches(
+                true,
+                0,
+                playerName,
+                0,
+                playerName.length()
+        )) {
+            return false;
+        }
+
+        String suffix = dimensionName.substring(playerName.length());
+
+        if (!suffix.startsWith("_") || suffix.length() <= 1) {
+            return false;
+        }
+
+        for (int i = 1; i < suffix.length(); i++) {
+            if (!Character.isDigit(suffix.charAt(i))) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private static String legacySanitizeDimensionName(String rawName) {
+        String safe = PSDimensions.sanitizeDimensionName(rawName);
+
+        while (safe.contains("__")) {
+            safe = safe.replace("__", "_");
+        }
+
+        while (safe.startsWith("_")) {
+            safe = safe.substring(1);
+        }
+
+        while (safe.endsWith("_")) {
+            safe = safe.substring(0, safe.length() - 1);
+        }
+
+        return safe;
     }
 }

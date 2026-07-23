@@ -892,7 +892,7 @@ public class CreateDimensionPacket {
             MinecraftServer server,
             String playerName
     ) {
-        String safeName = sanitizeDimensionName(playerName);
+        String safeName = PSDimensions.sanitizeDimensionName(playerName);
 
         if (safeName.isBlank()) {
             return PSDimensions.randomPersonalKey();
@@ -919,7 +919,7 @@ public class CreateDimensionPacket {
             MinecraftServer server,
             String playerName
     ) {
-        String safeName = sanitizeDimensionName(playerName);
+        String safeName = PSDimensions.sanitizeDimensionName(playerName);
 
         if (safeName.isBlank()) {
             return 0;
@@ -945,53 +945,6 @@ public class CreateDimensionPacket {
         }
 
         return count;
-    }
-
-    private static String sanitizeDimensionName(String rawName) {
-        if (rawName == null) {
-            return "";
-        }
-
-        String lowerName = rawName
-                .trim()
-                .toLowerCase(Locale.ROOT);
-
-        StringBuilder result = new StringBuilder();
-
-        for (int i = 0; i < lowerName.length(); i++) {
-            char c = lowerName.charAt(i);
-
-            if ((c >= 'a' && c <= 'z')
-                    || (c >= '0' && c <= '9')
-                    || c == '_'
-                    || c == '-'
-                    || c == '.') {
-                result.append(c);
-            } else {
-                result.append('_');
-            }
-        }
-
-        while (result.toString().contains("__")) {
-            int index = result.indexOf("__");
-            result.replace(index, index + 2, "_");
-        }
-
-        String safe = result.toString();
-
-        while (safe.startsWith("_")) {
-            safe = safe.substring(1);
-        }
-
-        while (safe.endsWith("_")) {
-            safe = safe.substring(0, safe.length() - 1);
-        }
-
-        if (safe.length() > 48) {
-            safe = safe.substring(0, 48);
-        }
-
-        return safe;
     }
 
     private static boolean isTeamDimensionKey(ResourceKey<Level> levelKey) {

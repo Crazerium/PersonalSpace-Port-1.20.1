@@ -126,14 +126,6 @@ public class UpdatePersonalSpaceSettingsPacket {
 
             PersonalSpaceData.save(level, data);
 
-            level.getGameRules()
-                    .getRule(net.minecraft.world.level.GameRules.RULE_DAYLIGHT)
-                    .set(false, level.getServer());
-
-            level.getGameRules()
-                    .getRule(net.minecraft.world.level.GameRules.RULE_SPAWN_RADIUS)
-                    .set(0, level.getServer());
-
             long wantedTime = data.getTimeOfDay() % 24000L;
 
             if (wantedTime < 0L) {

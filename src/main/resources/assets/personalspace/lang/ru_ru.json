@@ -59,7 +59,6 @@
 
   "block.personalspace.personal_portal": "Персональный портал",
   "block.personalspace.personal_air_intake": "Персональный воздухозаборный люк",
-  "block.personalspace.personal_air_intake": "Персональный воздухозаборный люк",
   "tooltip.personalspace.air_intake.infinite_hatch_1": "Можно превратить в персональный воздухозаборный люк.",
   "tooltip.personalspace.air_intake.infinite_hatch_2": "Shift + ПКМ в воздухе для конвертации.",
   "tooltip.personalspace.air_intake.personal_1": "Генерирует воздух GTCEu внутри PersonalSpace.",
@@ -160,5 +159,6 @@
   "command.personalspace.delete_cancelled": "§cУдаление командной персоналки отменено игроком %s.",
   "command.personalspace.delete_done": "§cПерсоналка удалена.",
   "command.personalspace.delete_team_done": "§cКомандная персоналка удалена после подтверждения всех участников.",
-  "command.personalspace.delete_not_owner": "§cВы не можете удалить эту персоналку. Удалять может только владелец или участник команды."
+  "command.personalspace.delete_not_owner": "§cВы не можете удалить эту персоналку. Удалять может только владелец или участник команды.",
+  "command.personalspace.no_personal_space_access": "У тебя нет доступа к этой персоналке."
 }

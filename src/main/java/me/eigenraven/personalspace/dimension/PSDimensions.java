@@ -78,7 +78,7 @@ public final class PSDimensions {
     }
 
 
-    private static String sanitizeDimensionName(String rawName) {
+    public static String sanitizeDimensionName(String rawName) {
         if (rawName == null) {
             return "";
         }
@@ -89,7 +89,7 @@ public final class PSDimensions {
 
         StringBuilder result = new StringBuilder();
 
-        for (int i = 0; i < lowerName.length(); i++) {
+        for (int i = 0; i < lowerName.length() && result.length() < 48; i++) {
             char c = lowerName.charAt(i);
 
             if ((c >= 'a' && c <= 'z')
@@ -103,26 +103,7 @@ public final class PSDimensions {
             }
         }
 
-        while (result.toString().contains("__")) {
-            int index = result.indexOf("__");
-            result.replace(index, index + 2, "_");
-        }
-
-        String safe = result.toString();
-
-        while (safe.startsWith("_")) {
-            safe = safe.substring(1);
-        }
-
-        while (safe.endsWith("_")) {
-            safe = safe.substring(0, safe.length() - 1);
-        }
-
-        if (safe.length() > 48) {
-            safe = safe.substring(0, 48);
-        }
-
-        return safe;
+        return result.toString();
     }
 
 

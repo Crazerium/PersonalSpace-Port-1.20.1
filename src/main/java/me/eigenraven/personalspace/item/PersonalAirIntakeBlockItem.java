@@ -42,9 +42,14 @@ public final class PersonalAirIntakeBlockItem extends BlockItem {
         ).withStyle(ChatFormatting.GRAY));
 
         tooltip.add(literal(
-                "Shift + ПКМ в воздухе, чтобы превратить обратно.",
-                "Shift + Right Click in air to convert back."
+                "Для получения нажмите Shift + ПКМ Бесконечным воздухозаборным люком.",
+                "For crafting press Shift + RMB by Infinite Intake Hatch."
         ).withStyle(ChatFormatting.AQUA));
+
+        tooltip.add(literal(
+                "Можно сконвертировать обратно нажав Shift + ПКМ.",
+                "Can be converted back by press Shift + RMB."
+        ).withStyle(ChatFormatting.BLUE));
 
         super.appendHoverText(stack, level, tooltip, flag);
     }
