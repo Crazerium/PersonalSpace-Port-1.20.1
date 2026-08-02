@@ -859,7 +859,20 @@ public final class PSDimensions {
             return true;
         }
 
-        return java.nio.file.Files.exists(getPersonalSpaceDimensionFolder(server, levelKey));
+        if (java.nio.file.Files.exists(
+                getPersonalSpaceDimensionFolder(server, levelKey)
+        )) {
+            return true;
+        }
+
+        return java.nio.file.Files.exists(
+                server.getWorldPath(
+                                net.minecraft.world.level.storage.LevelResource.ROOT
+                        )
+                        .resolve(levelKey.location().getPath())
+                        .toAbsolutePath()
+                        .normalize()
+        );
     }
 
     public static java.nio.file.Path getPersonalSpaceDimensionFolder(
@@ -868,17 +881,14 @@ public final class PSDimensions {
     ) {
         ResourceLocation id = levelKey.location();
 
-        String path = id.getPath();
-
-        if (path.startsWith(PERSONAL_SPACE_DIMENSION_FOLDER + "/")) {
-            path = path.substring((PERSONAL_SPACE_DIMENSION_FOLDER + "/").length());
-        }
-
         return server.getWorldPath(
                         net.minecraft.world.level.storage.LevelResource.ROOT
                 )
-                .resolve(PERSONAL_SPACE_DIMENSION_FOLDER)
-                .resolve(path);
+                .resolve("dimensions")
+                .resolve(id.getNamespace())
+                .resolve(id.getPath())
+                .toAbsolutePath()
+                .normalize();
     }
 
     public static void writeTeamInfoFile(

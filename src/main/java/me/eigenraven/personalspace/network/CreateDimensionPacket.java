@@ -1,5 +1,8 @@
 package me.eigenraven.personalspace.network;
 
+import me.eigenraven.personalspace.api.cluster.PersonalSpaceClusterApi;
+import me.eigenraven.personalspace.api.cluster.PersonalSpaceClusterResult;
+import me.eigenraven.personalspace.api.cluster.PersonalSpaceCreationContext;
 import me.eigenraven.personalspace.block.PortalBlock;
 import me.eigenraven.personalspace.block.PortalBlockEntity;
 import me.eigenraven.personalspace.compat.ftbteams.FTBTeamsCompat;
@@ -487,16 +490,74 @@ public class CreateDimensionPacket {
         sourcePortal.setReturnPortal(false);
         sourcePortal.setTarget(newLevelKey, innerPortalPos, targetDisplayName);
 
-        player.teleportTo(
-                newLevel,
-                innerPortalPos.getX() + 0.5D,
-                innerPortalPos.getY() + 1.0D,
-                innerPortalPos.getZ() + 0.5D,
-                player.getYRot(),
-                player.getXRot()
+        float destinationYaw = player.getYRot();
+        float destinationPitch = player.getXRot();
+
+        Runnable localContinuation = () -> completeCreationTeleport(
+                server,
+                player.getUUID(),
+                newLevelKey,
+                innerPortalPos,
+                destinationYaw,
+                destinationPitch
         );
 
-        PersonalSpaceSettingsSync.syncTo(player, newLevel);
+        PersonalSpaceClusterResult clusterResult =
+                PersonalSpaceClusterApi.handleCreated(
+                        new PersonalSpaceCreationContext(
+                                server,
+                                player,
+                                newLevelKey,
+                                newLevel,
+                                innerPortalPos,
+                                destinationYaw,
+                                destinationPitch,
+                                localContinuation
+                        )
+                );
+
+        if (clusterResult == PersonalSpaceClusterResult.HANDLED) {
+            return;
+        }
+
+        localContinuation.run();
+    }
+
+    private static void completeCreationTeleport(
+            MinecraftServer server,
+            java.util.UUID playerUuid,
+            ResourceKey<Level> dimension,
+            BlockPos destination,
+            float yaw,
+            float pitch
+    ) {
+        ServerPlayer player = server.getPlayerList().getPlayer(playerUuid);
+        if (player == null) {
+            return;
+        }
+
+        ServerLevel targetLevel = server.getLevel(dimension);
+        if (targetLevel == null) {
+            targetLevel = PersonalSpaceClusterApi.loadDimension(server, dimension);
+        }
+        if (targetLevel == null) {
+            player.sendSystemMessage(Component.translatable(
+                    "message.personalspace.target_dimension_not_found",
+                    dimension.location()
+            ));
+            return;
+        }
+
+        player.teleportTo(
+                targetLevel,
+                destination.getX() + 0.5D,
+                destination.getY() + 1.0D,
+                destination.getZ() + 0.5D,
+                yaw,
+                pitch
+        );
+
+        PersonalSpaceSettingsSync.syncTo(player, targetLevel);
     }
 
     private static boolean isValidChunkValue(int value) {

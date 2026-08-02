@@ -1,9 +1,11 @@
 package me.eigenraven.personalspace.block;
 
 import me.eigenraven.personalspace.PersonalSpace;
+import me.eigenraven.personalspace.api.cluster.PersonalSpaceClusterApi;
+import me.eigenraven.personalspace.api.cluster.PersonalSpaceClusterResult;
+import me.eigenraven.personalspace.api.cluster.PersonalSpacePortalTravelContext;
 import me.eigenraven.personalspace.compat.gtceu.PersonalSpaceGTCEuHooks;
 import me.eigenraven.personalspace.data.PersonalSpaceData;
-import me.eigenraven.personalspace.dimension.PSDimensions;
 import me.eigenraven.personalspace.network.PersonalSpaceSettingsSync;
 import me.eigenraven.personalspace.registry.PSBlockEntities;
 import net.minecraft.core.BlockPos;
@@ -124,11 +126,42 @@ public class PortalBlockEntity extends BlockEntity {
             lastTeleportGameTime = now;
         }
 
+        PersonalSpaceClusterResult clusterResult =
+                PersonalSpaceClusterApi.handlePortalTravel(
+                        new PersonalSpacePortalTravelContext(
+                                server,
+                                player,
+                                targetLevel,
+                                targetPos,
+                                player.getYRot(),
+                                player.getXRot(),
+                                () -> teleportLocally(player)
+                        )
+                );
+
+        if (clusterResult == PersonalSpaceClusterResult.HANDLED) {
+            return;
+        }
+
+        teleportLocally(player);
+    }
+
+    private void teleportLocally(ServerPlayer player) {
+        MinecraftServer server = player.server;
+        if (server == null || targetLevel == null) {
+            return;
+        }
+
         ServerLevel destination = server.getLevel(targetLevel);
 
         if (destination == null
-                && targetLevel.location().getNamespace().equals(PersonalSpace.MODID)) {
-            destination = PSDimensions.getOrCreate(server, targetLevel);
+                && PersonalSpaceClusterApi.isPersonalSpaceDimension(
+                targetLevel.location()
+        )) {
+            destination = PersonalSpaceClusterApi.loadDimension(
+                    server,
+                    targetLevel
+            );
         }
 
         if (destination == null) {
@@ -139,7 +172,9 @@ public class PortalBlockEntity extends BlockEntity {
             return;
         }
 
-        if (targetLevel.location().getNamespace().equals(PersonalSpace.MODID)) {
+        if (PersonalSpaceClusterApi.isPersonalSpaceDimension(
+                targetLevel.location()
+        )) {
             PersonalSpaceGTCEuHooks.onPersonalDimensionCreated(targetLevel);
         }
 
@@ -149,7 +184,7 @@ public class PortalBlockEntity extends BlockEntity {
 
         player.teleportTo(
                 destination,
-              teleportPos.getX() + 0.5D,
+                teleportPos.getX() + 0.5D,
                 teleportPos.getY(),
                 teleportPos.getZ() + 0.5D,
                 player.getYRot(),
