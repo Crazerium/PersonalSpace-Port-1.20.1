@@ -2,15 +2,17 @@ package me.eigenraven.personalspace.event;
 
 import me.eigenraven.personalspace.PersonalSpace;
 import me.eigenraven.personalspace.config.PSConfig;
+import me.eigenraven.personalspace.config.PersonalSpacePublicInteractionConfig;
 import me.eigenraven.personalspace.dimension.PersonalSpaceProtectionManager;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraftforge.event.entity.player.AttackEntityEvent;
+import net.minecraftforge.event.entity.player.FillBucketEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.event.level.BlockEvent;
 import net.minecraftforge.event.level.ExplosionEvent;
-import net.minecraftforge.event.entity.player.FillBucketEvent;
+import net.minecraftforge.eventbus.api.Event;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
@@ -53,10 +55,18 @@ public final class PersonalSpaceProtectionEvents {
         if (!PSConfig.SERVER.privacyProtectContainers.get()) {
             return;
         }
-        if (event.getEntity() instanceof ServerPlayer player && deny(player)) {
-            event.setCanceled(true);
-            event.setUseBlock(net.minecraftforge.eventbus.api.Event.Result.DENY);
-            event.setUseItem(net.minecraftforge.eventbus.api.Event.Result.DENY);
+        if (event.getEntity() instanceof ServerPlayer player) {
+            if (PersonalSpacePublicInteractionConfig.allows(event.getLevel().getBlockState(event.getPos()).getBlock())) {
+                if (denySilently(player)) {
+                    event.setUseItem(Event.Result.DENY);
+                }
+                return;
+            }
+            if (deny(player)) {
+                event.setCanceled(true);
+                event.setUseBlock(Event.Result.DENY);
+                event.setUseItem(Event.Result.DENY);
+            }
         }
     }
 

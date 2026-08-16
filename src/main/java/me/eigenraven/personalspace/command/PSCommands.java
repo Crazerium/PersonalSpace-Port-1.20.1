@@ -5,6 +5,7 @@ import com.mojang.brigadier.arguments.StringArgumentType;
 import me.eigenraven.personalspace.PersonalSpace;
 import me.eigenraven.personalspace.compat.ftbteams.FTBTeamsCompat;
 import me.eigenraven.personalspace.compat.gtceu.PersonalSpaceGTCEuMaintenance;
+import me.eigenraven.personalspace.config.PersonalSpacePublicInteractionConfig;
 import me.eigenraven.personalspace.data.PersonalSpaceData;
 import me.eigenraven.personalspace.dimension.PSDimensions;
 import me.eigenraven.personalspace.dimension.PersonalSpaceDeletionManager;
@@ -110,6 +111,11 @@ public final class PSCommands {
                         )
                 )
 
+                .then(Commands.literal("reload")
+                        .requires(source -> source.hasPermission(2))
+                        .executes(context -> reloadConfig(context.getSource()))
+                )
+
                 .then(Commands.literal("debug")
                         .requires(source -> source.hasPermission(3))
                         .then(Commands.literal("chunks")
@@ -136,6 +142,20 @@ public final class PSCommands {
                         )
                 )
         );
+    }
+
+    private static int reloadConfig(CommandSourceStack source) {
+        if (!PersonalSpacePublicInteractionConfig.reload()) {
+            source.sendFailure(Component.literal("Failed to reload PersonalSpace public interaction config. Check the server log."));
+            return 0;
+        }
+
+        int count = PersonalSpacePublicInteractionConfig.allowedBlockCount();
+        source.sendSuccess(
+                () -> Component.literal("PersonalSpace config reloaded. Public interaction blocks: " + count),
+                true
+        );
+        return 1;
     }
 
     private static int teleportToDimension(CommandSourceStack source, String dimensionName) {
