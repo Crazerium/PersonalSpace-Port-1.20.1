@@ -1,8 +1,12 @@
 package me.eigenraven.personalspace.network;
 
-import me.eigenraven.personalspace.PersonalSpace;
+import me.eigenraven.personalspace.api.cluster.PersonalSpaceClusterApi;
+import me.eigenraven.personalspace.api.cluster.PersonalSpaceClusterResult;
+import me.eigenraven.personalspace.api.cluster.PersonalSpaceCreationContext;
 import me.eigenraven.personalspace.block.PortalBlock;
 import me.eigenraven.personalspace.block.PortalBlockEntity;
+import me.eigenraven.personalspace.compat.ftbteams.FTBTeamsCompat;
+import me.eigenraven.personalspace.config.PSConfig;
 import me.eigenraven.personalspace.data.PersonalSpaceData;
 import me.eigenraven.personalspace.dimension.PSDimensions;
 import me.eigenraven.personalspace.registry.PSBlocks;
@@ -10,18 +14,21 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.network.chat.Component;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.util.Mth;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import me.eigenraven.personalspace.PersonalSpace;
+
+import java.util.Locale;
+import java.util.Optional;
 
 public class CreateDimensionPacket implements CustomPacketPayload {
     public static final Type<CreateDimensionPacket> TYPE = new Type<>(
@@ -29,11 +36,7 @@ public class CreateDimensionPacket implements CustomPacketPayload {
     );
 
     public static final StreamCodec<FriendlyByteBuf, CreateDimensionPacket> STREAM_CODEC =
-            StreamCodec.ofMember(
-                    CreateDimensionPacket::encode,
-                    CreateDimensionPacket::decode
-            );
-
+            StreamCodec.ofMember(CreateDimensionPacket::encode, CreateDimensionPacket::decode);
     private final PersonalSpaceData.WorldType type;
     private final int height;
     private final BlockPos sourcePortalPos;
@@ -120,11 +123,6 @@ public class CreateDimensionPacket implements CustomPacketPayload {
         this.repeatingGridEnabled = repeatingGridEnabled;
     }
 
-    @Override
-    public Type<? extends CustomPacketPayload> type() {
-        return TYPE;
-    }
-
     public void encode(FriendlyByteBuf buf) {
         buf.writeEnum(type);
         buf.writeInt(height);
@@ -208,89 +206,98 @@ public class CreateDimensionPacket implements CustomPacketPayload {
         );
     }
 
+    @Override
+    public Type<? extends CustomPacketPayload> type() {
+        return TYPE;
+    }
+
     public void handleServerSide(ServerPlayer player) {
-        MinecraftServer server = player.server;
+        handleOnServer(this, player);
+    }
+
+    private static void handleOnServer(CreateDimensionPacket msg, ServerPlayer player) {
+        MinecraftServer server = player.getServer();
 
         if (server == null) {
             return;
         }
 
-        if (!isValidChunkValue(boundaryChunksX)
-                || !isValidChunkValue(boundaryChunksZ)
-                || !isValidChunkValue(gapChunks)) {
+        if (!isValidChunkValue(msg.boundaryChunksX)
+                || !isValidChunkValue(msg.boundaryChunksZ)
+                || !isValidChunkValue(msg.gapChunks)) {
             player.sendSystemMessage(Component.literal("Boundary and gap values must be from 0 to 16."));
             return;
         }
 
-        PersonalSpaceData.WorldType safeType = type == null
+        PersonalSpaceData.WorldType safeType = msg.type == null
                 ? PersonalSpaceData.WorldType.VOID
-                : type;
+                : msg.type;
+        int safeHeight = net.minecraft.util.Mth.clamp(msg.height, 1, 240);
 
-        int safeHeight = Mth.clamp(height, 1, 240);
-        long safeTimeOfDay = Math.max(0L, Math.min(24000L, timeOfDay));
+        long safeTimeOfDay = Math.max(0L, Math.min(24000L, msg.timeOfDay));
 
-        int safeSkyRed = Mth.clamp(skyRed, 0, 255);
-        int safeSkyGreen = Mth.clamp(skyGreen, 0, 255);
-        int safeSkyBlue = Mth.clamp(skyBlue, 0, 255);
+        int safeSkyRed = net.minecraft.util.Mth.clamp(msg.skyRed, 0, 255);
+        int safeSkyGreen = net.minecraft.util.Mth.clamp(msg.skyGreen, 0, 255);
+        int safeSkyBlue = net.minecraft.util.Mth.clamp(msg.skyBlue, 0, 255);
 
-        float safeStarBrightness = Mth.clamp(
-                starBrightness,
+        float safeStarBrightness = net.minecraft.util.Mth.clamp(
+                msg.starBrightness,
                 0.0F,
                 1.0F
         );
 
         String safeBiomeName = sanitizeBiomeId(
                 server,
-                biomeName,
+                msg.biomeName,
                 "minecraft:plains"
         );
 
         String safeLayersPreset = sanitizeLayersPreset(
-                layersPreset,
+                msg.layersPreset,
                 "minecraft:bedrock,1;minecraft:dirt,3;minecraft:grass_block,1"
         );
 
-        int safeBoundaryChunksX = Mth.clamp(
-                boundaryChunksX,
+        int safeBoundaryChunksX = net.minecraft.util.Mth.clamp(
+                msg.boundaryChunksX,
                 0,
                 16
         );
 
-        int safeBoundaryChunksZ = Mth.clamp(
-                boundaryChunksZ,
+        int safeBoundaryChunksZ = net.minecraft.util.Mth.clamp(
+                msg.boundaryChunksZ,
                 0,
                 16
         );
 
-        int safeGapChunks = Mth.clamp(
-                gapChunks,
+        int safeGapChunks = net.minecraft.util.Mth.clamp(
+                msg.gapChunks,
                 0,
                 16
         );
 
         String safeBoundaryBlock = sanitizeBlockId(
-                boundaryBlock,
+                msg.boundaryBlock,
                 "minecraft:white_concrete"
         );
 
         String safeRoadBlock = sanitizeBlockId(
-                roadBlock,
+                msg.roadBlock,
                 "minecraft:cobbled_deepslate"
         );
 
         String safeCenterMarkerBlock = sanitizeBlockId(
-                centerMarkerBlock,
+                msg.centerMarkerBlock,
                 "minecraft:white_concrete"
         );
 
-        ServerLevel sourceLevel = getSourceLevel(this, player);
+        ServerLevel sourceLevel = getSourceLevel(msg, player);
 
         if (sourceLevel == null) {
             player.sendSystemMessage(Component.literal("Source dimension was not found."));
             return;
         }
 
-        BlockEntity sourceBlockEntity = sourceLevel.getBlockEntity(sourcePortalPos);
+        BlockEntity sourceBlockEntity = sourceLevel.getBlockEntity(msg.sourcePortalPos);
 
         if (!(sourceBlockEntity instanceof PortalBlockEntity sourcePortal)) {
             player.sendSystemMessage(Component.literal("Personal Space portal was not found."));
@@ -302,10 +309,53 @@ public class CreateDimensionPacket implements CustomPacketPayload {
             return;
         }
 
-        ResourceKey<Level> newLevelKey = PSDimensions.personalKeyForPlayer(
-                server,
-                player.getGameProfile().getName()
-        );
+        ResourceKey<Level> newLevelKey;
+
+        Optional<String> teamDimensionName = FTBTeamsCompat.getTeamDimensionName(player);
+
+        if (teamDimensionName.isPresent()) {
+            newLevelKey = PSDimensions.key(teamDimensionName.get());
+
+            if (PSDimensions.levelExists(server, newLevelKey)) {
+                player.sendSystemMessage(Component.translatable(
+                        "message.personalspace.team_dimension_exists"
+                ));
+
+                PersonalSpace.LOGGER.info(
+                        "Blocked duplicate Personal Space team dimension creation for {}: {}",
+                        player.getGameProfile().getName(),
+                        newLevelKey.location()
+                );
+
+                return;
+            }
+        } else {
+            int maxPersonalDimensions = PSConfig.SERVER.maxPersonalDimensionsPerPlayer.get();
+            int existingPersonalDimensions = countExistingPersonalDimensions(
+                    server,
+                    player.getGameProfile().getName()
+            );
+
+            if (maxPersonalDimensions > 0 && existingPersonalDimensions >= maxPersonalDimensions) {
+                player.sendSystemMessage(Component.translatable(
+                        "message.personalspace.player_dimension_limit",
+                        maxPersonalDimensions
+                ));
+
+                PersonalSpace.LOGGER.info(
+                        "Blocked Personal Space dimension creation for {}: limit {} reached",
+                        player.getGameProfile().getName(),
+                        maxPersonalDimensions
+                );
+
+                return;
+            }
+
+            newLevelKey = nextPersonalDimensionKey(
+                    server,
+                    player.getGameProfile().getName()
+            );
+        }
 
         PersonalSpaceData data = new PersonalSpaceData();
 
@@ -313,7 +363,7 @@ public class CreateDimensionPacket implements CustomPacketPayload {
         data.setGroundLevel(safeHeight);
 
         data.setReturnLevel(sourceLevel.dimension().location().toString());
-        data.setReturnPos(sourcePortalPos);
+        data.setReturnPos(msg.sourcePortalPos);
 
         data.setTimeOfDay(safeTimeOfDay);
         data.setSkyColor(safeSkyRed, safeSkyGreen, safeSkyBlue);
@@ -321,10 +371,10 @@ public class CreateDimensionPacket implements CustomPacketPayload {
         data.setStarBrightness(safeStarBrightness);
         data.setBiomeName(safeBiomeName);
 
-        data.setTreesEnabled(treesEnabled);
-        data.setFoliageEnabled(foliageEnabled);
-        data.setWeatherEnabled(weatherEnabled);
-        data.setCloudsEnabled(cloudsEnabled);
+        data.setTreesEnabled(msg.treesEnabled);
+        data.setFoliageEnabled(msg.foliageEnabled);
+        data.setWeatherEnabled(msg.weatherEnabled);
+        data.setCloudsEnabled(msg.cloudsEnabled);
 
         data.setLayersPreset(safeLayersPreset);
 
@@ -336,8 +386,19 @@ public class CreateDimensionPacket implements CustomPacketPayload {
         data.setRoadBlock(safeRoadBlock);
         data.setCenterMarkerBlock(safeCenterMarkerBlock);
 
-        data.setCenterMarkerEnabled(centerMarkerEnabled);
-        data.setRepeatingGridEnabled(repeatingGridEnabled);
+        data.setCenterMarkerEnabled(msg.centerMarkerEnabled);
+        data.setRepeatingGridEnabled(msg.repeatingGridEnabled);
+
+        if (teamDimensionName.isPresent()) {
+            String compactTeamId = teamDimensionName.get().substring("team_".length());
+            data.setProtectionOwnerTeam(compactTeamId);
+        } else {
+            data.setProtectionOwnerPlayer(
+                    player.getUUID(),
+                    player.getGameProfile().getName(),
+                    FTBTeamsCompat.getTeamId(player).orElse(null)
+            );
+        }
 
         BlockPos innerPortalPos = new BlockPos(
                 7,
@@ -405,27 +466,100 @@ public class CreateDimensionPacket implements CustomPacketPayload {
                 returnLocation
         );
 
-        innerPortal.setReturnPortal(true);
-        innerPortal.setTarget(returnKey, data.getReturnPos());
+        String targetDisplayName = FTBTeamsCompat.getTeamDisplayName(player)
+                .map(name -> "team:" + name)
+                .orElse("player:" + player.getGameProfile().getName());
 
-        sourcePortal.setReturnPortal(false);
-        sourcePortal.setTarget(newLevelKey, innerPortalPos);
-
-        player.teleportTo(
-                newLevel,
-                innerPortalPos.getX() + 0.5D,
-                innerPortalPos.getY() + 1.0D,
-                innerPortalPos.getZ() + 0.5D,
-                player.getYRot(),
-                player.getXRot()
+        FTBTeamsCompat.getTeamDisplayName(player).ifPresent(teamName ->
+                PSDimensions.writeTeamInfoFile(server, newLevelKey, teamName)
         );
 
-        PersonalSpaceSettingsSync.syncTo(player, newLevel);
+        PersonalSpace.LOGGER.info(
+                "Personal Space target display name for {} is '{}'",
+                player.getGameProfile().getName(),
+                targetDisplayName
+        );
+
+        innerPortal.setReturnPortal(true);
+        innerPortal.setTarget(returnKey, data.getReturnPos(), targetDisplayName);
+
+        sourcePortal.setReturnPortal(false);
+        sourcePortal.setTarget(newLevelKey, innerPortalPos, targetDisplayName);
+
+        float destinationYaw = player.getYRot();
+        float destinationPitch = player.getXRot();
+
+        Runnable localContinuation = () -> completeCreationTeleport(
+                server,
+                player.getUUID(),
+                newLevelKey,
+                innerPortalPos,
+                destinationYaw,
+                destinationPitch
+        );
+
+        PersonalSpaceClusterResult clusterResult =
+                PersonalSpaceClusterApi.handleCreated(
+                        new PersonalSpaceCreationContext(
+                                server,
+                                player,
+                                newLevelKey,
+                                newLevel,
+                                innerPortalPos,
+                                destinationYaw,
+                                destinationPitch,
+                                localContinuation
+                        )
+                );
+
+        if (clusterResult == PersonalSpaceClusterResult.HANDLED) {
+            return;
+        }
+
+        localContinuation.run();
+    }
+
+    private static void completeCreationTeleport(
+            MinecraftServer server,
+            java.util.UUID playerUuid,
+            ResourceKey<Level> dimension,
+            BlockPos destination,
+            float yaw,
+            float pitch
+    ) {
+        ServerPlayer player = server.getPlayerList().getPlayer(playerUuid);
+        if (player == null) {
+            return;
+        }
+
+        ServerLevel targetLevel = server.getLevel(dimension);
+        if (targetLevel == null) {
+            targetLevel = PersonalSpaceClusterApi.loadDimension(server, dimension);
+        }
+        if (targetLevel == null) {
+            player.sendSystemMessage(Component.translatable(
+                    "message.personalspace.target_dimension_not_found",
+                    dimension.location()
+            ));
+            return;
+        }
+
+        player.teleportTo(
+                targetLevel,
+                destination.getX() + 0.5D,
+                destination.getY() + 1.0D,
+                destination.getZ() + 0.5D,
+                yaw,
+                pitch
+        );
+
+        PersonalSpaceSettingsSync.syncTo(player, targetLevel);
     }
 
     private static boolean isValidChunkValue(int value) {
         return value >= 0 && value <= 16;
     }
+
 
     private static String sanitizeBiomeId(
             MinecraftServer server,
@@ -471,11 +605,9 @@ public class CreateDimensionPacket implements CustomPacketPayload {
 
         String namespace = id.getNamespace();
         String path = id.getPath();
-
         if (isForbiddenMaterialBlockName(path)) {
             return false;
         }
-
         boolean decorativeModBlock =
                 namespace.equals("chisel")
                         || namespace.equals("chisel_reborn")
@@ -504,17 +636,15 @@ public class CreateDimensionPacket implements CustomPacketPayload {
         if (!state.getFluidState().isEmpty()) {
             return false;
         }
-
         if (state.hasBlockEntity()) {
             return false;
         }
-
         if (namespace.equals("minecraft")) {
             return isAllowedVanillaBuildingBlock(path);
         }
-
         return decorativeModBlock;
     }
+
 
     private static boolean isForbiddenBlockName(String path) {
         return path.contains("log")
@@ -647,6 +777,7 @@ public class CreateDimensionPacket implements CustomPacketPayload {
                 || path.contains("aluminum")
                 || path.contains("aluminium");
     }
+
 
     private static boolean isAllowedVanillaBuildingBlock(String path) {
         return path.equals("stone")
@@ -788,7 +919,7 @@ public class CreateDimensionPacket implements CustomPacketPayload {
                 return fallbackPreset;
             }
 
-            count = Mth.clamp(count, 1, 256);
+            count = net.minecraft.util.Mth.clamp(count, 1, 256);
 
             if (!sanitized.isEmpty()) {
                 sanitized.append(";");
@@ -809,14 +940,89 @@ public class CreateDimensionPacket implements CustomPacketPayload {
             return "";
         }
 
-        return rawId.trim().toLowerCase();
+        return rawId.trim().toLowerCase(Locale.ROOT);
+    }
+
+
+
+    private static ResourceKey<Level> nextPersonalDimensionKey(
+            MinecraftServer server,
+            String playerName
+    ) {
+        String safeName = PSDimensions.sanitizeDimensionName(playerName);
+
+        if (safeName.isBlank()) {
+            return PSDimensions.randomPersonalKey();
+        }
+
+        ResourceKey<Level> baseKey = PSDimensions.key("ps_" + safeName);
+
+        if (!PSDimensions.levelExists(server, baseKey)) {
+            return baseKey;
+        }
+
+        for (int index = 2; index < 10_000; index++) {
+            ResourceKey<Level> candidate = PSDimensions.key("ps_" + safeName + "_" + index);
+
+            if (!PSDimensions.levelExists(server, candidate)) {
+                return candidate;
+            }
+        }
+
+        return PSDimensions.randomPersonalKey();
+    }
+
+    private static int countExistingPersonalDimensions(
+            MinecraftServer server,
+            String playerName
+    ) {
+        String safeName = PSDimensions.sanitizeDimensionName(playerName);
+
+        if (safeName.isBlank()) {
+            return 0;
+        }
+
+        int count = 0;
+
+        ResourceKey<Level> baseKey = PSDimensions.key("ps_" + safeName);
+
+        if (PSDimensions.levelExists(server, baseKey)) {
+            count++;
+        }
+
+        for (int index = 2; index < 10_000; index++) {
+            ResourceKey<Level> candidate = PSDimensions.key("ps_" + safeName + "_" + index);
+
+            if (PSDimensions.levelExists(server, candidate)) {
+                count++;
+                continue;
+            }
+
+            break;
+        }
+
+        return count;
+    }
+
+    private static boolean isTeamDimensionKey(ResourceKey<Level> levelKey) {
+        if (levelKey == null) {
+            return false;
+        }
+
+        String path = levelKey.location().getPath();
+
+        if (path.startsWith(PSDimensions.PERSONAL_SPACE_DIMENSION_FOLDER + "/")) {
+            path = path.substring((PSDimensions.PERSONAL_SPACE_DIMENSION_FOLDER + "/").length());
+        }
+
+        return path.startsWith("team_");
     }
 
     private static ServerLevel getSourceLevel(
             CreateDimensionPacket msg,
             ServerPlayer player
     ) {
-        MinecraftServer server = player.server;
+        MinecraftServer server = player.getServer();
 
         if (server == null) {
             return null;
@@ -861,21 +1067,5 @@ public class CreateDimensionPacket implements CustomPacketPayload {
         level.setBlockEntity(portal);
 
         return portal;
-    }
-
-    public PersonalSpaceData.WorldType selectedType() {
-        return type;
-    }
-
-    public int height() {
-        return height;
-    }
-
-    public BlockPos sourcePortalPos() {
-        return sourcePortalPos;
-    }
-
-    public ResourceLocation sourceLevelId() {
-        return sourceLevelId;
     }
 }

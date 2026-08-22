@@ -3,8 +3,18 @@
   "minVersion": "0.8",
   "package": "me.eigenraven.personalspace.mixin",
   "compatibilityLevel": "JAVA_21",
+  "mixins": [
+    "LevelIsDayMixin",
+    "LevelDimensionForGTConditionMixin",
+    "LevelWeatherServerMixin",
+    "LevelTimeOfDayServerMixin",
+    "compat.FtbEssentialsTeleportPosMixin",
+    "compat.ae2.Ae2TickHandlerUnloadMixin",
+    "compat.ae2.Ae2BaseBlockEntityUnloadMixin"
+  ],
   "client": [
-    "client.LevelTimeOfDayMixin"
+    "client.LevelTimeOfDayMixin",
+    "client.LevelWeatherMixin"
   ],
   "injectors": {
     "defaultRequire": 1

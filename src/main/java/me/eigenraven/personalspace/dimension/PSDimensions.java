@@ -1,8 +1,10 @@
 package me.eigenraven.personalspace.dimension;
 
-import me.eigenraven.personalspace.PersonalSpace;
-import me.eigenraven.personalspace.data.PersonalSpaceData;
 import net.commoble.infiniverse.api.InfiniverseAPI;
+import me.eigenraven.personalspace.PersonalSpace;
+import me.eigenraven.personalspace.compat.ftbteams.FTBTeamsCompat;
+import me.eigenraven.personalspace.data.PersonalSpaceData;
+import me.eigenraven.personalspace.data.PersonalSpaceRuntimeSettings;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.HolderSet;
@@ -12,6 +14,7 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.biome.Biome;
@@ -56,26 +59,14 @@ public final class PSDimensions {
             return randomPersonalKey();
         }
 
-        ResourceKey<Level> baseKey = ResourceKey.create(
-                Registries.DIMENSION,
-                ResourceLocation.fromNamespaceAndPath(
-                        PersonalSpace.MODID,
-                        PERSONAL_SPACE_DIMENSION_FOLDER + "/ps_" + safeName
-                )
-        );
+        ResourceKey<Level> baseKey = key("ps_" + safeName);
 
         if (server.getLevel(baseKey) == null) {
             return baseKey;
         }
 
         for (int index = 2; index < 10_000; index++) {
-            ResourceKey<Level> candidate = ResourceKey.create(
-                    Registries.DIMENSION,
-                    ResourceLocation.fromNamespaceAndPath(
-                            PersonalSpace.MODID,
-                            PERSONAL_SPACE_DIMENSION_FOLDER + "/ps_" + safeName + "_" + index
-                    )
-            );
+            ResourceKey<Level> candidate = key("ps_" + safeName + "_" + index);
 
             if (server.getLevel(candidate) == null) {
                 return candidate;
@@ -85,7 +76,8 @@ public final class PSDimensions {
         return randomPersonalKey();
     }
 
-    private static String sanitizeDimensionName(String rawName) {
+
+    public static String sanitizeDimensionName(String rawName) {
         if (rawName == null) {
             return "";
         }
@@ -96,7 +88,7 @@ public final class PSDimensions {
 
         StringBuilder result = new StringBuilder();
 
-        for (int i = 0; i < lowerName.length(); i++) {
+        for (int i = 0; i < lowerName.length() && result.length() < 48; i++) {
             char c = lowerName.charAt(i);
 
             if ((c >= 'a' && c <= 'z')
@@ -110,27 +102,9 @@ public final class PSDimensions {
             }
         }
 
-        while (result.toString().contains("__")) {
-            int index = result.indexOf("__");
-            result.replace(index, index + 2, "_");
-        }
-
-        String safe = result.toString();
-
-        while (safe.startsWith("_")) {
-            safe = safe.substring(1);
-        }
-
-        while (safe.endsWith("_")) {
-            safe = safe.substring(0, safe.length() - 1);
-        }
-
-        if (safe.length() > 48) {
-            safe = safe.substring(0, 48);
-        }
-
-        return safe;
+        return result.toString();
     }
+
 
     public static ResourceKey<Level> key(String idOrPath) {
         ResourceLocation location;
@@ -144,27 +118,25 @@ public final class PSDimensions {
                 path = PERSONAL_SPACE_DIMENSION_FOLDER + "/" + path;
             }
 
-            location = ResourceLocation.fromNamespaceAndPath(
-                    PersonalSpace.MODID,
-                    path
-            );
+            location = ResourceLocation.fromNamespaceAndPath(PersonalSpace.MODID, path);
         }
 
         return ResourceKey.create(Registries.DIMENSION, location);
     }
 
     public static ServerLevel getOrCreate(MinecraftServer server, ResourceKey<Level> levelKey) {
+        PersonalSpaceData storedData = PersonalSpaceData.load(server, levelKey);
+
         ServerLevel level = InfiniverseAPI.get().getOrCreateLevel(
                 server,
                 levelKey,
-                () -> createStem(server, PersonalSpaceData.WorldType.VOID, DEFAULT_GROUND_LEVEL, "minecraft:plains")
+                () -> createStem(server, storedData)
         );
 
         applyStoredSettings(level);
 
         return level;
     }
-
     public static ServerLevel createPersonalDimension(
             MinecraftServer server,
             ResourceKey<Level> levelKey,
@@ -220,7 +192,6 @@ public final class PSDimensions {
                         .registryOrThrow(Registries.BIOME)
                         .getHolderOrThrow(fallbackKey));
     }
-
     private static LevelStem createStem(
             MinecraftServer server,
             PersonalSpaceData.WorldType type,
@@ -249,11 +220,9 @@ public final class PSDimensions {
 
             layers.add(new FlatLayerInfo(1, Blocks.GRASS_BLOCK));
         }
-
         Optional<HolderSet<StructureSet>> noStructures = Optional.of(
                 HolderSet.direct(List.<Holder<StructureSet>>of())
         );
-
         FlatLevelGeneratorSettings settings = new FlatLevelGeneratorSettings(
                 noStructures,
                 biome,
@@ -312,6 +281,7 @@ public final class PSDimensions {
         );
     }
 
+
     public static int clampGroundLevel(ServerLevel level, int y) {
         int min = level.getMinBuildHeight();
         int max = level.getMaxBuildHeight() - 4;
@@ -360,8 +330,6 @@ public final class PSDimensions {
                 }
             }
 
-            applyBoundaryRoadsAndMarker(level, portalPos, data);
-
             return;
         }
 
@@ -373,7 +341,6 @@ public final class PSDimensions {
                         presetLayers
                 );
 
-                applyBoundaryRoadsAndMarker(level, portalPos, data);
                 applyVegetation(level, portalPos, data);
             }
 
@@ -393,6 +360,8 @@ public final class PSDimensions {
 
         data.setRepeatingGridOrigin(originX, originZ);
     }
+
+
 
     private static void applyRepeatingGridChunk(
             ServerLevel level,
@@ -561,7 +530,6 @@ public final class PSDimensions {
             }
         }
     }
-
     private static void applyBoundaryRoadsAndMarker(
             ServerLevel level,
             BlockPos portalPos,
@@ -639,7 +607,6 @@ public final class PSDimensions {
             }
         }
     }
-
     private static void applyVegetation(
             ServerLevel level,
             BlockPos portalPos,
@@ -837,8 +804,10 @@ public final class PSDimensions {
             path = path.substring((PERSONAL_SPACE_DIMENSION_FOLDER + "/").length());
         }
 
-        return path.startsWith("ps_");
+        return path.startsWith("ps_") || path.startsWith("team_");
     }
+
+
 
     private static void applyStoredSettings(ServerLevel level) {
         if (!isPersonalSpaceDimension(level.dimension().location())) {
@@ -846,10 +815,117 @@ public final class PSDimensions {
         }
 
         PersonalSpaceData data = PersonalSpaceData.load(level);
-        level.setDayTime(data.getTimeOfDay());
+
+        long wantedTime = data.getTimeOfDay() % 24000L;
+        if (wantedTime < 0L) {
+            wantedTime += 24000L;
+        }
+
+        PersonalSpaceRuntimeSettings.setTimeOfDay(level, wantedTime);
 
         if (!data.isWeatherEnabled()) {
+            level.setRainLevel(0.0F);
+            level.setThunderLevel(0.0F);
             level.setWeatherParameters(6000, 0, false, false);
+        }
+    }
+
+    public static ResourceKey<Level> personalKeyForPlayer(ServerPlayer player) {
+        if (player == null) {
+            return randomPersonalKey();
+        }
+
+        Optional<String> teamDimensionName = FTBTeamsCompat.getTeamDimensionName(player);
+
+        if (teamDimensionName.isPresent()) {
+            return key(teamDimensionName.get());
+        }
+
+        return personalKeyForPlayer(
+                player.getServer(),
+                player.getGameProfile().getName()
+        );
+    }
+
+    public static boolean levelExists(MinecraftServer server, ResourceKey<Level> levelKey) {
+        if (server == null || levelKey == null) {
+            return false;
+        }
+
+        if (server.getLevel(levelKey) != null) {
+            return true;
+        }
+
+        if (java.nio.file.Files.exists(
+                getPersonalSpaceDimensionFolder(server, levelKey)
+        )) {
+            return true;
+        }
+
+        return java.nio.file.Files.exists(
+                server.getWorldPath(
+                                net.minecraft.world.level.storage.LevelResource.ROOT
+                        )
+                        .resolve(levelKey.location().getPath())
+                        .toAbsolutePath()
+                        .normalize()
+        );
+    }
+
+    public static java.nio.file.Path getPersonalSpaceDimensionFolder(
+            MinecraftServer server,
+            ResourceKey<Level> levelKey
+    ) {
+        ResourceLocation id = levelKey.location();
+
+        return server.getWorldPath(
+                        net.minecraft.world.level.storage.LevelResource.ROOT
+                )
+                .resolve("dimensions")
+                .resolve(id.getNamespace())
+                .resolve(id.getPath())
+                .toAbsolutePath()
+                .normalize();
+    }
+
+    public static void writeTeamInfoFile(
+            MinecraftServer server,
+            ResourceKey<Level> levelKey,
+            String teamName
+    ) {
+        if (server == null || levelKey == null || teamName == null || teamName.isBlank()) {
+            return;
+        }
+
+        ResourceLocation id = levelKey.location();
+
+        java.nio.file.Path dimensionPath = server.getWorldPath(
+                        net.minecraft.world.level.storage.LevelResource.ROOT
+                )
+                .resolve("dimensions")
+                .resolve(id.getNamespace())
+                .resolve(id.getPath());
+
+        java.nio.file.Path infoFile = dimensionPath.resolve("team_info.txt");
+
+        String content = "Team name: " + teamName + System.lineSeparator()
+                + "Dimension: " + id + System.lineSeparator();
+
+        try {
+            java.nio.file.Files.createDirectories(dimensionPath);
+            java.nio.file.Files.writeString(
+                    infoFile,
+                    content,
+                    java.nio.charset.StandardCharsets.UTF_8,
+                    java.nio.file.StandardOpenOption.CREATE,
+                    java.nio.file.StandardOpenOption.TRUNCATE_EXISTING
+            );
+        } catch (java.io.IOException exception) {
+            PersonalSpace.LOGGER.warn(
+                    "Failed to write Personal Space team info file for {}",
+                    id,
+                    exception
+            );
         }
     }
 }

@@ -1,7 +1,29 @@
-# Gradle / build
+# Gradle / build output
 .gradle/
+**/.gradle/
 build/
+**/build/
 out/
+**/out/
+bin/
+**/bin/
+
+# Generated sources/resources and caches
+generated/
+**/generated/
+src/generated/
+.cache/
+**/.cache/
+
+# NeoForge / Minecraft development runs
+run/
+runs/
+**/run/
+**/runs/
+logs/
+crash-reports/
+*.log
+*.log.gz
 
 # IntelliJ IDEA
 .idea/
@@ -9,24 +31,34 @@ out/
 *.ipr
 *.iws
 
+# VS Code
+.vscode/
+
 # Eclipse
 .classpath
 .project
 .settings/
+.factorypath
 
-# Minecraft Forge run directory
-run/
-logs/
-crash-reports/
+# Java / JVM crash artifacts
+*.class
+hs_err_pid*
+replay_pid*
+*.hprof
+
+# Temporary/editor files
+*.tmp
+*.temp
+*.bak
+*.orig
+*~
+
+# Local packaged artifacts
+*.zip
+*.tar
+*.tar.gz
 
 # OS files
 .DS_Store
 Thumbs.db
-
-# Java
-*.class
-
-# Archives / local artifacts
-*.zip
-*.tar
-*.tar.gz
+desktop.ini

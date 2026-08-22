@@ -2,7 +2,12 @@ package me.eigenraven.personalspace;
 
 import com.mojang.logging.LogUtils;
 import me.eigenraven.personalspace.command.PSCommands;
+import me.eigenraven.personalspace.command.PersonalSpaceCommandBlocker;
 import me.eigenraven.personalspace.config.PSConfig;
+import me.eigenraven.personalspace.dimension.PersonalSpaceAutoUnloadManager;
+import me.eigenraven.personalspace.dimension.PersonalSpaceDeletionManager;
+import me.eigenraven.personalspace.dimension.PersonalSpaceLazyMigrationManager;
+import me.eigenraven.personalspace.dimension.PersonalSpaceProtectionManager;
 import me.eigenraven.personalspace.event.PSWorldRules;
 import me.eigenraven.personalspace.network.PSNetwork;
 import me.eigenraven.personalspace.registry.PSBlockEntities;
@@ -19,7 +24,7 @@ import net.neoforged.neoforge.event.RegisterCommandsEvent;
 import org.slf4j.Logger;
 
 @Mod(PersonalSpace.MODID)
-public final class PersonalSpace {
+public class PersonalSpace {
     public static final String MODID = "personalspace";
     public static final Logger LOGGER = LogUtils.getLogger();
 
@@ -43,8 +48,17 @@ public final class PersonalSpace {
         NeoForge.EVENT_BUS.addListener(PSWorldRules::onEntityJoinLevel);
         NeoForge.EVENT_BUS.addListener(PSWorldRules::onPlayerLoggedIn);
         NeoForge.EVENT_BUS.addListener(PSWorldRules::onPlayerChangedDimension);
-        NeoForge.EVENT_BUS.addListener(PSWorldRules::onServerTick);
+        NeoForge.EVENT_BUS.addListener(PSWorldRules::onLevelLoad);
+        NeoForge.EVENT_BUS.addListener(PSWorldRules::onLevelUnload);
         NeoForge.EVENT_BUS.addListener(this::registerCommands);
+
+        NeoForge.EVENT_BUS.addListener(PersonalSpaceDeletionManager::onServerTick);
+        NeoForge.EVENT_BUS.addListener(PersonalSpaceLazyMigrationManager::onServerTick);
+        NeoForge.EVENT_BUS.addListener(PersonalSpaceAutoUnloadManager::onServerTick);
+        NeoForge.EVENT_BUS.addListener(PersonalSpaceAutoUnloadManager::onPlayerLoggedIn);
+        NeoForge.EVENT_BUS.addListener(PersonalSpaceAutoUnloadManager::onPlayerLoggedOut);
+        NeoForge.EVENT_BUS.addListener(PersonalSpaceProtectionManager::onServerStarted);
+        NeoForge.EVENT_BUS.register(new PersonalSpaceCommandBlocker());
     }
 
     private void registerCommands(RegisterCommandsEvent event) {

@@ -77,7 +77,7 @@ public final class PortalTeleportConfirmScreen extends Screen {
         if (personalSpaceLevel) {
             ClientPersonalSpaceSettings.Settings settings = ClientPersonalSpaceSettings.get(clickedLevelId);
 
-            this.selectedTime = (int) settings.timeOfDay();
+            this.selectedTime = snapTimeToPreset(settings.timeOfDay());
             this.selectedRed = settings.skyRed();
             this.selectedGreen = settings.skyGreen();
             this.selectedBlue = settings.skyBlue();
@@ -111,7 +111,7 @@ public final class PortalTeleportConfirmScreen extends Screen {
         super.init();
 
         int centerX = width / 2;
-        int startY = personalSpaceLevel ? height / 2 - 145 : height / 2 - 45;
+        int startY = personalSpaceLevel ? height / 2 - 165 : height / 2 - 45;
 
         addRenderableWidget(Button.builder(
                 Component.translatable("screen.personalspace.portal.enter"),
@@ -225,6 +225,9 @@ public final class PortalTeleportConfirmScreen extends Screen {
         addRenderableWidget(Button.builder(
                 settingsText("settings.save"),
                 button -> {
+                    selectedTime = snapTimeToPreset(selectedTime);
+                    preview();
+
                     PacketDistributor.sendToServer(new UpdatePersonalSpaceSettingsPacket(
                             selectedTime,
                             selectedRed,
@@ -248,6 +251,13 @@ public final class PortalTeleportConfirmScreen extends Screen {
                 button -> Minecraft.getInstance().setScreen(null)
         ).bounds(centerX + 5, startY + 280, 115, 20).build());
 
+        addRenderableWidget(Button.builder(
+                Component.translatable("screen.personalspace.delete.button"),
+                button -> Minecraft.getInstance().setScreen(
+                        new DeletePersonalSpaceConfirmScreen(this, clickedLevelId)
+                )
+        ).bounds(centerX - 120, startY + 310, 240, 20).build());
+
         preview();
     }
 
@@ -270,6 +280,25 @@ public final class PortalTeleportConfirmScreen extends Screen {
                 selectedCloudsEnabled,
                 lockedLayersPreset
         );
+    }
+
+    private static int snapTimeToPreset(long rawTime) {
+        long normalized = rawTime % 24000L;
+
+        if (normalized < 0L) {
+            normalized += 24000L;
+        }
+
+        int bestIndex = 0;
+        long bestDistance = Long.MAX_VALUE;
+        for (int i = 0; i < TIME_VALUES.length; i++) {
+            long distance = Math.abs(TIME_VALUES[i] - normalized);
+            if (distance < bestDistance) {
+                bestDistance = distance;
+                bestIndex = i;
+            }
+        }
+        return (int) TIME_VALUES[bestIndex];
     }
 
     private int getTimeIndex() {
@@ -314,8 +343,8 @@ public final class PortalTeleportConfirmScreen extends Screen {
         renderPersonalSpaceBackground(graphics);
 
         int centerX = width / 2;
-        int startY = personalSpaceLevel ? height / 2 - 145 : height / 2 - 45;
-        int boxHeight = personalSpaceLevel ? 330 : 120;
+        int startY = personalSpaceLevel ? height / 2 - 165 : height / 2 - 45;
+        int boxHeight = personalSpaceLevel ? 370 : 120;
 
         graphics.fill(centerX - 145, startY - 10, centerX + 145, startY + boxHeight, 0xCC101010);
         graphics.fill(centerX - 143, startY - 8, centerX + 143, startY + boxHeight - 2, 0xCC303030);
@@ -349,7 +378,7 @@ public final class PortalTeleportConfirmScreen extends Screen {
                     font,
                     settingsText("settings.worldgen_locked"),
                     centerX - 120,
-                    startY + 307,
+                    startY + 337,
                     0x777777,
                     false
             );
@@ -358,7 +387,7 @@ public final class PortalTeleportConfirmScreen extends Screen {
                     font,
                     settingsText("settings.locked_biome", lockedBiomeName),
                     centerX - 120,
-                    startY + 319,
+                    startY + 349,
                     0x777777,
                     false
             );

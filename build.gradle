@@ -16,14 +16,6 @@ java.toolchain.languageVersion = JavaLanguageVersion.of(21)
 
 repositories {
     maven {
-        name = 'CurseMaven'
-        url = 'https://cursemaven.com'
-        content {
-            includeGroup 'curse.maven'
-        }
-    }
-
-    maven {
         name = 'Commoble Maven'
         url = 'https://maven.commoble.net/'
     }
@@ -71,7 +63,7 @@ neoForge {
 }
 
 dependencies {
-    implementation "curse.maven:infiniverse-568341:5486311"
+    implementation "net.commoble.infiniverse:infiniverse-1.21:2.0.1.0"
 
     implementation 'com.google.code.gson:gson:2.10.1'
 }

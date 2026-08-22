@@ -2,6 +2,7 @@ package me.eigenraven.personalspace.network;
 
 import me.eigenraven.personalspace.PersonalSpace;
 import me.eigenraven.personalspace.data.PersonalSpaceData;
+import me.eigenraven.personalspace.data.PersonalSpaceRuntimeSettings;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
@@ -128,7 +129,11 @@ public class UpdatePersonalSpaceSettingsPacket implements CustomPacketPayload {
 
         PersonalSpaceData.save(level, data);
 
-        level.setDayTime(data.getTimeOfDay());
+        long wantedTime = data.getTimeOfDay() % 24000L;
+        if (wantedTime < 0L) {
+            wantedTime += 24000L;
+        }
+        PersonalSpaceRuntimeSettings.setTimeOfDay(level, wantedTime);
 
         if (!data.isWeatherEnabled()) {
             level.setRainLevel(0.0F);

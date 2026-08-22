@@ -15,6 +15,16 @@ public final class PSConfig {
 
     public static final class Server {
         public final ModConfigSpec.IntValue maxPersonalSpaceSizeBlocks;
+        public final ModConfigSpec.IntValue maxPersonalDimensionsPerPlayer;
+        public final ModConfigSpec.BooleanValue autoUnloadPersonalSpaces;
+        public final ModConfigSpec.IntValue autoUnloadDelaySeconds;
+        public final ModConfigSpec.BooleanValue privacyEnabled;
+        public final ModConfigSpec.BooleanValue privacyProtectExisting;
+        public final ModConfigSpec.BooleanValue privacyAllowTeamMembers;
+        public final ModConfigSpec.BooleanValue privacyAllowOpBypass;
+        public final ModConfigSpec.BooleanValue privacyProtectContainers;
+        public final ModConfigSpec.BooleanValue privacyProtectEntities;
+        public final ModConfigSpec.BooleanValue privacyProtectFromPlayerExplosions;
 
         private Server(ModConfigSpec.Builder builder) {
             builder.push("personal_space_limits");
@@ -28,6 +38,75 @@ public final class PSConfig {
                             "Set to 0 to disable the limit."
                     )
                     .defineInRange("maxPersonalSpaceSizeBlocks", 10000, 0, 100000);
+
+            maxPersonalDimensionsPerPlayer = builder
+                    .comment(
+                            "Maximum number of personal dimensions each player may create.",
+                            "This limit applies only to player-owned dimensions: ps_<player>, ps_<player>_2, etc.",
+                            "FTB Teams dimensions are handled separately: one team can have only one team dimension.",
+                            "Set to 0 to disable the personal dimension count limit."
+                    )
+                    .defineInRange("maxPersonalDimensionsPerPlayer", 1, 0, 1000);
+
+            builder.pop();
+
+            builder.push("lazy_loading");
+
+            autoUnloadPersonalSpaces = builder
+                    .comment(
+                            "Automatically unload idle Personal Space dimensions.",
+                            "A dimension is kept loaded while it has online players, NeoForge/FTB forced chunks,",
+                            "or an offline player who logged out inside it."
+                    )
+                    .define("autoUnloadPersonalSpaces", true);
+
+            autoUnloadDelaySeconds = builder
+                    .comment(
+                            "How long a Personal Space must stay idle before it is unloaded.",
+                            "The unload is performed one dimension at a time."
+                    )
+                    .defineInRange("autoUnloadDelaySeconds", 300, 30, 86400);
+
+            builder.pop();
+
+            builder.push("privacy");
+
+            privacyEnabled = builder
+                    .comment(
+                            "Protect the whole Personal Space dimension without creating FTB Chunks claims.",
+                            "The protection therefore does not consume claimed-chunk limits."
+                    )
+                    .define("enabled", true);
+
+            privacyProtectExisting = builder
+                    .comment(
+                            "Automatically infer and store owners for old ps_ and team_ dimensions.",
+                            "Migration is lazy and disk-based; dimensions are not loaded just for this."
+                    )
+                    .define("protectExistingPersonalSpaces", true);
+
+            privacyAllowTeamMembers = builder
+                    .comment("Allow members of the owner's current FTB Team to build and interact.")
+                    .define("allowTeamMembers", true);
+
+            privacyAllowOpBypass = builder
+                    .comment("Allow operators with permission level 2 or higher to bypass protection.")
+                    .define("allowOpBypass", true);
+
+            privacyProtectContainers = builder
+                    .comment("Block unauthorized use of blocks, machines, inventories, buckets and similar interactions.")
+                    .define("protectContainersAndMachines", true);
+
+            privacyProtectEntities = builder
+                    .comment("Block unauthorized entity interaction and attacks inside Personal Spaces.")
+                    .define("protectEntities", true);
+
+            privacyProtectFromPlayerExplosions = builder
+                    .comment(
+                            "Prevent block damage from explosions directly caused by unauthorized players.",
+                            "Automatic machine explosions without a player source are not changed."
+                    )
+                    .define("protectFromUnauthorizedPlayerExplosions", true);
 
             builder.pop();
         }

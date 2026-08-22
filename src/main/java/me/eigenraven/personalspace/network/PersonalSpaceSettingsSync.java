@@ -2,6 +2,7 @@ package me.eigenraven.personalspace.network;
 
 import me.eigenraven.personalspace.PersonalSpace;
 import me.eigenraven.personalspace.data.PersonalSpaceData;
+import me.eigenraven.personalspace.data.PersonalSpaceRuntimeSettings;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.neoforge.network.PacketDistributor;
@@ -17,7 +18,7 @@ public final class PersonalSpaceSettingsSync {
 
         PersonalSpaceData data = PersonalSpaceData.load(level);
 
-        level.setDayTime(data.getTimeOfDay());
+        PersonalSpaceRuntimeSettings.setTimeOfDay(level, data.getTimeOfDay());
 
         if (!data.isWeatherEnabled()) {
             level.setWeatherParameters(6000, 0, false, false);

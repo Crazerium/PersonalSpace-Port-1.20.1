@@ -65,7 +65,7 @@ public class PersonalSpaceSettingsScreen extends Screen {
 
         ClientPersonalSpaceSettings.Settings settings = ClientPersonalSpaceSettings.get(levelId);
 
-        this.selectedTime = (int) settings.timeOfDay();
+        this.selectedTime = snapTimeToPreset(settings.timeOfDay());
         this.selectedRed = settings.skyRed();
         this.selectedGreen = settings.skyGreen();
         this.selectedBlue = settings.skyBlue();
@@ -194,6 +194,9 @@ public class PersonalSpaceSettingsScreen extends Screen {
         addRenderableWidget(Button.builder(
                 text("settings.save"),
                 button -> {
+                    selectedTime = snapTimeToPreset(selectedTime);
+                    preview();
+
                     PacketDistributor.sendToServer(new UpdatePersonalSpaceSettingsPacket(
                             selectedTime,
                             selectedRed,
@@ -237,8 +240,8 @@ public class PersonalSpaceSettingsScreen extends Screen {
         );
     }
 
-    private int getTimeIndex() {
-        long normalized = selectedTime % 24000L;
+    private static int getNearestTimePresetIndex(long rawTime) {
+        long normalized = rawTime % 24000L;
 
         if (normalized < 0L) {
             normalized += 24000L;
@@ -246,17 +249,22 @@ public class PersonalSpaceSettingsScreen extends Screen {
 
         int bestIndex = 0;
         long bestDistance = Long.MAX_VALUE;
-
         for (int i = 0; i < TIME_VALUES.length; i++) {
             long distance = Math.abs(TIME_VALUES[i] - normalized);
-
             if (distance < bestDistance) {
                 bestDistance = distance;
                 bestIndex = i;
             }
         }
-
         return bestIndex;
+    }
+
+    private static int snapTimeToPreset(long rawTime) {
+        return (int) TIME_VALUES[getNearestTimePresetIndex(rawTime)];
+    }
+
+    private int getTimeIndex() {
+        return getNearestTimePresetIndex(selectedTime);
     }
 
     private Component getTimeButtonText() {

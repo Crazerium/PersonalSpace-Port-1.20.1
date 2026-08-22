@@ -38,6 +38,23 @@ public final class PSNetwork {
                 SyncPersonalSpaceSettingsPacket.STREAM_CODEC,
                 PSNetwork::handleSyncPersonalSpaceSettings
         );
+
+        registrar.playToServer(
+                DeletePersonalSpacePacket.TYPE,
+                DeletePersonalSpacePacket.STREAM_CODEC,
+                PSNetwork::handleDeletePersonalSpace
+        );
+    }
+
+    private static void handleDeletePersonalSpace(DeletePersonalSpacePacket packet, IPayloadContext context) {
+        context.enqueueWork(() -> {
+            if (context.player() instanceof ServerPlayer player) {
+                packet.handleServerSide(player);
+            }
+        }).exceptionally(exception -> {
+            PersonalSpace.LOGGER.error("Failed to handle delete personal space packet", exception);
+            return null;
+        });
     }
 
     private static void handleUsePortal(UsePortalPacket packet, IPayloadContext context) {
